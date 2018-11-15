@@ -1,0 +1,3244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Artifactory is a binaries repository manager.
+  ~ Copyright (C) 2013 JFrog Ltd.
+  ~
+  ~ Artifactory is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Lesser General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ Artifactory is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.7.3"
+           xmlns="http://artifactory.jfrog.org/xsd/1.7.3"
+           elementFormDefault="qualified">
+
+    <xs:element name="config" type="CentralConfigType"/>
+
+    <xs:complexType name="CentralConfigType">
+        <xs:sequence>
+            <xs:element name="serverName" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        A name uniquely identifying this artifactory server instance across the network.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="offlineMode" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        If marked, Artifactory never tries to fetch artifacts remotely.
+                        Only cached and local artifacts are served.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="helpLinksEnabled" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether help links are shown in the UI.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="fileUploadMaxSizeMb" type="xs:int" default="100" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum size in megabytes for artifact files uploaded through the web UI. Set to '0' for
+                        unlimited size.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="dateFormat" type="xs:string" default="dd-MM-yy HH:mm:ss z" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The format used for displaying dates.
+                        For a detailed explanation see: <a href="http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html" target="_blank">Joda DateTimeFormat</a>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="addons" type="AddonsType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Add-ons-related configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="mailServer" type="MailServerType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Mail server-related configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="bintrayConfig" type="BintrayConfigType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Default (globally used) Bintray credentials configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="security" type="SecurityType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Security-related configuration used in authentication and authorization.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backups" type="BackupsType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of backup configurations.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="indexer" type="IndexerType" minOccurs="0"/>
+            <xs:element name="localRepositories" type="LocalRepositoriesType">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of locally installed repositories.
+                        NOTE! that when using the default global virtual repository (repo) the order of the local
+                        repositories resolution is determined by the order they appear in this list.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="remoteRepositories" type="RemoteRepositoriesType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of remote proxied (normally cached) repositories.
+                        NOTE! that when using the default global virtual repository (repo) the order of the cache and
+                        remote repositories resolution is determined by the order they appear in this list.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="virtualRepositories" type="VirtualRepositoriesType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of virtual repositories aggregating regular local and remote repositories.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="proxies" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of reusable proxy definitions. Proxies can be used by remote repositories by associating a
+                        proxy definition with a remote repository.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="proxy" type="ProxyType" maxOccurs="unbounded" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="reverseProxies" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of reusable reverse proxy definitions.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="reverseProxy" type="ReverseProxyType" maxOccurs="unbounded" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="propertySets" type="PropertySetsType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Define property sets to group together properties of the same category (e.g. QA). Then, define
+                        properties and their respective possible values (e.g. performance:{poor,acceptable,good} and
+                        qaStaffComment:[any]).
+                        Once property sets and their properties are defined, you can associate them with repositories,
+                        in order to be able to easily set, update and search for predefined property values on hosted
+                        repository items.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="urlBase" type="xs:string" default="" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A hard-coded URL prefix used by Artifactory for calculating relative URLs.
+                        Use this only if you must override the default URL base (similar to the Servlet context URL
+                        - e.g. http://myhost.com/artifactory).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="logo" type="xs:string" default="" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The remote URL of a logo image.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="footer" type="xs:string" default="" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Additional custom text to appear in the page footer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="repoLayouts" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Define reusable repository storage layouts used for identifying modules (module artifacts and
+                        module descriptors).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="repoLayout" type="RepoLayoutType" maxOccurs="unbounded" minOccurs="0" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="remoteReplications" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Configure scheduled remote repository replications.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="remoteReplication" type="RemoteReplicationType" maxOccurs="unbounded"
+                                    minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="localReplications" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Configure scheduled local repository replications.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="localReplication" type="LocalReplicationType" maxOccurs="unbounded"
+                                    minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="gcConfig" type="GcConfigType" minOccurs="1"/>
+            <xs:element name="cleanupConfig" type="CleanupConfigType" minOccurs="1"/>
+            <xs:element name="virtualCacheCleanupConfig" type="CleanupConfigType" minOccurs="1"/>
+            <xs:element name="quotaConfig" type="QuotaConfigType" minOccurs="0"/>
+            <xs:element name="externalProviders" type="ExternalProvidersType" minOccurs="0"/>
+            <xs:element name="systemMessageConfig" type="SystemMessageType" minOccurs="0"/>
+            <xs:element name="folderDownloadConfig" type="FolderDownloadConfigType" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="trashcanConfig" type="TrashcanConfigType" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="replicationsConfig" type="replicationsConfigType" minOccurs="0"  maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LocalRepositoriesType">
+        <xs:sequence>
+            <xs:element name="localRepository" type="LocalRepoType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LocalRepoType">
+        <xs:complexContent>
+            <xs:extension base="RealRepoType">
+                <xs:sequence>
+                    <xs:element name="snapshotVersionBehavior" default="unique" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether to use time-based version numbers for the name of SNAPSHOTs,
+                                or to use a non-unique, self-overriding naming pattern of
+                                artifactId-version-SNAPSHOT.type (default), or to respect the
+                                deployer settings coming from the Maven client.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="deployer"/>
+                                <xs:enumeration value="non-unique"/>
+                                <xs:enumeration value="unique"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="localRepoChecksumPolicyType" default="client-checksums" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Checksum policy determines how Artifactory behaves when a client checksum for a deployed
+                                resource is missing or conflicts with the locally calculated checksum (bad checksum).
+                                Checking checksums effectively verifies the integrity of the deployed resource.
+                                The options are:
+                                (1) Verify against client checksums (default) - Until a client has sent a valid checksum
+                                for a deployed artifact matching the server's locally calculated checksum, the
+                                artifact's checksum is not available and returns 404 (not found).
+                                If the client has sent a checksum conflicting with the one calculated on the server a
+                                409 (conflict) is returned until a valid checksum is deployed.
+                                (2) Trust server generated checksums - Do not verify against checksums sent by clients
+                                and trust the store server's locally calculated checksums. An uploaded artifact is
+                                available for consumption immediately, but integrity might be compromised.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="client-checksums"/>
+                                <xs:enumeration value="server-generated-checksums"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="calculateYumMetadata" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                A-synchronously calculate YUM repository metadata upon RPM deployment and removal.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="yumRootDepth" type="xs:int" default="0" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The depth, relative to the repository's root folder, where YUM metadata is created.
+                                This is useful when your repository contains multiple YUM repositories under parallel
+                                hierarchies.
+                                For example, if your RPMs are stored under 'fedora/linux/$releasever/$basearch', specify
+                                a depth of 4.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="yumGroupFileNames" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                A comma-separated list of xml file names containing YUM group component definitions.
+                                Artifactory includes the group definitions as part of the calculated YUM metadata,
+                                as well as automatically generating a gzipped version of the group files, if required.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="debianTrivialLayout" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The default Debian architecture is "Automatic", to change the Debian architecture to
+                                'Trivial' (which is deprecated) and generate the indices in the root directory,
+                                set the Trivial Layout checkbox.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="RealRepoType" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="RepoType">
+                <xs:sequence>
+                    <xs:element name="blackedOut" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether the repository is blacked-out. A blacked-out repository or its local cache do
+                                not
+                                participate in artifact resolution.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="handleReleases" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether the repository handles release artifacts.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="handleSnapshots" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether the repository handles snapshot artifacts.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="maxUniqueSnapshots" type="xs:int" default="0" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The maximum number of unique snapshots (of the same artifact) to store.
+                                Any number of snapshots above the max are automatically removed by age.
+                                A value of 0 (the default) indicates no limits on unique snapshots number (thus
+                                no automatic cleanup).
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="suppressPomConsistencyChecks" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether the repository should suppress POM consistency checks.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="propertySets" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The property sets that you are able to use of items hosted under this repository.
+                                As property sets are purely assistive and not enforcing, setting this on a repository
+                                only affects the list of predefined properties in the user interface properties tab for
+                                items under the repository. You are still be able to attach arbitrary properties to
+                                repository items.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="propertySetRef" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded">
+                                    <xs:annotation>
+                                        <xs:documentation source="description">
+                                            A property set usable by this repository.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:element>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="archiveBrowsingEnabled" type="xs:boolean" minOccurs="0" default="false">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                <![CDATA[
+                        Allow Unsafe Content and Archive Browsing -
+                        Determines whether viewing content (e.g., html files, Javadoc browsing) directly from Artifactory is allowed.
+                        Allowing content browsing requires strict content moderation in order to make sure malicious users do not
+                        upload content that is used to compromise security. For example, to conduct cross-site scripting attacks.
+                        ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="RepoType" abstract="true">
+        <xs:sequence>
+            <xs:element name="key" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Repository unique ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="type" type="xs:string" minOccurs="1"/>
+            <xs:element name="description" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Textual description of the repository.
+                        This description also appears when selecting the repository in the Tree Browser.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="notes" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Optional notes about this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="includesPattern" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Comma-separated list of artifact patterns to include when evaluating
+                        artifact requests, in the form of x/y/**/z/*. When used, only requests
+                        matching one of the include patterns are served.
+                        By default all artifacts are included (**/*).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="excludesPattern" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Comma-separated list of artifact patterns to exclude when evaluating
+                        artifact requests, in the form of x/y/**/z/*.
+                        By default no artifacts are excluded.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="repoLayoutRef" type="xs:IDREF" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Select the layout that the repository should use for storing and identifying modules.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="dockerApiVersion" default="V1" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Docker API version.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="V1"/>
+                        <xs:enumeration value="V2"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="forceDockerAuthentication" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Force basic authentication credentials in order to use this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="forceNugetAuthentication" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Force basic authentication credentials in order to use this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RemoteRepositoriesType">
+        <xs:sequence>
+            <xs:element name="remoteRepository" type="RemoteRepoType"
+                        minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RemoteRepoType">
+        <xs:complexContent>
+            <xs:extension base="RemoteRepoBaseType">
+                <xs:sequence>
+                    <xs:element name="username" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                HTTP authentication username.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="password" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                HTTP authentication password.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="allowAnyHostAuth" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Allow credentials of this repository to be used on requests redirected to any other
+                                host.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="socketTimeoutMillis" type="xs:int" default="15000"
+                                minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network timeout in milliseconds to use both for connection
+                                establishment and for unanswered requests.
+                                Timing out on a network operation is considered as a retrieval
+                                failure.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="enableCookieManagement" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Enable cookie management if the remote repo uses cookies to manage client state.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="enableTokenAuthentication" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Enable token (Bearer) based authentication
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="localAddress" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The local address to be used when creating connections.
+                                Useful for specifying the interface to use on systems with multiple network interfaces.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="proxyRef" type="xs:IDREF" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network proxy reference.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="queryParams" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                <![CDATA[
+                                Custom HTTP query parameters that will be automatically included in all remote resource requests.
+                                For example: param1=val1&amp;param2=val2&amp;param3=val3
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="propagateQueryParams" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                <![CDATA[
+                                If original query parameters should be included in remote requests
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="RemoteRepoBaseType" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="RealRepoType">
+                <xs:sequence>
+                    <xs:element name="url" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The URL for the remote repository. Currently only HTTP/S URLs are
+                                supported.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="offline" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                When marked, only already-cached artifacts are retrieved and
+                                fetching remote artifacts is not attempted.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="hardFail" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether failing to communicate with this repository returns an
+                                error to the client that fails the build.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="storeArtifactsLocally" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether the repository should store cached artifacts locally or not. When not storing
+                                artifacts locally, direct repository-to-client streaming is used. This can be useful for
+                                multi-server setups over a high-speed LAN, with one Artifactory caching certain data
+                                on a central storage and streaming it directly to satellite pass-though Artifactory
+                                servers.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="fetchJarsEagerly" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                When marked, the repository attempts to eagerly fetch the jar in the background
+                                each time a POM is requested.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="fetchSourcesEagerly" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                When marked, the repository attempts to eagerly fetch the source jar in the
+                                background each time a jar is requested.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="retrievalCachePeriodSecs" type="xs:long" default="600" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The number of seconds to cache artifact look-up results.
+                                A value of 0 indicates no caching.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="assumedOfflinePeriodSecs" type="xs:long" default="30" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The number of seconds the repository stays in assumed offline state after a connection
+                                error. At the end of this time an online check is attempted in order to reset the
+                                offline status.
+                                A value of 0 means the repository is never assumed offline.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="missedRetrievalCachePeriodSecs" type="xs:long" default="1800" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The number of seconds to cache artifact retrieval misses (artifact not found).
+                                A value of 0 indicates no caching.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="remoteRepoChecksumPolicyType" default="generate-if-absent" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Checksum policy determines how Artifactory behaves when a checksum for a remote resource
+                                is missing or conflicts with the locally calculated checksum (bad checksum).
+                                Checksum checking effectively verifies the integrity of the remote resource.
+                                The options are:
+                                1) Generate if absent (by default) - A bad remote checksum fails the resource
+                                request. If, however, a remote checksum could not be found Artifactory automatically
+                                generates one.
+                                2) Fail: A bad or missing remote checksum fails the resource request.
+                                3) Ignore and generate: Artifactory locally generates a checksum for both bad or
+                                missing remote checksum. Remote resource retrieval never fails, but integrity might
+                                be compromised.
+                                4) Pass-thru: Artifactory stores and passes-thorugh all remote checksums including
+                                bad ones and locally generates a checksum for a missing remote checksum that cannot be
+                                found. Remote resource retrieval never fails, but integrity might be compromised and
+                                client-side checksum validation (such as the one performed by Maven) fails.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="generate-if-absent"/>
+                                <xs:enumeration value="fail"/>
+                                <xs:enumeration value="ignore-and-generate"/>
+                                <xs:enumeration value="pass-thru"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="unusedArtifactsCleanupPeriodHours" type="xs:int" default="0" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The number of hours to wait before an artifact is deemed "unused" and eligible for
+                                cleanup from the repository.
+                                A value of 0 means automatic cleanup of cached artifacts is disabled.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="shareConfiguration" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether or not the configuration details of this remote repository can be publicly
+                                shared with remote clients, such as other Artifactory servers.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="synchronizeProperties" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether to synchronize properties of artifacts retrieved from a remote instance of
+                                Artifactory.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="listRemoteFolderItems" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Lists the items of remote folders in simple and list browsing. Required for dynamic
+                                resolution that depends on remote folder content information, such as remote Ivy version
+                                lookups. The remote content is cached according to the value of the
+                                'Retrieval Cache Period'
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="remoteRepoLayoutRef" type="xs:IDREF" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Select the layout that best matches the layout used by remote repository for storing and
+                                identifying modules.
+                                Path-mapping takes place if the remote layout is different from the local layout -
+                                remote module artifacts and descriptors is stored according to the local repository
+                                layout (e.g., Maven 1->Maven 2, or Maven 2->Ivy).
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="rejectInvalidJars" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Reject the caching of jar files that are found to be invalid. For example, pseudo jars
+                                retrieved behind a "captive portal".
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="p2Support" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Support remote P2 metadata updates.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="nuget" type="NuGetConfigurationType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Proxy and cache NuGet libraries from the remote repository.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="pypi" type="PypiConfigurationType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Proxy and cache NuGet libraries from the remote repository.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="bower" type="BowerConfigurationType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Proxy and cache Bower libraries from the remote repository.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="cocoaPods" type="CocoaPodsConfigurationType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Proxy and cache CocoaPods libraries from the remote repository.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="p2OriginalUrl" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The URL for the original P2 repository. Currently only HTTP/S URLs are
+                                supported.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="vcs" type="VcsType" minOccurs="0"/>
+                    <xs:element name="contentSynchronisation" type="ContentSynchronisation" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Content synchronisation to another artifactory repository
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="blockMismatchingMimeTypes" type="xs:boolean" default="true" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                If set, artifacts will fail to download if a mismatch is detected between requested and
+                                received mimetype according to the list specified in the system properties file under
+                                blockedMismatchingMimeTypes. You can override by adding mimetypes to the override list below.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="mismatchingMimeTypesOverrideList" type="xs:string" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                A comma separated list of mime types that will be blocked by this repo if the original
+                                request was for a different mime type.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ContentSynchronisation">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" form="qualified" default="false"  minOccurs="1" maxOccurs="1"/>
+            <xs:element name="statistics" type="StatisticsContent" form="qualified"  minOccurs="1" maxOccurs="1"/>
+            <xs:element name="properties" type="PropertiesContent" form="qualified"  minOccurs="1" maxOccurs="1"/>
+            <xs:element name="source" type="SourceContent" form="qualified" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="StatisticsContent">
+        <xs:complexContent>
+            <xs:extension base="AbstractRemoteRepoDelegate">
+                <xs:sequence/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PropertiesContent">
+        <xs:complexContent>
+            <xs:extension base="AbstractRemoteRepoDelegate">
+                <xs:sequence/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SourceContent">
+        <xs:sequence>
+            <xs:element name="originAbsenceDetection" type="xs:boolean" form="qualified" default="false" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AbstractRemoteRepoDelegate" abstract="true">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" form="qualified" default="false"  minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="VirtualRepositoriesType">
+        <xs:sequence>
+            <xs:element name="virtualRepository" type="VirtualRepoType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="VirtualRepoType">
+        <xs:complexContent>
+            <xs:extension base="RepoType">
+                <xs:sequence>
+                    <xs:element name="artifactoryRequestsCanRetrieveRemoteArtifacts" type="xs:boolean" minOccurs="0"
+                                default="false">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Determines whether artifact requests coming from other Artifactories
+                                can be fulfilled by accessing this virtual repository's remote repositories
+                                or by only accessing its caches (by default).
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="repositories" type="RepositoryRefsType" maxOccurs="1" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                A set of local and remote repository references to include in a
+                                virtual repository.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="keyPair" type="xs:string" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                A named key-pair to use for automatically signing artifacts.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="pomRepositoryReferencesCleanupPolicy" default="discard_active_reference"
+                                minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                (1) Discard Active References - Removes repository elements that are declared
+                                directly under project or under a profile in the same POM that is activeByDefault.
+                                (2)Discard Any References - Removes all repository elements regardless of whether
+                                they are included in an active profile or not.
+                                (3)Nothing - Does not remove any repository elements declared in the POM.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="discard_active_reference"/>
+                                <xs:enumeration value="discard_any_reference"/>
+                                <xs:enumeration value="nothing"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="p2" type="P2ConfigurationType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Configuration for automatic P2 handling
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="defaultDeploymentRepo" type="xs:IDREF" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Local repository reference (key).
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="externalDependencies" type="ExternalDependenciesConfigType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Configuration for fetching external depenednecies
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="P2ConfigurationType">
+        <xs:sequence>
+            <xs:element name="urls" type="P2UrlsType" maxOccurs="1" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of local and remote P2 repository URLs to aggregate under this virtual repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ExternalDependenciesConfigType">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="1" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable filtering of external dependencies
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="patterns" type="ExternalDependenciesPatternsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of ant patterns to match for external dependencies.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="remoteRepo" type="xs:IDREF" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Remote repo used to cache external dependencies
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ExternalDependenciesPatternsType">
+        <xs:sequence>
+            <xs:element name="pattern" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The pattern to match for external dependency
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NuGetConfigurationType">
+        <xs:sequence>
+            <xs:element name="feedContextPath" type="xs:string" default="api/v2" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path prefix through which the NuGet feeds are served.
+                        For example, the NuGet Gallery feed URL is 'https://nuget.org/api/v2', so the repository URL should
+                        be configured as 'https://nuget.org' and the feed context path should be configured as 'api/v2'.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="downloadContextPath" type="xs:string" default="api/v2/package" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path prefix through which NuGet downloads are served.
+                        For example, the NuGet Gallery download URL is 'https://nuget.org/api/v2/package', so the repository
+                        URL should be configured as 'https://nuget.org' and the download context path should be configured
+                        as 'api/v2/package'.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PypiConfigurationType">
+        <xs:sequence>
+            <xs:element name="indexContextPath" type="xs:string" default="simple/" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path to the remote server's simple index.
+                        For example, for 'https://pypi.python.org/' it is 'simple/'
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="packagesContextPath" type="xs:string" default="packages/" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path to where packages are stored at the remote server.
+                        For example, for 'https://pypi.python.org/' it is 'packages/'
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BowerConfigurationType">
+        <xs:sequence>
+            <xs:element name="bowerRegistryUrl" type="xs:string" default="https://bower.herokuapp.com" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The Bower registry URL to communicate with.
+                        Usually should be left as a default for 'https://bower.herokuapp.com' unless the remote
+                        is an Artifactory instance of which the value should match the remote repository URL.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CocoaPodsConfigurationType">
+        <xs:sequence>
+            <xs:element name="cocoaPodsSpecsRepoUrl" type="xs:string" default="https://github.com/CocoaPods/Specs" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The CocoaPods Specs Repo URL to communicate with.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="specRepoProvider" type="VcsGitType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="P2UrlsType">
+        <xs:sequence>
+            <xs:element name="url" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The URL of the target P2 repository. This URL should contain a P2 metadata descriptor
+                        (composite, content or artifacts).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RepositoryRefsType">
+        <xs:sequence>
+            <xs:element name="repositoryRef" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Local, remote or virtual repository reference (key).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ProxyType">
+        <xs:sequence>
+            <xs:element name="key" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Proxy Unique ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="host" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Proxy host name.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="port" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Proxy port number.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="username" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Proxy username.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="password" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Proxy password.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ntHost" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The computer name of this machine (that is connected to the NTLM proxy).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="domain" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Proxy domain/realm name.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="defaultProxy" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Make this proxy the default for new remote repositories and for internal HTTP requests.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="redirectedToHosts" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        An optional list of newline or comma separated host names to which the proxy may redirect
+                        requests.
+                        The credentials of the proxy are reused by requests redirected to any of these hosts.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ReverseProxyType">
+        <xs:sequence>
+            <xs:element name="key" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Reverse Proxy Unique ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="webServerType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The web server type for this reverse proxy
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="nginx"/>
+                        <xs:enumeration value="apache"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="artifactoryAppContext" type="xs:string"/>
+            <xs:element name="publicAppContext" type="xs:string"/>
+            <xs:element name="serverName" type="xs:string"/>
+            <xs:element name="serverNameExpression" type="xs:string" nillable="true"/>
+            <xs:element name="sslType" minOccurs="0" maxOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="self-signed"/>
+                        <xs:enumeration value="ca-signed"/>
+                        <xs:enumeration value="no-ssl"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="sslCertificate" type="xs:string" nillable="true"/>
+            <xs:element name="sslKey" type="xs:string" nillable="true"/>
+            <xs:element name="dockerReverseProxyMethod" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        method to use for reverse proxy
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="portPerRepo"/>
+                        <xs:enumeration value="subDomain"/>
+                        <xs:enumeration value="noValue"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="useHttps" type="xs:boolean" />
+            <xs:element name="useHttp" type="xs:boolean" />
+            <xs:element name="sslPort" type="xs:int"/>
+            <xs:element name="httpPort" type="xs:int"/>
+            <xs:element name="reverseProxyRepositories" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of reusable reverse proxy repositories.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="reverseProxyRepoConfigs" type="ReverseProxyRepoConfigType" maxOccurs="unbounded" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="artifactoryServerName" type="xs:string"/>
+            <xs:element name="upStreamName" type="xs:string" nillable="true"/>
+            <xs:element name="artifactoryPort" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ReverseProxyRepoConfigType">
+        <xs:sequence>
+            <xs:element name="repoRef" type="xs:IDREF"/>
+            <xs:element name="serverName" type="xs:string"/>
+            <xs:element name="port" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BackupsType">
+        <xs:sequence>
+            <xs:element name="backup" type="BackupType" maxOccurs="unbounded" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BackupType">
+        <xs:sequence>
+            <xs:element name="key" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Backup Unique ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether this backup is enabled or disabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="dir" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The directory to which backup local repository data as files.
+                        The default is $ARTIFACTORY_HOME/backup/[backup_key]
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cronExp" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The Cron expression by which backup frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="retentionPeriodHours" type="xs:int" default="168" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum number of hours to keep old backups in the destination dir.
+                        Marking the "Incremental" checkbox, indicates that backups are incrementally (delta only)
+                        written to the same directory: ${backupDir}/current. This "in place" backup type is suitable
+                        for file-system based backup support, and cleanup of old backups is inactive in this mode.
+                        The default is 168 hours = 7 days.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="createArchive" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether the backup output should be a zip archive or a
+                        directory (the default).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="excludedRepositories" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of repository references to exclude from backup.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="repositoryRef" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation source="description">
+                                    Local or remote repository reference (key).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="sendMailOnError" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Send email notifications to admin users if errors are encountered during the backup process
+                        (requires properly configured email settings and valid email addresses for admin users).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="excludeBuilds" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Exclude all builds from the backup.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="excludeNewRepositories" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Automatically exclude new repositories from the backup.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="IndexerType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Configuration for the indexer creating Maven indexes downloadable by IDEs.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether the indexer service is enabled and should be run.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cronExp" type="xs:string" default="0 23 5 * * ?" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The Cron expression by which indexer frequency is determined to recalculate
+                        new Maven indexes on selected repositories. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="includedRepositories" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of repository references to index.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="repositoryRef" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation source="description">
+                                    Repository reference (key).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AddonsType">
+        <xs:sequence>
+            <xs:element name="showAddonsInfo" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        When selected, info about available Add-ons is displayed in the Artifactory user interface.
+                        Enabling add-ons info display resets any user-specific info-hiding preference.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="showAddonsInfoCookie" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A variable used for calculating the path for a user cookie storing their personal add-on
+                        info showing preferences.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="MailServerType">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="true" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The activity state of the configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="host" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The host name of the mail server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="port" type="xs:int" default="25" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The mail server port.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="username" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The authentication username.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="password" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The authentication password.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="from" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The "from" address header to use in all outgoing mails. Can be left blank.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="subjectPrefix" type="xs:string" minOccurs="0" default="[Artifactory]">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A prefix to use for the subject of all outgoing mails.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="tls" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether to use transport layer security when connecting to the mail server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ssl" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether to use SSL when connecting to the mail server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="artifactoryUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The Artifactory URL to use in all outgoing mails to denote links to Artifactory. Can be left
+                        blank.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BintrayConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                The default Bintray Credentials that will be used by Artifactory in cases where an Artifactory
+                user doesn't have Bintray credentials defined.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="userName" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The default Bintray user name that will be used by Artifactory in cases where an Artifactory
+                        user doesn't have Bintray credentials defined.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="apiKey" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The default Bintray API Key that will be used by Artifactory in cases where an Artifactory
+                        user doesn't have Bintray credentials defined.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="fileUploadLimit" type="xs:int" default="200" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum number of files that a user is allowed to push to Bintray in a single operation.
+                        Set to '0' for unlimited.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SecurityType">
+        <xs:sequence>
+            <xs:element name="anonAccessEnabled" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether anonymous access to the repository and the UI is permitted.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="anonAccessToBuildInfosDisabled" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether anonymous users can view build related information.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="hideUnauthorizedResources" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        When marked, Artifactory hides the existence of unauthorized resources by sending a 404
+                        response (not found) to requests for resources that are not accessible by the user. Otherwise,
+                        the response implies that the resource exists but is protected - by requesting authentication
+                        for anonymous requests (401) or by denying an authenticated request for unauthorized users.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="passwordSettings" type="PasswordSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Password policy settings (credentials encryption etc.).
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ldapSettings" type="LdapSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to LDAP.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ldapGroupSettings" type="LdapGroupSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to LDAP Groups.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="httpSsoSettings" type="HttpSsoSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to HTTP SSO.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="crowdSettings" type="CrowdSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to Atlassian Crowd.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="samlSettings" type="SamlSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to SAML.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="oauthSettings" type="oauthSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to OAuth.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="debianSettings" type="DebianSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to GPG signing
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="userLockPolicy" type="UserLockPolicyType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                         User locking policy settings.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="sshServerSettings" type="SshServerSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to SSH.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PasswordSettingsType">
+        <xs:sequence>
+            <xs:element name="encryptionPolicy" default="supported" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines the password requirements from users identified to Artifactory from a remote
+                        client, such as Maven.
+                        The options are:
+                        (1) Supported (by default) - Users can authenticate using both secure encrypted
+                        passwords or clear-text passwords.
+                        (2) Required: Users must authenticate using secure encrypted passwords. Clear-text
+                        authentication fails.
+                        (3) Unsupported: Only clear-text passwords can be used for authentication.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="supported"/>
+                        <xs:enumeration value="required"/>
+                        <xs:enumeration value="unsupported"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="expirationPolicy" type="PasswordExpirationPolicyType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                         Password expiration policy.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="UserLockPolicyType">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Whether user can be locked up on incorrect login attempt.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="loginAttempts" type="xs:int" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The number of incorrect login attempts that will lock user.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PasswordExpirationPolicyType">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Whether user password can expire.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="passwordMaxAge" type="xs:int" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The number of days for password to get expired.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="notifyByEmail" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Whether users should be notified by email about password expiration.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="HttpSsoSettingsType">
+        <xs:sequence>
+            <xs:element name="httpSsoProxied" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Artifactory trusts incoming requests and reuses the remote user originally set on the
+request by the SSO of the HTTP server.
+
+This is useful if you want to use existing enterprise SSO integrations, such as the powerful authentication
+schemes provided by Apache (mod_auth_ldap, mod_auth_ntlm, mod_auth_kerb, etc.).
+
+When Artifactory is deployed as a webapp on Tomcat behind Apache:
+If using mod_proxy_ajp, ensure to set tomcatAuthentication="false" on the AJP connector.
+If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's configuration.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="noAutoUserCreation" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from an SSO user, the user is temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage
+						user permissions not attached to their default groups.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="allowUserToAccessProfile" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from a SAML user, the user is temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage
+						user permissions not attached to their default groups.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="remoteUserRequestVariable" type="xs:string" minOccurs="0" default="REMOTE_USER">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The name of the HTTP request variable to use for extracting the user identity.
+                                Default is: REMOTE_USER.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="SshServerSettingsType">
+        <xs:sequence>
+            <xs:element name="enableSshServer" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                SSH n stuff
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="sshServerPort" type="xs:int" default="1337" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        SSH server port number.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="CrowdSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Enable security integration with Atlassian Crowd.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="serverUrl" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The full URL of the Crowd server to use.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="applicationName" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The application name configured for Artifactory in Crowd.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The application password configured for Artifactory in Crowd.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="sessionValidationInterval" type="xs:long" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The time window, in minutes, in which the session does not need to be revalidated.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="useDefaultProxy" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        If a default proxy definition exists, it is used to pass through to the Crowd Server.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="noAutoUserCreation" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from a Crowd user, the user is temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage
+						user permissions not attached to their default groups.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="customCookieTokenKey" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Specify the SSO custom cookie name. Out-of-the-box Crowd uses the 'crowd.token_key' cookie name for all Crowd-connected applications.
+                                You can override the default value with your own cookie name. This is useful in environments with multiple Crowd servers.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="directAuthentication" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Authenticate using credentials instead of the default session, token-based authentication. This is required for use with JIRA User Server.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SamlSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Enable security integration with SAML.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="loginUrl" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The identity provider login URL (when you try to login, the service provider redirects to this URL).
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="logoutUrl" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The identity provider logout URL (when you try to logout, the service provider redirects to this URL).
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="certificate" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The certificate for SAML Authentication. NOTE! that the certificate must contain the public key to allow Artifactory to verify sign-in requests.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="serviceProviderName" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                SAML service provider name: this is the Artifactory name in the SAML federation.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="noAutoUserCreation" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from a SAML user, the user is temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage
+						user permissions not attached to their default groups.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="allowUserToAccessProfile" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from a SAML user, the user is temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage
+						user permissions not attached to their default groups.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="autoRedirect" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Auto redirect the login page link to the identity provider URL.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="oauthSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Enable security integration with OAuth.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="allowUserToAccessProfile" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from a SAML user, the user is temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage
+						user permissions not attached to their default groups.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="persistUsers" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Persist new users.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="defaultNpm" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Default NPM provider.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="oauthProvidersSettings" type="oauthProvidersSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to LDAP Groups.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="oauthProvidersSettingsType">
+        <xs:sequence>
+            <xs:element name="oauthProvidersSettings" type="oauthProviderSettingsType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="oauthProviderSettingsType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider unique name.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider type.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="providerType" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider type.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="id" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider id.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secret" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider secret.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="apiUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider url.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="authUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider authenticationUrl.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="tokenUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider token URL.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="basicUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider basic URL.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="domain" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider domain.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="DebianSettingsType">
+        <xs:sequence>
+            <xs:element name="passphrase" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[ Passphrase for GPG signing. ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LdapSettingsType">
+        <xs:sequence>
+            <xs:element name="ldapSetting" type="LdapSettingType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LdapGroupSettingsType">
+        <xs:sequence>
+            <xs:element name="ldapGroupSetting" type="LdapGroupSettingType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LdapSettingType">
+        <xs:sequence>
+            <xs:element name="key" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        LDAP setting Unique ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether this LDAP is enabled or disabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ldapUrl" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Location of the LDAP server in the form of:
+                        ldap://myserver:myport/dc=sampledomain,dc=com
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="userDnPattern" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        A DN pattern that can be used to login users directlyto LDAP.
+                        This pattern is used for creating a DN string for 'direct' user
+                        authentication, where the pattern is relative to the base DN in the LDAP URL.
+                        The pattern argument {0} is replaced with the username.
+                        This works only if anonymous binding is allowed and a direct user DN can
+                        be used, which is not the default case for Active Directory (use User DN
+                        search filter instead).
+                        Example: uid={0},ou=People
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="search" type="SearchType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="autoCreateUser" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether users should be auto-created when using LDAP, otherwise they are transient
+                        and associated with auto-join groups defined in Artifactory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="emailAttribute" type="xs:string" default="mail" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        An attribute that can be used to map a user's email to a user created
+                        automatically in Artifactory.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LdapGroupSettingType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        LDAP group setting search base.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="groupBaseDn" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        LDAP group setting search base.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="groupNameAttribute" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The group name attribute.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="groupMemberAttribute" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The group member attribute.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="subTree" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Mark if you want to check the full subtree when searching.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="filter" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The filter to search for in the group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="descriptionAttribute" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The group description.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="strategy" default="STATIC" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The group description.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="HIERARCHICAL"/>
+                        <xs:enumeration value="STATIC"/>
+                        <xs:enumeration value="DYNAMIC"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="enabledLdap" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A reference to the LDAP setting to retrieve this group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SearchType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                <![CDATA[
+                An authentication pattern can include either a userDnPattern for "direct"
+                authentication or searchFilter for user "search" (after binding with a manager DN)
+                and then authentication of the found user.
+                The managerDn and managerPassword are not used for "direct" DN authentication.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="searchFilter" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        A filter expression used to search for the user DN used in LDAP
+                        authentication.
+                        This is an LDAP search filter (as defined in 'RFC 2254') with optional
+                        arguments. In this case, the username is the only argument, denoted by '{0}'.
+                        Possible examples are:
+                        (uid={0}) - this searches for a username match on the attribute.
+                        Authentication to LDAP is performed from the DN found, if successful.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="searchBase" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Context name to search in, relative to the base DN in the LDAP URL. ex: ou=users
+                        With LDAP Group Add-on enabled, it is possible to enter multiple search base entries
+                        separated by the '|' sign. ex: ou=internalUsers,ou=hq|ou=externalUsers
+                        This parameter is optional.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="searchSubTree" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Enables deep search through the sub tree of the LDAP URL + search base. True by default.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="managerDn" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Used only with "search" authentication method.
+                        It is the full DN of the user that binds to the LDAP server to perform user searches.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="managerPassword" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Used only with "search" authentication method.
+                        It is the password of the user that binds to the LDAP server to perform the search.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PropertySetsType">
+        <xs:sequence>
+            <xs:element name="propertySet" type="PropertySetType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PropertySetType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A unique name identifying the property set.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="visible" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Whether this property set is visible in the properties management user interface, or is
+                        intended for internal use.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="PropertiesType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The list of properties grouped under this property set.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PropertiesType">
+        <xs:sequence>
+            <xs:element name="property" type="PropertyType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A unique name identifying the property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="closedPredefinedValues" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Whether the values of the property shall come from a predefined closed list of values.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="multipleChoice" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Whether the property supports multiple values.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="predefinedValues" type="PredefinedValuesType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A list of predefined values to select from for the property value(s).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PredefinedValuesType">
+        <xs:sequence>
+            <xs:element name="predefinedValue" type="PredefinedValueType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PredefinedValueType">
+        <xs:sequence>
+            <xs:element name="value" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The actual value.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="defaultValue" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Whether or not this value is a default/pre-selected one (multiple choice properties support
+                        multiple default values).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RepoLayoutType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A unique name identifying the layout.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="artifactPathPattern" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[(HTML)
+                        <div class="legend-surrownding-text">
+                            The path pattern that matches the storage path of artifacts.<br/>
+                            The path pattern is composed of literals (including path separators) and any of the following tokens:<br/>
+                            <i>org, orgPath, baseRev, fileIntegRev, folderIntegRev, module, classifier, ext, type.</i>
+                        </div>
+                        <table class="legend">
+                            <thead>
+                                <tr>
+                                    <th>Token</th>
+                                    <th>Description</th>
+                                    <th>Example Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="token">[org]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's organization.
+                                        Equivalent to Ivy's 'organization'.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'org.apache.derby'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[orgPath]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's organization where dots ('.') are replaced by path separators ('/'). Equivalent to Maven's 'groupId'.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'org/apache/derby'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[module]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's module.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'hibernate'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[baseRev]</td>
+                                    <td class="desc">
+                                       Identifies the base revision part of the artifact version, excluding any integration information
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'2.1.1'</span> which may be part of the full version '2.1.1-SNAPSHOT' or '2.1.1-build.1099'.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[folderItegRev]</td>
+                                    <td class="desc">
+                                        Identifies the integration revision part used in folder names in the artifact's path, excluding the base revision.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'SNAPSHOT'</span> or <span class="e-value">'build.1099'</span> which may be part of the folder name '2.1.1-SNAPSHOT' or '2.1.1-build.1099', respectively.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[fileItegRev]</td>
+                                    <td class="desc">
+                                        Identifies the integration revision part in the artifact's file name, excluding the base revision.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'20110113.145509-8'</span> or <span class="e-value">'build.1099'</span> which may be part of the file name '2.1.1-20110113.145509-8' or '2.1.1-build.1099', respectively.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[classifier]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's classifier.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'sources'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[ext]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's extension.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'jar'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[type]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's type. Typically used when the artifact's extension cannot be reused as the artifact's type.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'javadoc'</span> (that can have the 'jar' extension) or 'ivy' (that can have the 'xml' extension).
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[customToken&lt;regex&gt;]</td>
+                                    <td class="desc">
+                                        A custom regex token. Can be used to create a new type of token when the provided defaults don't suffice.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'[timestamp<\d{8}>]'</span> a new timestamp custom token that has 8 digits.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="legend-surrownding-text">
+                            For Artifactory to be able to construct meaningful module information the following tokens have to be used at the minimum:<br/>
+                            <i>org or orgPath, baseRev and module.</i>
+                        </div>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="distinctiveDescriptorPathPattern" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[(HTML)
+                        <p>
+                            Check this if the repository layout uses separate path patterns for artifacts and descriptors
+                            (such as Ivy descriptor files). Otherwise, the artifact path pattern will be used to match
+                            descriptors.
+                        </p>
+                        <p>
+                            The descriptor path pattern matches the storage path of module descriptors and uses the same
+                            format as of the artifact path pattern.
+                        </p>
+                        <table class="legend">
+                            <thead>
+                                <tr>
+                                    <th>Token</th>
+                                    <th>Description</th>
+                                    <th>Example Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="token">[org]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's organization.
+                                        Equivalent to Ivy's 'organization'.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'org.apache.derby'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[orgPath]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's organization where dots ('.') are replaced by path separators ('/'). Equivalent to Maven's 'groupId'.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'org/apache/derby'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[baseRev]</td>
+                                    <td class="desc">
+                                       Identifies the base revision part of the artifact version, excluding any integration information
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'2.1.1'</span> which may be part of the full version '2.1.1-SNAPSHOT' or '2.1.1-build.1099'.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[fileItegRev]</td>
+                                    <td class="desc">
+                                        Identifies the integration revision part in the artifact's file name, excluding the base revision.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'20110113.145509-8'</span> or <span class="e-value">'build.1099'</span> which may be part of the file name '2.1.1-20110113.145509-8' or '2.1.1-build.1099', respectively.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[folderItegRev]</td>
+                                    <td class="desc">
+                                        Identifies the integration revision part used in folder names in the artifact's path, excluding the base revision.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'SNAPSHOT'</span> or <span class="e-value">'build.1099'</span> which may be part of the folder name '2.1.1-SNAPSHOT' or '2.1.1-build.1099', respectively.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[module]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's module.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'hibernate'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[classifier]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's classifier.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'sources'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[ext]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's extension.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'jar'</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[type]</td>
+                                    <td class="desc">
+                                        Identifies the artifact's type. Typically used when the artifact's extension cannot be reused as the artifact's type.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'javadoc'</span> (that can have the 'jar' extension) or 'ivy' (that can have the 'xml' extension).
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">[customToken&lt;regex&gt;]</td>
+                                    <td class="desc">
+                                        A custom regex token. Can be used to create a new type of token when the provided defaults don't suffice.
+                                    </td>
+                                    <td class="example">
+                                        <span class="e-value">'[timestamp<\d{8}>]'</span> a new timestamp custom token that has 8 digits.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="descriptorPathPattern" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The path pattern matching the storage path of module descriptors.
+                        Uses the same format as the artifact path pattern.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="folderIntegrationRevisionRegExp" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A regular expression matching the integration revision string appearing in a folder name
+                        as part of the artifact's path. For example, 'SNAPSHOT', in Maven.
+                        Note! that you must ensure not to introduce any regexp capturing groups within this expression.
+                        If not applicable use '.*'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="fileIntegrationRevisionRegExp" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A regular expression matching the integration revision string appearing in a file name
+                        as part of the artifact's path. For example, 'SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))',
+                        in Maven.
+                        Note! that you must ensure not to introduce any regexp capturing groups within this expression.
+                        If not applicable use '.*'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ReplicationBaseType">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable active replication of this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cronExp" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The Cron expression by which replication frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="syncDeletes" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Delete artifacts and folders that no longer exist in the source repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="syncProperties" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Include metadata properties of files and folders as part of the replication.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pathPrefix" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A subpath within the source repository to limit replication to.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="repoKey" type="xs:string" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The replicated repository key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RemoteReplicationType">
+        <xs:complexContent>
+            <xs:extension base="ReplicationBaseType">
+                <xs:sequence>
+                    <xs:element name="socketTimeoutMillis" type="xs:int" default="15000" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network timeout in milliseconds to use for remote file listing query.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="LocalReplicationType">
+        <xs:complexContent>
+            <xs:extension base="ReplicationBaseType">
+                <xs:sequence>
+                    <xs:element name="url" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The URL of the target local repository on a remote Artifactory server.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="proxyRef" type="xs:IDREF" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network proxy reference.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="socketTimeoutMillis" type="xs:int" default="15000" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network timeout in milliseconds to use both for connection
+                                establishment and for unanswered requests.
+                                Timing out on a network operation is considered as a retrieval
+                                failure.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="username" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                HTTP authentication username.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="password" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                HTTP authentication password.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="enableEventReplication" type="xs:boolean" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Replicate additions and modifications as they occur.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="GcConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                GC config.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="cronExp" type="xs:string" default="* * 4 * * ?" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The Cron expression by which garbage collection frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial </a>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="CleanupConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Cleanup config.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="cronExp" type="xs:string" default="0 12 5 * * ?" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The Cron expression by which artifacts cleanup frequency is determined. For detailed information
+                        see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="QuotaConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Quota management configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable control over the size of storage space used for binaries to avoid running out of disk
+                        space.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="diskSpaceLimitPercentage" type="xs:int" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum disk usage allowed by percentage, of the partition containing the binaries folder.
+                        Once this limit has been reached, deployments are rejected with a 413 error (request entity
+                        too large) and an error message is displayed in the UI (visible to admin users only).
+                        With a filesystem storage the partition checked is the one containing the
+                        '$ARTIFACTORY_HOME/data/filestore' directory.
+                        With a database BLOB storage the partition checked is the one containing the
+                        '$ARTIFACTORY_HOME/data/cache' directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="diskSpaceWarningPercentage" type="xs:int" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum warning-level of disk usage, by percentage, of the partition containing the binaries
+                        folder.
+                        Once this limit is reached a warning is logged and a warning message is displayed in the UI
+                        (visible to admin users only).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ExternalProvidersType">
+        <xs:sequence>
+            <xs:element name="blackduck" type="BlackDuckSettingsType" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BlackDuckSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable Black Duck Code Center integration with Artifactory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:sequence>
+                <xs:element name="serverUri" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Black Duck Code Center server URI.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="username" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Black Duck Code Center authentication username.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="password" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Black Duck Code Center authentication password.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="connectionTimeoutMillis" type="xs:long" default="20000" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Network timeout in milliseconds to use both for connection
+                            establishment and for unanswered requests.
+                            Timing-out on a network operation is considered as a retrieval
+                            failure. Defaults to 20000 milliseconds.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="proxyRef" type="xs:IDREF" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Proxy configuration to use for accessing Black Duck Code Center.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SystemMessageType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Configuration for the system message that can be displayed in the Artifactory UI.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether the system message is displayed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="title" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Title for the system message.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="titleColor" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Color for the system message's title, in rgb format (i.e. #00ec00)
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="message" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The message that will be displayed
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="showOnAllPages" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether the system message is displayed in all pages or just the home page.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="FolderDownloadConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Configuration for the ability to download folders from the UI.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether downloading folders is allowed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="maxDownloadSizeMb" type="xs:int" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Max allowed size of all uncompressed files under a tree to download in a single request, in MB.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="maxFiles" type="xs:long" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Max allowed number of files to download in a single request.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="maxConcurrentRequests" type="xs:int" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Maximum number of folder download requests that will be treated concurrently before being
+                        queued.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TrashcanConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Configuration for the global trashcan repository.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="true" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether trashcan is enabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="allowPermDeletes" type="xs:boolean" default="false" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Allow users with delete permission to optionally skip the trash upon deletion.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="retentionPeriodDays" type="xs:int" default="30" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum number of days to keep deleted artifacts in the trashcan.
+                        The default is 30 days.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="VcsType">
+        <xs:sequence>
+            <xs:element name="type">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="git"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="git" type="VcsGitType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="VcsGitType">
+        <xs:sequence>
+            <xs:element name="provider" minOccurs="1" maxOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="github"/>
+                        <xs:enumeration value="bitbucket"/>
+                        <xs:enumeration value="stash"/>
+                        <xs:enumeration value="artifactory"/>
+                        <xs:enumeration value="custom"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="downloadUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[(HTML)
+                        <div class="legend-surrownding-text">
+                            The download pattern which matches the remote repository tarballs URLs.<br/>
+                            The download pattern is composed of literals (including path separators) and placeholders for the following tokens:<br/>
+                            <i>userOrg, repo, refName, fileExtension.</i><br/>
+                        </div>
+                        <table class="legend">
+                            <thead>
+                                <tr>
+                                    <th>Token</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="token">{0}</td>
+                                    <td class="desc">
+                                        Identifies the username or organization name.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">{1}</td>
+                                    <td class="desc">
+                                        Identifies the repository name.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">{2}</td>
+                                    <td class="desc">
+                                        Identifies the branch or tag name.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="token">{3}</td>
+                                    <td class="desc">
+                                        Identifies the file extension to download.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="legend-surrownding-text">
+                            For example, GitHub uses the following pattern to download tarballs: https://github.com/{userOrg}/{repo}/archive/{refName}.{fileExt}<br/>
+                            So to be able to download from any repository in GitHub, the composed download pattern should be {0}/{1}/archive/{2}.{3}.<br/>
+                        </div>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="replicationsConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Global replication configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="blockPushReplications" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Globally disable the push replication.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="blockPullReplications" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Globally disable the pull replication.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

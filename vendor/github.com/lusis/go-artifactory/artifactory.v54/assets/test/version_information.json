@@ -1,0 +1,5 @@
+{
+  "version": "5.4.6",
+  "revision": "50406900",
+  "addons": [ "build", "ldap", "properties", "rest", "search", "sso", "watch", "webstart" ]
+}

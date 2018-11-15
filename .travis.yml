@@ -1,0 +1,11 @@
+language: go
+
+go:
+  - 1.11
+
+notifications:
+  email: false
+
+script:
+  - make lint
+  - make test-verbose

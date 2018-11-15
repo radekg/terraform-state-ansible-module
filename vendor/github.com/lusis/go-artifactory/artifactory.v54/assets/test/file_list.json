@@ -1,0 +1,26 @@
+{
+  "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme",
+  "created": "ISO8601",
+  "files": [
+    {
+      "uri": "/archived",
+      "size": -1,
+      "lastModified": "ISO8601",
+      "folder": true
+    },
+    {
+      "uri": "/doc.txt",
+      "size": 253207,
+      "lastModified": "ISO8601",
+      "folder": false,
+      "sha1": "sha1Checksum"
+    },
+    {
+      "uri": "/archived/doc1.txt",
+      "size": 253100,
+      "lastModified": "ISO8601",
+      "folder": false,
+      "sha1": "sha1Checksum"
+    }
+  ]
+}

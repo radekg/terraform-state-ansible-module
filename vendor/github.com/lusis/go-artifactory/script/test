@@ -1,0 +1,2 @@
+#!/bin/bash
+go test -v ./artifactory.v51 ./artifactory.v54

@@ -1,0 +1,8 @@
+<AlertBanner
+  @type="danger"
+  @message="Your auth token expired on {{moment-format auth.tokenExpirationDate 'MMMM Do YYYY, h:mm:ss a'}}. You will need to re-authenticate."
+>
+  {{#link-to "vault.cluster.logout" class="button link"}}
+    Reauthenticate
+  {{/link-to}}
+</AlertBanner>

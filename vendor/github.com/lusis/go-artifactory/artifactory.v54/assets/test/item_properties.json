@@ -1,0 +1,7 @@
+{
+  "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme",
+  "properties": {
+    "p1": ["v1","v2","v3"],
+    "p2": ["v4","v5","v6"]
+  }
+}
