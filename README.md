@@ -39,6 +39,13 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
   - `module_path`: string, optional, default `empty string` (maps to the `root` path)
 - `require_all`: boolean, default `false`; if `true`, the module will fail when at least one of the values could not be found in the Terraform state
 
+### Retrieve paths
+
+Currently, only two possible combinations can be reetrieved:
+
+- output: `o/<output name>`
+- resource: `r/<resource>/<attribute>`
+
 ## Creating releases
 
 To cut a release, run: 
@@ -54,5 +61,3 @@ After the release is cut, build the binaries for the release:
     ./bin/build-release-binaries.sh
 
 After the binaries are built, upload the to GitHub release.
-
-Note that the version is hardcoded in the [Dockerfile](Dockerfile). You may wish to update it after release.
