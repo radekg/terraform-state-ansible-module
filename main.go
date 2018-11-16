@@ -23,10 +23,11 @@ import (
 	tfBackendSwift "github.com/hashicorp/terraform/backend/remote-state/swift"
 
 	tfConfig "github.com/hashicorp/terraform/config"
-	tfState "github.com/hashicorp/terraform/state"
 	"github.com/hashicorp/terraform/svchost/disco"
 	"github.com/hashicorp/terraform/terraform"
 )
+
+// -- Ansible related:
 
 // Retrieve represents an item to retrieve.
 type Retrieve struct {
@@ -47,16 +48,6 @@ type Response struct {
 	Msg     string `json:"msg,omitempty"`
 	Changed bool   `json:"changed"`
 	Failed  bool   `json:"failed"`
-}
-
-type parsedResource struct {
-	id         string
-	attributes map[string]string
-}
-
-type parsedState struct {
-	outputs   map[string]interface{}
-	resources map[string]parsedResource
 }
 
 func exitJSON(responseBody Response) {
@@ -83,47 +74,70 @@ func returnResponse(responseBody Response) {
 	}
 }
 
+// -- Module related:
+
+type parsedResource struct {
+	id         string
+	attributes map[string]string
+}
+
+type parsedState struct {
+	outputs   map[string]interface{}
+	resources map[string]parsedResource
+}
+
 const (
 	defaultState      = "default"
 	defaultModulePath = "root"
 )
 
-func backendFromConfig(b backend.Backend, c map[string]interface{}) backend.Backend {
+var (
+	irregularBackends = map[string]bool{
+		"atlas": true,
+	}
+)
+
+func maybeFailWithError(err error) {
+	if err != nil {
+		failJSON(Response{Msg: fmt.Sprintf("%+v", err)})
+	}
+}
+
+func configureBackend(b backend.Backend, c map[string]interface{}) (backend.Backend, error) {
 	rc, err := tfConfig.NewRawConfig(c)
 	if err != nil {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
+		return backend.Nil{}, err
 	}
 	conf := terraform.NewResourceConfig(rc)
 	_, errs := b.Validate(conf)
 	if len(errs) > 0 {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", errs)})
+		return backend.Nil{}, fmt.Errorf("Error while configuring Terraform backend: '%+v'", errs)
 	}
-	if err := b.Configure(conf); err != nil {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
+	err = b.Configure(conf)
+	if err != nil {
+		return backend.Nil{}, err
 	}
-	return b
+	return b, nil
 }
 
-func getBackend(bt string) backend.Backend {
+func getBackend(bt string) (backend.Backend, error) {
 	backends := map[string]interface{}{
 		"azure":  func() backend.Backend { return tfBackendAzure.New() },
 		"consul": func() backend.Backend { return tfBackendConsul.New() },
 		"etcdv3": func() backend.Backend { return tfBackendEtcdv3.New() },
 		"gcs":    func() backend.Backend { return tfBackendGcs.New() },
 		"inmem":  func() backend.Backend { return tfBackendInmem.New() },
+		"local":  func() backend.Backend { return tfBackendLocal.New() },
 		"manta":  func() backend.Backend { return tfBackendManta.New() },
+		"remote": func() backend.Backend { return tfBackendRemote.New(disco.New()) },
 		"s3":     func() backend.Backend { return tfBackendS3.New() },
 		"swift":  func() backend.Backend { return tfBackendSwift.New() },
 	}
 	b, ok := backends[bt]
 	if !ok {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Unknown remote-backend type '%s'.", bt)})
+		return backend.Nil{}, fmt.Errorf("Unknown backend type '%s'", bt)
 	}
-	return b.(func() backend.Backend)()
+	return b.(func() backend.Backend)(), nil
 }
 
 func reduceToMap(bits []string, value interface{}, into map[string]interface{}) map[string]interface{} {
@@ -139,15 +153,16 @@ func reduceToMap(bits []string, value interface{}, into map[string]interface{}) 
 	return into
 }
 
-func processState(state tfState.State, moduleArgs ModuleArgs) {
+func processState(state *terraform.State, moduleArgs *ModuleArgs) (map[string]interface{}, error) {
+
+	responseData := make(map[string]interface{})
+
 	ps := parsedState{
 		outputs:   make(map[string]interface{}),
 		resources: make(map[string]parsedResource),
 	}
 
-	state.RefreshState()
-
-	for _, moduleState := range state.State().Modules {
+	for _, moduleState := range state.Modules {
 		for key, outputState := range moduleState.Outputs {
 			ps.outputs[fmt.Sprintf("%s.%s", strings.Join(moduleState.Path, "."), key)] = outputState.Value
 		}
@@ -174,8 +189,7 @@ func processState(state tfState.State, moduleArgs ModuleArgs) {
 				responseItems[responsePath] = v
 			} else {
 				if moduleArgs.RequireAll {
-					failJSON(Response{
-						Msg: fmt.Sprintf("Output '%s' not found.", lookupPath)})
+					return responseData, fmt.Errorf("Output '%s' not found", lookupPath)
 				}
 			}
 		}
@@ -190,108 +204,93 @@ func processState(state tfState.State, moduleArgs ModuleArgs) {
 					responseItems[fmt.Sprintf("%s.%s", responsePath, segments[2])] = a
 				} else {
 					if moduleArgs.RequireAll {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Resource attribute '%s' not found.", segments[2])})
+						return responseData, fmt.Errorf("Resource attribute '%s' not found", segments[2])
 					}
 				}
 			} else {
 				if moduleArgs.RequireAll {
-					failJSON(Response{
-						Msg: fmt.Sprintf("Resource '%s' not found.", lookupPath)})
+					return responseData, fmt.Errorf("Resource '%s' not found", lookupPath)
 				}
 			}
 		}
 	}
 
-	responseData := make(map[string]interface{})
 	for k, v := range responseItems {
 		responseData = reduceToMap(strings.Split(k, "."), v, responseData)
 	}
 
-	bytes, err := json.Marshal(responseData)
-	if err != nil {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Error while serializing response data. Reason: '%+v'.", err)})
-	}
-	exitJSON(Response{Msg: string(bytes)})
+	return responseData, nil
 }
 
-func validateRetrieve(retrieve string) {
+func validateRetrieve(retrieve string) error {
 	if strings.HasPrefix(retrieve, "o/") {
 		if len(strings.Split(retrieve, "/")) != 2 {
-			failJSON(Response{
-				Msg: fmt.Sprintf("Output '%s' lookup format incorrect. Must be o/<name>.", retrieve)})
+			return fmt.Errorf("Output '%s' lookup format incorrect. Must be o/<name>", retrieve)
 		}
 	} else if strings.HasPrefix(retrieve, "r/") {
 		if len(strings.Split(retrieve, "/")) != 3 {
-			failJSON(Response{
-				Msg: fmt.Sprintf("Resource '%s' lookup format incorrect. Must be r/<resource>/<property>.", retrieve)})
+			return fmt.Errorf("Resource '%s' lookup format incorrect. Must be r/<resource>/<property>", retrieve)
 		}
 	} else {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Unsupported retrieve format: '%s'. Must start with 'o/' or 'r/'.", retrieve)})
+		return fmt.Errorf("Unsupported retrieve format: '%s'. Must start with 'o/' or 'r/'", retrieve)
 	}
+	return nil
 }
 
-func handleOsArgs(osargs []string) ModuleArgs {
-
+func handleOsArgs(osargs []string) (*ModuleArgs, error) {
 	if len(osargs) != 2 {
-		failJSON(Response{
-			Msg: "No argument file provided."})
+		return nil, fmt.Errorf("No argument file provided")
 	}
 	argsFile := osargs[1]
-
 	text, err := ioutil.ReadFile(argsFile)
 	if err != nil {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Could not read configuration file: '%s'. Reason: '%+v'.", argsFile, err)})
+		return nil, fmt.Errorf("Could not read configuration file: '%s'. Reason: '%+v'", argsFile, err)
 	}
-
 	var args ModuleArgs
 	err = json.Unmarshal(text, &args)
 	if err != nil {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Configuration file not valid JSON: '%s'. Reason: '%+v'.", argsFile, err)})
+		return nil, fmt.Errorf("Configuration file not valid JSON: '%s'. Reason: '%+v'", argsFile, err)
 	}
-
 	if args.TerraformConfigPath == "" {
-		failJSON(Response{
-			Msg: "Terraform configuration file not given. Missing terraform_config_path?"})
+		return nil, fmt.Errorf("Terraform configuration file not given. Missing terraform_config_path?")
 	}
 	if len(args.Retrieves) == 0 {
-		failJSON(Response{
-			Msg: "Nothing to retrieve."})
-	} else {
-		newRetrieves := make([]Retrieve, 0)
-		for _, r := range args.Retrieves {
-			validateRetrieve(r.Retrieve)
-			if r.ModulePath == "" {
-				r.ModulePath = defaultModulePath
-			}
-			newRetrieves = append(newRetrieves, r)
-		}
-		args.Retrieves = newRetrieves
+		return nil, fmt.Errorf("Nothing to retrieve")
 	}
+	newRetrieves := make([]Retrieve, 0)
+	for _, r := range args.Retrieves {
+		err := validateRetrieve(r.Retrieve)
+		if err != nil {
+			return nil, err
+		}
+		if r.ModulePath == "" {
+			r.ModulePath = defaultModulePath
+		}
+		newRetrieves = append(newRetrieves, r)
+	}
+	args.Retrieves = newRetrieves
 	if args.State == "" {
 		args.State = defaultState
 	}
+	return &args, nil
+}
 
-	return args
+func attemptFinishWithResponseData(responseData map[string]interface{}) ([]byte, error) {
+	var bytes []byte
+	bytes, err := json.Marshal(responseData)
+	if err != nil {
+		return bytes, fmt.Errorf("Error while serializing response data. Reason: '%+v'", err)
+	}
+	return bytes, nil
 }
 
 func executeProgram(osargs []string) {
-	moduleArgs := handleOsArgs(osargs)
-
-	notStandardBackends := map[string]bool{
-		"atlas":  true,
-		"remote": true,
-		"local":  true,
-	}
+	moduleArgs, err := handleOsArgs(osargs)
+	maybeFailWithError(err)
 
 	cfg, err := tfConfig.LoadFile(moduleArgs.TerraformConfigPath)
 	if err != nil {
-		failJSON(Response{
-			Msg: fmt.Sprintf("Terraform configuration file not found at: '%s'.", moduleArgs.TerraformConfigPath)})
+		maybeFailWithError(fmt.Errorf("Terraform configuration file not found at: '%s'", moduleArgs.TerraformConfigPath))
 	}
 
 	if cfg.Terraform != nil {
@@ -299,77 +298,49 @@ func executeProgram(osargs []string) {
 
 			errs := cfg.Terraform.Backend.Validate()
 			if len(errs) > 0 {
-				failJSON(Response{
-					Msg: fmt.Sprintf("Error while validating the Terraform backend configuration: '%+v'.", errs)})
+				maybeFailWithError(fmt.Errorf("Error while validating the Terraform backend configuration: '%+v'", errs))
 			}
 
 			rawMap := cfg.Terraform.Backend.RawConfig.RawMap()
 
-			if _, ok := notStandardBackends[cfg.Terraform.Backend.Type]; !ok {
-				configuredBackend := backendFromConfig(getBackend(cfg.Terraform.Backend.Type), rawMap)
+			if _, ok := irregularBackends[cfg.Terraform.Backend.Type]; !ok {
+				b, err := getBackend(cfg.Terraform.Backend.Type)
+				maybeFailWithError(err)
+				configuredBackend, err := configureBackend(b, rawMap)
+				maybeFailWithError(err)
 				state, err := configuredBackend.State(moduleArgs.State)
+				maybeFailWithError(err)
+				state.RefreshState()
+				responseData, err := processState(state.State(), moduleArgs)
 				if err != nil {
-					failJSON(Response{
-						Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
+					maybeFailWithError(err)
 				}
-				processState(state, moduleArgs)
-
+				bytes, err := attemptFinishWithResponseData(responseData)
+				if err != nil {
+					maybeFailWithError(err)
+				}
+				exitJSON(Response{Msg: string(bytes)})
 			} else {
-
 				if cfg.Terraform.Backend.Type == "atlas" {
 					atlasBacked := tfBackendAtlas.New()
 					atlasRawConfig, err := tfConfig.NewRawConfig(rawMap)
-					if err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
-					}
-					if err := atlasBacked.Configure(terraform.NewResourceConfig(atlasRawConfig)); err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
-					}
+					maybeFailWithError(err)
+					err = atlasBacked.Configure(terraform.NewResourceConfig(atlasRawConfig))
+					maybeFailWithError(err)
 					state, err := atlasBacked.State(moduleArgs.State)
+					maybeFailWithError(err)
+					state.RefreshState()
+					responseData, err := processState(state.State(), moduleArgs)
 					if err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
+						maybeFailWithError(err)
 					}
-					processState(state, moduleArgs)
-				} else if cfg.Terraform.Backend.Type == "remote" {
-					remoteBackend := tfBackendRemote.New(disco.New())
-					remoteRawConfig, err := tfConfig.NewRawConfig(rawMap)
+					bytes, err := attemptFinishWithResponseData(responseData)
 					if err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
+						maybeFailWithError(err)
 					}
-					if err := remoteBackend.Configure(terraform.NewResourceConfig(remoteRawConfig)); err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
-					}
-					state, err := remoteBackend.State(moduleArgs.State)
-					if err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
-					}
-					processState(state, moduleArgs)
-				} else if cfg.Terraform.Backend.Type == "local" {
-					localBackend := tfBackendLocal.New()
-					localRawConfig, err := tfConfig.NewRawConfig(rawMap)
-					if err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
-					}
-					if err := localBackend.Configure(terraform.NewResourceConfig(localRawConfig)); err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
-					}
-					state, err := localBackend.State(moduleArgs.State)
-					if err != nil {
-						failJSON(Response{
-							Msg: fmt.Sprintf("Error while configuring Terraform backend: '%+v'.", err)})
-					}
-					processState(state, moduleArgs)
+					exitJSON(Response{Msg: string(bytes)})
 				} else {
-					failJSON(Response{
-						Msg: fmt.Sprintf("Backend type '%s' not supported.", cfg.Terraform.Backend.Type)})
+					maybeFailWithError(fmt.Errorf("Backend type '%s' not supported", cfg.Terraform.Backend.Type))
 				}
 			}
 		}
