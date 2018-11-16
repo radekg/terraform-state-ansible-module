@@ -1,8 +1,8 @@
-# Read Terraform state from a backend using Ansible
+# Ansible module for retrieving Terraform state properties
 
 [![Build Status](https://travis-ci.org/radekg/terraform-provisioner-ansible.svg?branch=master)](https://travis-ci.org/radekg/terraform-state-ansible-module)
 
-Coming full circle: provision machine [using Terraform and Ansible](https://github.com/radekg/terraform-provisioner-ansible), then use the Terraform state to power your Ansible!
+Coming full circle: provision machines [using Terraform and Ansible](https://github.com/radekg/terraform-provisioner-ansible), then use the Terraform state to power your Ansible!
 
 ## Installation
 
