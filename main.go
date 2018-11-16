@@ -298,7 +298,7 @@ func executeProgram(osargs []string) {
 
 			errs := cfg.Terraform.Backend.Validate()
 			if len(errs) > 0 {
-				maybeFailWithError(fmt.Errorf("Error while validating the Terraform backend configuration: '%+v'.", errs))
+				maybeFailWithError(fmt.Errorf("Error while validating the Terraform backend configuration: '%+v'", errs))
 			}
 
 			rawMap := cfg.Terraform.Backend.RawConfig.RawMap()
