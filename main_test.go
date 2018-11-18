@@ -4,66 +4,78 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	tfConfig "github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/terraform"
 )
 
-var terraformConfigUnderTest string
-var terraformLocalStateUnderTest string
+var (
+	terraformConfigUnderTest     string
+	terraformLocalStateUnderTest string
+	terraformVarsUnderTest       string
+	argsTerraformTfUnderTest     string
+	argsVarsTfUnderTest          string
+)
 
 func TestMain(m *testing.M) {
+	tempDir, _ := ioutil.TempDir("", "tsam-test")
 
-	tempStateFile, _ := ioutil.TempFile("", "tempStateFile*.tfstate")
-	ioutil.WriteFile(tempStateFile.Name(), []byte(testState), 0644)
+	terraformLocalStateUnderTest := filepath.Join(tempDir, "tempStateFile.tfstate")
+	ioutil.WriteFile(terraformLocalStateUnderTest, []byte(testState), 0644)
 
-	tempTerraformConfigFile, _ := ioutil.TempFile("", "tempTerraformConfigFile*.tf")
-	ioutil.WriteFile(tempTerraformConfigFile.Name(), []byte(fmt.Sprintf(testTerraformConfig, tempStateFile.Name())), 0644)
+	terraformConfigUnderTest = filepath.Join(tempDir, "terraform.tf")
+	ioutil.WriteFile(terraformConfigUnderTest, []byte(fmt.Sprintf(testTerraformConfig, terraformLocalStateUnderTest)), 0644)
 
-	tempArgsFile, _ := ioutil.TempFile("", "tempArgsFile")
-	ioutil.WriteFile(tempArgsFile.Name(), []byte(fmt.Sprintf(testArgs, tempTerraformConfigFile.Name())), 0644)
+	terraformVarsUnderTest = filepath.Join(tempDir, "vars.tf")
+	ioutil.WriteFile(terraformVarsUnderTest, []byte(testVars), 0644)
 
-	terraformConfigUnderTest = tempArgsFile.Name()
-	terraformLocalStateUnderTest = tempStateFile.Name()
+	argsTerraformTfUnderTest = filepath.Join(tempDir, "terraformTfArgs")
+	ioutil.WriteFile(argsTerraformTfUnderTest, []byte(fmt.Sprintf(testTerrafromTfArgs, terraformConfigUnderTest)), 0644)
 
-	defer os.Remove(tempStateFile.Name())
-	defer os.Remove(tempTerraformConfigFile.Name())
-	defer os.Remove(tempArgsFile.Name())
+	argsVarsTfUnderTest = filepath.Join(tempDir, "varsTfArgs")
+	ioutil.WriteFile(argsVarsTfUnderTest, []byte(fmt.Sprintf(testVarsTfArgs, terraformVarsUnderTest)), 0644)
 
 	result := m.Run()
-
+	os.RemoveAll(tempDir)
 	os.Exit(result)
-
 }
 
-/*func TestExecution(t *testing.T) {
-	executeProgram([]string{"program-name", terraformConfigUnderTest})
+/*func TestTerraformTfExecution(t *testing.T) {
+	executeProgram([]string{"program-name", argsTerraformTfUnderTest})
+}*/
+
+/*func TestVarsTfExecution(t *testing.T) {
+	executeProgram([]string{"program-name", argsVarsTfUnderTest})
 }*/
 
 func TestValidRetrieve(t *testing.T) {
+	ma := ModuleArgs{}
 	var err error
-	err = validateRetrieve("o/output_name")
+	err = ma.validateRetrieve("o/output_name")
 	if err != nil {
 		t.Fatal("Expected no error o/output_name")
 	}
-	err = validateRetrieve("r/resource/attribute")
+	err = ma.validateRetrieve("r/resource/attribute")
 	if err != nil {
 		t.Fatal("Expected no error for r/resource/attribute")
 	}
 }
 
 func TestFailsWithInvalidRetrieve(t *testing.T) {
+	ma := ModuleArgs{}
 	var err error
-	err = validateRetrieve("r/resource.only")
+	err = ma.validateRetrieve("r/resource.only")
 	if err == nil {
 		t.Fatal("Expected the validation to fail")
 	}
-	err = validateRetrieve("r/resource/attribute/wrong")
+	err = ma.validateRetrieve("r/resource/attribute/wrong")
 	if err == nil {
 		t.Fatal("Expected the validation to fail")
 	}
-	err = validateRetrieve("u/unknown/resource")
+	err = ma.validateRetrieve("u/unknown/resource")
 	if err == nil {
 		t.Fatal("Expected the validation to fail")
 	}
@@ -159,8 +171,8 @@ func TestProcessState(t *testing.T) {
 		},
 	}
 	margs := &ModuleArgs{
-		TerraformConfigPath: "/not/important/here.tf",
-		State:               defaultState,
+		TerraformFilePath: "/not/important/here.tf",
+		State:             defaultState,
 		Retrieves: []Retrieve{
 			Retrieve{
 				Retrieve:   "o/foo",
@@ -209,8 +221,8 @@ func TestFailRequireAllMissingRetrieve(t *testing.T) {
 		},
 	}
 	margs := &ModuleArgs{
-		TerraformConfigPath: "/not/important/here.tf",
-		State:               defaultState,
+		TerraformFilePath: "/not/important/here.tf",
+		State:             defaultState,
 		Retrieves: []Retrieve{
 			Retrieve{
 				Retrieve:   "o/not_foo",
@@ -226,8 +238,75 @@ func TestFailRequireAllMissingRetrieve(t *testing.T) {
 	}
 }
 
-var testArgs = `{
-	"terraform_config_path": "%s",
+func TestFailUnsupportedTerraformFile(t *testing.T) {
+	margs := &ModuleArgs{
+		TerraformFilePath: "/not/important/outputs.tf",
+		State:             defaultState,
+	}
+	_, err := margs.validate()
+	if err == nil {
+		t.Fatalf("Expected an error")
+	}
+}
+
+func TestHandlingCorrectVariables(t *testing.T) {
+	vars := []*tfConfig.Variable{
+		&tfConfig.Variable{
+			Name:    "test_string_variable",
+			Default: "string value",
+		},
+		&tfConfig.Variable{
+			Name:    "test_list_variable",
+			Default: []string{"string value", "string value2"},
+		},
+		&tfConfig.Variable{
+			Name: "test_map_variable",
+			Default: map[string]interface{}{
+				"hello": "test world!",
+			},
+		},
+	}
+
+	responseData, err := processVariables(vars)
+	if err != nil {
+		t.Fatalf("Expected no error")
+	}
+	if m, ok := responseData["test_string_variable"]; !ok {
+		t.Fatalf("Expected test_string_variable in response data")
+		if _, ook := m.(map[string]interface{})["default"]; !ook {
+			t.Fatalf("Expected test_string_variable.default in response data")
+		}
+	}
+	if m, ok := responseData["test_list_variable"]; !ok {
+		t.Fatalf("Expected test_list_variable in response data")
+		if _, ook := m.(map[string]interface{})["default"]; !ook {
+			t.Fatalf("Expected test_list_variable.default in response data")
+		}
+	}
+	if m, ok := responseData["test_map_variable"]; !ok {
+		t.Fatalf("Expected test_map_variable in response data")
+		if _, ook := m.(map[string]interface{})["default"]; !ook {
+			t.Fatalf("Expected test_map_variable.default in response data")
+		}
+	}
+}
+
+func TestFailUnknownVariableType(t *testing.T) {
+	vars := []*tfConfig.Variable{
+		&tfConfig.Variable{
+			Name:         "test_string_variable",
+			Default:      "string value",
+			DeclaredType: "unknown_type",
+		},
+	}
+	_, err := processVariables(vars)
+	if err == nil {
+		t.Fatalf("Expected an error")
+	}
+}
+
+var testTerrafromTfArgs = `{
+	"terraform_file_path": "%s",
 	"retrieves": [
 		{ "retrieve": "o/bucket_backups" },
 		{ "retrieve": "r/aws_s3_bucket.backups/bucket_domain_name" },
@@ -235,6 +314,10 @@ var testArgs = `{
 		{ "retrieve": "r/aws_s3_bucket.internal_backups/bucket_domain_name" },
 		{ "retrieve": "r/aws_s3_bucket.internal_backups/request_payer" }
 	]
+}`
+
+var testVarsTfArgs = `{
+	"terraform_file_path": "%s"
 }`
 
 var testTerraformConfig = `terraform {
@@ -328,5 +411,22 @@ var testState = `{
             "depends_on": []
         }
     ]
+}
+`
+
+var testVars = `
+variable "key" {
+	type = "string"
+	default = "test value"
+}
+variable "images" {
+	type = "map"
+	default = {
+		us-east-1 = "image-1234"
+		us-west-2 = "image-4567"
+	}
+}
+variable "zones" {
+	default = ["us-east-1a", "us-east-1b"]
 }
 `

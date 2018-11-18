@@ -10,6 +10,10 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
 
 ## Usage
 
+The module supports two Terraform file types: `terraform.tf` and `vars.tf`. When passing the path to `terraform.tf` file, an existence of a properly configured `backend` is assumed.
+
+### Handling state using `terraform.tf`
+
 ```yaml
 ---
 - hosts: all
@@ -18,7 +22,7 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
   gather_facts: no
   tasks:
     - terraform_state:
-        terraform_config_path: /path/to/my/terraform.tf
+        terraform_file_path: /path/to/my/terraform.tf
         retrieves:
          - { retrieve: o/bucket_backups }
          - { retrieve: r/aws_s3_bucket.backups/bucket_domain_name }
@@ -30,9 +34,40 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
         msg: " ==> I have got {{ retrieved_terraform_state_data.aws_s3_bucket.backups }}"
 ```
 
+### Handling variables using `vars.tf`
+
+```yaml
+---
+- hosts: all
+  become: no
+  connection: local
+  gather_facts: no
+  tasks:
+    - terraform_state:
+        terraform_file_path: /path/to/my/vars.tf
+      register: retrieved_vars
+    - set_fact:
+        retrieved_vars_data: "{{ retrieved_vars.msg | from_json }}"
+    - debug:
+        msg: " ==> I have these vars {{ retrieved_vars_data }}"
+```
+
+The data retrieved from the `vars.tf` file contains only the values provided with the `default` property. Furthermore, the `default` property existence is explicit in the output. For a `vars.tf` file:
+
+```tf
+variable "key" {
+    default = "test value"
+}
+```
+
+the value is avialble via `<retrieved_vars>.key.default`.
+
 ## Parameters
 
-- `terraform_config_path`: string, required, path to the `terraform.tf` file, no default
+- `terraform_file_path`: string, required, path to the `terraform.tf` or `vars.tf` file, no default
+
+Following configuration settings take effect only when `terraform.tf` is used:
+
 - `state`: string, optional, state name to use, default value `default`
 - `retrieves`: a list of values to retrieve, at least one is required, each retrieve
   - `retrieve`: string, required, property to retrieve; more below

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/terraform/backend"
@@ -37,10 +38,58 @@ type Retrieve struct {
 
 // ModuleArgs represents Ansible module arguments.
 type ModuleArgs struct {
-	TerraformConfigPath string     `json:"terraform_config_path"`
-	State               string     `json:"state"`
-	Retrieves           []Retrieve `json:"retrieves"`
-	RequireAll          bool       `json:"require_all"`
+	TerraformFilePath string     `json:"terraform_file_path"`
+	State             string     `json:"state"`
+	Retrieves         []Retrieve `json:"retrieves"`
+	RequireAll        bool       `json:"require_all"`
+}
+
+func (ma *ModuleArgs) handlingTerraformConfig() bool {
+	return filepath.Base(ma.TerraformFilePath) == "terraform.tf"
+}
+
+func (ma *ModuleArgs) handlingTerraformVars() bool {
+	return filepath.Base(ma.TerraformFilePath) == "vars.tf"
+}
+
+func (ma *ModuleArgs) validateRetrieve(retrieve string) error {
+	if strings.HasPrefix(retrieve, "o/") {
+		if len(strings.Split(retrieve, "/")) != 2 {
+			return fmt.Errorf("Output '%s' lookup format incorrect. Must be o/<name>", retrieve)
+		}
+	} else if strings.HasPrefix(retrieve, "r/") {
+		if len(strings.Split(retrieve, "/")) != 3 {
+			return fmt.Errorf("Resource '%s' lookup format incorrect. Must be r/<resource>/<property>", retrieve)
+		}
+	} else {
+		return fmt.Errorf("Unsupported retrieve format: '%s'. Must start with 'o/' or 'r/'", retrieve)
+	}
+	return nil
+}
+
+func (ma *ModuleArgs) validate() (*tfConfig.Config, error) {
+	if !ma.handlingTerraformConfig() && !ma.handlingTerraformVars() {
+		return nil, fmt.Errorf("Module supports terraform.tf and vars.tf files only")
+	}
+	if ma.TerraformFilePath == "" {
+		return nil, fmt.Errorf("Terraform file path missing. terraform_file_path not set?")
+	}
+	cfg, err := tfConfig.LoadFile(ma.TerraformFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("Terraform configuration file not found at: '%s'", ma.TerraformFilePath)
+	}
+	if ma.handlingTerraformConfig() {
+		if len(ma.Retrieves) == 0 {
+			return nil, fmt.Errorf("Nothing to retrieve")
+		}
+		for _, r := range ma.Retrieves {
+			err := ma.validateRetrieve(r.Retrieve)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return cfg, nil
 }
 
 // Response represents Ansible JSON message response.
@@ -222,19 +271,27 @@ func processState(state *terraform.State, moduleArgs *ModuleArgs) (map[string]in
 	return responseData, nil
 }
 
-func validateRetrieve(retrieve string) error {
-	if strings.HasPrefix(retrieve, "o/") {
-		if len(strings.Split(retrieve, "/")) != 2 {
-			return fmt.Errorf("Output '%s' lookup format incorrect. Must be o/<name>", retrieve)
+func processVariables(vars []*tfConfig.Variable) (map[string]interface{}, error) {
+	varsResponse := make(map[string]interface{})
+	for _, v := range vars {
+		switch v.Type() {
+		case tfConfig.VariableTypeString:
+			varsResponse[v.Name] = map[string]interface{}{
+				"default": v.Default,
+			}
+		case tfConfig.VariableTypeMap:
+			varsResponse[v.Name] = map[string]interface{}{
+				"default": v.Default,
+			}
+		case tfConfig.VariableTypeList:
+			varsResponse[v.Name] = map[string]interface{}{
+				"default": v.Default,
+			}
+		default:
+			return varsResponse, fmt.Errorf("Unsupported Terraform variable type '%s' for variable '%s'", v.DeclaredType, v.Name)
 		}
-	} else if strings.HasPrefix(retrieve, "r/") {
-		if len(strings.Split(retrieve, "/")) != 3 {
-			return fmt.Errorf("Resource '%s' lookup format incorrect. Must be r/<resource>/<property>", retrieve)
-		}
-	} else {
-		return fmt.Errorf("Unsupported retrieve format: '%s'. Must start with 'o/' or 'r/'", retrieve)
 	}
-	return nil
+	return varsResponse, nil
 }
 
 func handleOsArgs(osargs []string) (*ModuleArgs, error) {
@@ -251,18 +308,8 @@ func handleOsArgs(osargs []string) (*ModuleArgs, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Configuration file not valid JSON: '%s'. Reason: '%+v'", argsFile, err)
 	}
-	if args.TerraformConfigPath == "" {
-		return nil, fmt.Errorf("Terraform configuration file not given. Missing terraform_config_path?")
-	}
-	if len(args.Retrieves) == 0 {
-		return nil, fmt.Errorf("Nothing to retrieve")
-	}
 	newRetrieves := make([]Retrieve, 0)
 	for _, r := range args.Retrieves {
-		err := validateRetrieve(r.Retrieve)
-		if err != nil {
-			return nil, err
-		}
 		if r.ModulePath == "" {
 			r.ModulePath = defaultModulePath
 		}
@@ -288,46 +335,26 @@ func executeProgram(osargs []string) {
 	moduleArgs, err := handleOsArgs(osargs)
 	maybeFailWithError(err)
 
-	cfg, err := tfConfig.LoadFile(moduleArgs.TerraformConfigPath)
-	if err != nil {
-		maybeFailWithError(fmt.Errorf("Terraform configuration file not found at: '%s'", moduleArgs.TerraformConfigPath))
-	}
+	cfg, err := moduleArgs.validate()
+	maybeFailWithError(err)
 
-	if cfg.Terraform != nil {
-		if cfg.Terraform.Backend != nil {
+	if moduleArgs.handlingTerraformConfig() {
+		if cfg.Terraform != nil {
+			if cfg.Terraform.Backend != nil {
 
-			errs := cfg.Terraform.Backend.Validate()
-			if len(errs) > 0 {
-				maybeFailWithError(fmt.Errorf("Error while validating the Terraform backend configuration: '%+v'", errs))
-			}
-
-			rawMap := cfg.Terraform.Backend.RawConfig.RawMap()
-
-			if _, ok := irregularBackends[cfg.Terraform.Backend.Type]; !ok {
-				b, err := getBackend(cfg.Terraform.Backend.Type)
-				maybeFailWithError(err)
-				configuredBackend, err := configureBackend(b, rawMap)
-				maybeFailWithError(err)
-				state, err := configuredBackend.State(moduleArgs.State)
-				maybeFailWithError(err)
-				state.RefreshState()
-				responseData, err := processState(state.State(), moduleArgs)
-				if err != nil {
-					maybeFailWithError(err)
+				errs := cfg.Terraform.Backend.Validate()
+				if len(errs) > 0 {
+					maybeFailWithError(fmt.Errorf("Error while validating the Terraform backend configuration: '%+v'", errs))
 				}
-				bytes, err := attemptFinishWithResponseData(responseData)
-				if err != nil {
+
+				rawMap := cfg.Terraform.Backend.RawConfig.RawMap()
+
+				if _, ok := irregularBackends[cfg.Terraform.Backend.Type]; !ok {
+					b, err := getBackend(cfg.Terraform.Backend.Type)
 					maybeFailWithError(err)
-				}
-				exitJSON(Response{Msg: string(bytes)})
-			} else {
-				if cfg.Terraform.Backend.Type == "atlas" {
-					atlasBacked := tfBackendAtlas.New()
-					atlasRawConfig, err := tfConfig.NewRawConfig(rawMap)
+					configuredBackend, err := configureBackend(b, rawMap)
 					maybeFailWithError(err)
-					err = atlasBacked.Configure(terraform.NewResourceConfig(atlasRawConfig))
-					maybeFailWithError(err)
-					state, err := atlasBacked.State(moduleArgs.State)
+					state, err := configuredBackend.State(moduleArgs.State)
 					maybeFailWithError(err)
 					state.RefreshState()
 					responseData, err := processState(state.State(), moduleArgs)
@@ -340,10 +367,42 @@ func executeProgram(osargs []string) {
 					}
 					exitJSON(Response{Msg: string(bytes)})
 				} else {
-					maybeFailWithError(fmt.Errorf("Backend type '%s' not supported", cfg.Terraform.Backend.Type))
+					if cfg.Terraform.Backend.Type == "atlas" {
+						atlasBacked := tfBackendAtlas.New()
+						atlasRawConfig, err := tfConfig.NewRawConfig(rawMap)
+						maybeFailWithError(err)
+						err = atlasBacked.Configure(terraform.NewResourceConfig(atlasRawConfig))
+						maybeFailWithError(err)
+						state, err := atlasBacked.State(moduleArgs.State)
+						maybeFailWithError(err)
+						state.RefreshState()
+						responseData, err := processState(state.State(), moduleArgs)
+						if err != nil {
+							maybeFailWithError(err)
+						}
+						bytes, err := attemptFinishWithResponseData(responseData)
+						if err != nil {
+							maybeFailWithError(err)
+						}
+						exitJSON(Response{Msg: string(bytes)})
+					} else {
+						maybeFailWithError(fmt.Errorf("Backend type '%s' not supported", cfg.Terraform.Backend.Type))
+					}
 				}
 			}
 		}
+	} else if moduleArgs.handlingTerraformVars() {
+		responseData, err := processVariables(cfg.Variables)
+		if err != nil {
+			maybeFailWithError(err)
+		}
+		bytes, err := attemptFinishWithResponseData(responseData)
+		if err != nil {
+			maybeFailWithError(err)
+		}
+		exitJSON(Response{Msg: string(bytes)})
+	} else {
+		maybeFailWithError(fmt.Errorf("Module supports terraform.tf and vars.tf files only"))
 	}
 }
 
