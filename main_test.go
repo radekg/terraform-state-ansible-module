@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -11,35 +12,43 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-var terraformConfigUnderTest string
-var terraformLocalStateUnderTest string
+var (
+	terraformConfigUnderTest     string
+	terraformLocalStateUnderTest string
+	terraformVarsUnderTest       string
+	argsTerraformTfUnderTest     string
+	argsVarsTfUnderTest          string
+)
 
 func TestMain(m *testing.M) {
+	tempDir, _ := ioutil.TempDir("", "tsam-test")
 
-	tempStateFile, _ := ioutil.TempFile("", "tempStateFile*.tfstate")
-	ioutil.WriteFile(tempStateFile.Name(), []byte(testState), 0644)
+	terraformLocalStateUnderTest := filepath.Join(tempDir, "tempStateFile.tfstate")
+	ioutil.WriteFile(terraformLocalStateUnderTest, []byte(testState), 0644)
 
-	tempTerraformConfigFile, _ := ioutil.TempFile("", "tempTerraformConfigFile*.tf")
-	ioutil.WriteFile(tempTerraformConfigFile.Name(), []byte(fmt.Sprintf(testTerraformConfig, tempStateFile.Name())), 0644)
+	terraformConfigUnderTest = filepath.Join(tempDir, "terraform.tf")
+	ioutil.WriteFile(terraformConfigUnderTest, []byte(fmt.Sprintf(testTerraformConfig, terraformLocalStateUnderTest)), 0644)
 
-	tempArgsFile, _ := ioutil.TempFile("", "tempArgsFile")
-	ioutil.WriteFile(tempArgsFile.Name(), []byte(fmt.Sprintf(testArgs, tempTerraformConfigFile.Name())), 0644)
+	terraformVarsUnderTest = filepath.Join(tempDir, "vars.tf")
+	ioutil.WriteFile(terraformVarsUnderTest, []byte(testVars), 0644)
 
-	terraformConfigUnderTest = tempArgsFile.Name()
-	terraformLocalStateUnderTest = tempStateFile.Name()
+	argsTerraformTfUnderTest = filepath.Join(tempDir, "terraformTfArgs")
+	ioutil.WriteFile(argsTerraformTfUnderTest, []byte(fmt.Sprintf(testTerrafromTfArgs, terraformConfigUnderTest)), 0644)
 
-	defer os.Remove(tempStateFile.Name())
-	defer os.Remove(tempTerraformConfigFile.Name())
-	defer os.Remove(tempArgsFile.Name())
+	argsVarsTfUnderTest = filepath.Join(tempDir, "varsTfArgs")
+	ioutil.WriteFile(argsVarsTfUnderTest, []byte(fmt.Sprintf(testVarsTfArgs, terraformVarsUnderTest)), 0644)
 
 	result := m.Run()
-
+	os.RemoveAll(tempDir)
 	os.Exit(result)
-
 }
 
-/*func TestExecution(t *testing.T) {
-	executeProgram([]string{"program-name", terraformConfigUnderTest})
+/*func TestTerraformTfExecution(t *testing.T) {
+	executeProgram([]string{"program-name", argsTerraformTfUnderTest})
+}*/
+
+/*func TestVarsTfExecution(t *testing.T) {
+	executeProgram([]string{"program-name", argsVarsTfUnderTest})
 }*/
 
 func TestValidRetrieve(t *testing.T) {
@@ -296,7 +305,7 @@ func TestFailUnknownVariableType(t *testing.T) {
 	}
 }
 
-var testArgs = `{
+var testTerrafromTfArgs = `{
 	"terraform_file_path": "%s",
 	"retrieves": [
 		{ "retrieve": "o/bucket_backups" },
@@ -305,6 +314,10 @@ var testArgs = `{
 		{ "retrieve": "r/aws_s3_bucket.internal_backups/bucket_domain_name" },
 		{ "retrieve": "r/aws_s3_bucket.internal_backups/request_payer" }
 	]
+}`
+
+var testVarsTfArgs = `{
+	"terraform_file_path": "%s"
 }`
 
 var testTerraformConfig = `terraform {
@@ -398,5 +411,22 @@ var testState = `{
             "depends_on": []
         }
     ]
+}
+`
+
+var testVars = `
+variable "key" {
+	type = "string"
+	default = "test value"
+}
+variable "images" {
+	type = "map"
+	default = {
+		us-east-1 = "image-1234"
+		us-west-2 = "image-4567"
+	}
+}
+variable "zones" {
+	default = ["us-east-1a", "us-east-1b"]
 }
 `

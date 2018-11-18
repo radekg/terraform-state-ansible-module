@@ -71,6 +71,9 @@ func (ma *ModuleArgs) validate() (*tfConfig.Config, error) {
 	if !ma.handlingTerraformConfig() && !ma.handlingTerraformVars() {
 		return nil, fmt.Errorf("Module supports terraform.tf and vars.tf files only")
 	}
+	if ma.TerraformFilePath == "" {
+		return nil, fmt.Errorf("Terraform file path missing. terraform_file_path not set?")
+	}
 	cfg, err := tfConfig.LoadFile(ma.TerraformFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("Terraform configuration file not found at: '%s'", ma.TerraformFilePath)
@@ -274,15 +277,15 @@ func processVariables(vars []*tfConfig.Variable) (map[string]interface{}, error)
 		switch v.Type() {
 		case tfConfig.VariableTypeString:
 			varsResponse[v.Name] = map[string]interface{}{
-				"default": v.Default.(string),
+				"default": v.Default,
 			}
 		case tfConfig.VariableTypeMap:
 			varsResponse[v.Name] = map[string]interface{}{
-				"default": v,
+				"default": v.Default,
 			}
 		case tfConfig.VariableTypeList:
 			varsResponse[v.Name] = map[string]interface{}{
-				"default": v,
+				"default": v.Default,
 			}
 		default:
 			return varsResponse, fmt.Errorf("Unsupported Terraform variable type '%s' for variable '%s'", v.DeclaredType, v.Name)
@@ -304,12 +307,6 @@ func handleOsArgs(osargs []string) (*ModuleArgs, error) {
 	err = json.Unmarshal(text, &args)
 	if err != nil {
 		return nil, fmt.Errorf("Configuration file not valid JSON: '%s'. Reason: '%+v'", argsFile, err)
-	}
-	if args.TerraformFilePath == "" {
-		return nil, fmt.Errorf("Terraform configuration file not given. Missing terraform_config_path?")
-	}
-	if len(args.Retrieves) == 0 {
-		return nil, fmt.Errorf("Nothing to retrieve")
 	}
 	newRetrieves := make([]Retrieve, 0)
 	for _, r := range args.Retrieves {

@@ -12,6 +12,8 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
 
 The module supports two Terraform file types: `terraform.tf` and `vars.tf`. When passing the path to `terraform.tf` file, an existence of a properly configured `backend` is assumed.
 
+### Handling state using `terraform.tf`
+
 ```yaml
 ---
 - hosts: all
@@ -31,6 +33,34 @@ The module supports two Terraform file types: `terraform.tf` and `vars.tf`. When
     - debug:
         msg: " ==> I have got {{ retrieved_terraform_state_data.aws_s3_bucket.backups }}"
 ```
+
+### Handling variables using `vars.tf`
+
+```yaml
+---
+- hosts: all
+  become: no
+  connection: local
+  gather_facts: no
+  tasks:
+    - terraform_state:
+        terraform_file_path: /path/to/my/vars.tf
+      register: retrieved_vars
+    - set_fact:
+        retrieved_vars_data: "{{ retrieved_vars.msg | from_json }}"
+    - debug:
+        msg: " ==> I have these vars {{ retrieved_vars_data }}"
+```
+
+The data retrieved from the `vars.tf` file contains only the values provided with the `default` property. Furthermore, the `default` property existence is explicit in the output. For a `vars.tf` file:
+
+```tf
+variable "key" {
+    default = "test value"
+}
+```
+
+the value is avialble via `<retrieved_vars>.key.default`.
 
 ## Parameters
 
