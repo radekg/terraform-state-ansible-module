@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	tfConfig "github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/terraform"
 )
 
@@ -42,28 +43,30 @@ func TestMain(m *testing.M) {
 }*/
 
 func TestValidRetrieve(t *testing.T) {
+	ma := ModuleArgs{}
 	var err error
-	err = validateRetrieve("o/output_name")
+	err = ma.validateRetrieve("o/output_name")
 	if err != nil {
 		t.Fatal("Expected no error o/output_name")
 	}
-	err = validateRetrieve("r/resource/attribute")
+	err = ma.validateRetrieve("r/resource/attribute")
 	if err != nil {
 		t.Fatal("Expected no error for r/resource/attribute")
 	}
 }
 
 func TestFailsWithInvalidRetrieve(t *testing.T) {
+	ma := ModuleArgs{}
 	var err error
-	err = validateRetrieve("r/resource.only")
+	err = ma.validateRetrieve("r/resource.only")
 	if err == nil {
 		t.Fatal("Expected the validation to fail")
 	}
-	err = validateRetrieve("r/resource/attribute/wrong")
+	err = ma.validateRetrieve("r/resource/attribute/wrong")
 	if err == nil {
 		t.Fatal("Expected the validation to fail")
 	}
-	err = validateRetrieve("u/unknown/resource")
+	err = ma.validateRetrieve("u/unknown/resource")
 	if err == nil {
 		t.Fatal("Expected the validation to fail")
 	}
@@ -159,8 +162,8 @@ func TestProcessState(t *testing.T) {
 		},
 	}
 	margs := &ModuleArgs{
-		TerraformConfigPath: "/not/important/here.tf",
-		State:               defaultState,
+		TerraformFilePath: "/not/important/here.tf",
+		State:             defaultState,
 		Retrieves: []Retrieve{
 			Retrieve{
 				Retrieve:   "o/foo",
@@ -209,8 +212,8 @@ func TestFailRequireAllMissingRetrieve(t *testing.T) {
 		},
 	}
 	margs := &ModuleArgs{
-		TerraformConfigPath: "/not/important/here.tf",
-		State:               defaultState,
+		TerraformFilePath: "/not/important/here.tf",
+		State:             defaultState,
 		Retrieves: []Retrieve{
 			Retrieve{
 				Retrieve:   "o/not_foo",
@@ -226,8 +229,75 @@ func TestFailRequireAllMissingRetrieve(t *testing.T) {
 	}
 }
 
+func TestFailUnsupportedTerraformFile(t *testing.T) {
+	margs := &ModuleArgs{
+		TerraformFilePath: "/not/important/outputs.tf",
+		State:             defaultState,
+	}
+	_, err := margs.validate()
+	if err == nil {
+		t.Fatalf("Expected an error")
+	}
+}
+
+func TestHandlingCorrectVariables(t *testing.T) {
+	vars := []*tfConfig.Variable{
+		&tfConfig.Variable{
+			Name:    "test_string_variable",
+			Default: "string value",
+		},
+		&tfConfig.Variable{
+			Name:    "test_list_variable",
+			Default: []string{"string value", "string value2"},
+		},
+		&tfConfig.Variable{
+			Name: "test_map_variable",
+			Default: map[string]interface{}{
+				"hello": "test world!",
+			},
+		},
+	}
+
+	responseData, err := processVariables(vars)
+	if err != nil {
+		t.Fatalf("Expected no error")
+	}
+	if m, ok := responseData["test_string_variable"]; !ok {
+		t.Fatalf("Expected test_string_variable in response data")
+		if _, ook := m.(map[string]interface{})["default"]; !ook {
+			t.Fatalf("Expected test_string_variable.default in response data")
+		}
+	}
+	if m, ok := responseData["test_list_variable"]; !ok {
+		t.Fatalf("Expected test_list_variable in response data")
+		if _, ook := m.(map[string]interface{})["default"]; !ook {
+			t.Fatalf("Expected test_list_variable.default in response data")
+		}
+	}
+	if m, ok := responseData["test_map_variable"]; !ok {
+		t.Fatalf("Expected test_map_variable in response data")
+		if _, ook := m.(map[string]interface{})["default"]; !ook {
+			t.Fatalf("Expected test_map_variable.default in response data")
+		}
+	}
+}
+
+func TestFailUnknownVariableType(t *testing.T) {
+	vars := []*tfConfig.Variable{
+		&tfConfig.Variable{
+			Name:         "test_string_variable",
+			Default:      "string value",
+			DeclaredType: "unknown_type",
+		},
+	}
+	_, err := processVariables(vars)
+	if err == nil {
+		t.Fatalf("Expected an error")
+	}
+}
+
 var testArgs = `{
-	"terraform_config_path": "%s",
+	"terraform_file_path": "%s",
 	"retrieves": [
 		{ "retrieve": "o/bucket_backups" },
 		{ "retrieve": "r/aws_s3_bucket.backups/bucket_domain_name" },

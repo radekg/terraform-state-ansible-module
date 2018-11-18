@@ -10,6 +10,8 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
 
 ## Usage
 
+The module supports two Terraform file types: `terraform.tf` and `vars.tf`. When passing the path to `terraform.tf` file, an existence of a properly configured `backend` is assumed.
+
 ```yaml
 ---
 - hosts: all
@@ -18,7 +20,7 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
   gather_facts: no
   tasks:
     - terraform_state:
-        terraform_config_path: /path/to/my/terraform.tf
+        terraform_file_path: /path/to/my/terraform.tf
         retrieves:
          - { retrieve: o/bucket_backups }
          - { retrieve: r/aws_s3_bucket.backups/bucket_domain_name }
@@ -32,7 +34,10 @@ Download latest release from the [prebuilt releases on GitHub](https://github.co
 
 ## Parameters
 
-- `terraform_config_path`: string, required, path to the `terraform.tf` file, no default
+- `terraform_file_path`: string, required, path to the `terraform.tf` or `vars.tf` file, no default
+
+Following configuration settings take effect only when `terraform.tf` is used:
+
 - `state`: string, optional, state name to use, default value `default`
 - `retrieves`: a list of values to retrieve, at least one is required, each retrieve
   - `retrieve`: string, required, property to retrieve; more below
