@@ -53,12 +53,3 @@ func TestNext(t *testing.T) {
 		}
 	}
 }
-
-func BenchmarkNext(b *testing.B) {
-	g := NewGenerator(0x12, time.Now())
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.Next()
-	}
-}

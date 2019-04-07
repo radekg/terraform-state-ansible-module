@@ -4,11 +4,14 @@ package vault
 
 import (
 	"context"
+	"time"
 
 	"github.com/hashicorp/vault/helper/license"
 	"github.com/hashicorp/vault/helper/namespace"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/physical"
+	"github.com/hashicorp/vault/vault/replication"
+	cache "github.com/patrickmn/go-cache"
 )
 
 type entCore struct{}
@@ -31,6 +34,10 @@ func coreInit(c *Core, conf *CoreConfig) error {
 	}
 	c.physicalCache = c.physical.(physical.ToggleablePurgemonster)
 
+	// Wrap in encoding checks
+	if !conf.DisableKeyEncodingChecks {
+		c.physical = physical.NewStorageEncoding(c.physical)
+	}
 	return nil
 }
 
@@ -85,7 +92,7 @@ func (c *Core) namepaceByPath(string) *namespace.Namespace {
 	return namespace.RootNamespace
 }
 
-func (c *Core) setupReplicatedClusterPrimary(*ReplicatedCluster) error { return nil }
+func (c *Core) setupReplicatedClusterPrimary(*replication.Cluster) error { return nil }
 
 func (c *Core) perfStandbyCount() int { return 0 }
 
@@ -100,3 +107,7 @@ func (c *Core) checkReplicatedFiltering(context.Context, *MountEntry, string) (b
 func (c *Core) invalidateSentinelPolicy(PolicyType, string) {}
 
 func (c *Core) removePerfStandbySecondary(context.Context, string) {}
+
+func (c *Core) perfStandbyClusterHandler() (*replication.Cluster, *cache.Cache, chan struct{}, error) {
+	return nil, cache.New(2*HeartbeatInterval, 1*time.Second), make(chan struct{}), nil
+}

@@ -109,8 +109,7 @@ pkg unicode, var <new script or property> *RangeTable
 
 	var (
 		cldr       = generate("./unicode/cldr", unicode)
-		compact    = generate("./internal/language/compact", cldr)
-		language   = generate("./language", cldr, compact)
+		language   = generate("./language", cldr)
 		internal   = generate("./internal", unicode, language)
 		norm       = generate("./unicode/norm", unicode)
 		rangetable = generate("./unicode/rangetable", unicode)
@@ -119,18 +118,16 @@ pkg unicode, var <new script or property> *RangeTable
 		bidi       = generate("./unicode/bidi", unicode, norm, rangetable)
 		mib        = generate("./encoding/internal/identifier", unicode)
 		number     = generate("./internal/number", unicode, cldr, language, internal)
-		cldrtree   = generate("./internal/cldrtree", language, internal)
-		_          = generate("./unicode/runenames", unicode)
 		_          = generate("./encoding/htmlindex", unicode, language, mib)
 		_          = generate("./encoding/ianaindex", unicode, language, mib)
 		_          = generate("./secure/precis", unicode, norm, rangetable, cases, width, bidi)
+		_          = generate("./internal/cldrtree", language)
 		_          = generate("./currency", unicode, cldr, language, internal, number)
 		_          = generate("./feature/plural", unicode, cldr, language, internal, number)
 		_          = generate("./internal/export/idna", unicode, bidi, norm)
 		_          = generate("./language/display", unicode, cldr, language, internal, number)
 		_          = generate("./collate", unicode, norm, cldr, language, rangetable)
 		_          = generate("./search", unicode, norm, cldr, language, rangetable)
-		_          = generate("./date", cldr, language, cldrtree)
 	)
 	all.Wait()
 
@@ -268,7 +265,7 @@ var goGenRE = regexp.MustCompile("//go:generate[^\n]*\n")
 // copyPackage copies relevant files from a directory in x/text to the
 // destination package directory. The destination package is assumed to have
 // the same name. For each copied file go:generate lines are removed and
-// package comments are rewritten to the new path.
+// and package comments are rewritten to the new path.
 func copyPackage(dirSrc, dirDst, search, replace string) {
 	err := filepath.Walk(dirSrc, func(file string, info os.FileInfo, err error) error {
 		base := filepath.Base(file)

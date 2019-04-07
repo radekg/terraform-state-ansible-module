@@ -10,9 +10,10 @@ import (
 // testing rulesForGroupPermissions
 func TestRulesMixedMatching(t *testing.T) {
 	cases := []struct {
-		local  []interface{}
-		remote []map[string]interface{}
-		saves  []map[string]interface{}
+		groupId string
+		local   []interface{}
+		remote  []map[string]interface{}
+		saves   []map[string]interface{}
 	}{
 		{
 			local: []interface{}{
@@ -25,7 +26,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       int64(80),
 					"to_port":         int64(8000),
 					"protocol":        "tcp",
@@ -34,7 +35,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       80,
 					"to_port":         8000,
 					"protocol":        "tcp",
@@ -53,7 +54,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       int64(80),
 					"to_port":         int64(8000),
 					"protocol":        "tcp",
@@ -62,13 +63,13 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       80,
 					"to_port":         8000,
 					"protocol":        "tcp",
 					"security_groups": schema.NewSet(schema.HashString, []interface{}{"sg-9876", "sg-4444"}),
 				},
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -86,7 +87,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -94,7 +95,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   80,
 					"to_port":     8000,
 					"protocol":    "tcp",
@@ -112,7 +113,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       int64(80),
 					"to_port":         int64(8000),
 					"protocol":        "tcp",
@@ -120,7 +121,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       80,
 					"to_port":         8000,
 					"protocol":        "tcp",
@@ -144,7 +145,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -152,13 +153,13 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   80,
 					"to_port":     8000,
 					"protocol":    "tcp",
 					"cidr_blocks": []string{"172.8.0.0/16"},
 				},
-				{
+				map[string]interface{}{
 					"from_port":   80,
 					"to_port":     8000,
 					"protocol":    "tcp",
@@ -169,7 +170,7 @@ func TestRulesMixedMatching(t *testing.T) {
 		{
 			local: []interface{}{},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -177,7 +178,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -195,14 +196,14 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(80),
 					"to_port":   int64(8000),
 					"protocol":  "tcp",
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": 80,
 					"to_port":   8000,
 					"protocol":  "tcp",
@@ -220,7 +221,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -231,7 +232,7 @@ func TestRulesMixedMatching(t *testing.T) {
 			// encoding. We could convert this code, but ultimately Terraform doesn't
 			// care it's for the reflect.DeepEqual in this test
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -250,7 +251,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -258,7 +259,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -290,7 +291,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -298,13 +299,13 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   80,
 					"to_port":     8000,
 					"protocol":    "tcp",
 					"cidr_blocks": []string{"172.8.0.0/16"},
 				},
-				{
+				map[string]interface{}{
 					"from_port":   80,
 					"to_port":     8000,
 					"protocol":    "tcp",
@@ -324,7 +325,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -332,13 +333,13 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   80,
 					"to_port":     8000,
 					"protocol":    "tcp",
 					"cidr_blocks": []string{"172.8.0.0/16", "10.8.0.0/16"},
 				},
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
@@ -350,7 +351,7 @@ func TestRulesMixedMatching(t *testing.T) {
 		{
 			local: []interface{}{},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       int64(22),
 					"to_port":         int64(22),
 					"protocol":        "tcp",
@@ -358,7 +359,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					// we're saving the remote, so it will be int64 encoded
 					"from_port":       int64(22),
 					"to_port":         int64(22),
@@ -384,7 +385,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(22),
 					"to_port":   int64(22),
 					"protocol":  "tcp",
@@ -398,7 +399,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": 22,
 					"to_port":   22,
 					"protocol":  "tcp",
@@ -409,7 +410,7 @@ func TestRulesMixedMatching(t *testing.T) {
 						},
 					),
 				},
-				{
+				map[string]interface{}{
 					"from_port": 22,
 					"to_port":   22,
 					"protocol":  "tcp",
@@ -434,7 +435,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(22),
 					"to_port":   int64(22),
 					"protocol":  "tcp",
@@ -442,7 +443,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(22),
 					"to_port":   int64(22),
 					"protocol":  "tcp",
@@ -461,7 +462,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(22),
 					"to_port":   int64(22),
 					"protocol":  "tcp",
@@ -469,7 +470,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(22),
 					"to_port":   int64(22),
 					"protocol":  "tcp",
@@ -487,7 +488,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(22),
 					"to_port":   int64(22),
 					"protocol":  "tcp",
@@ -495,7 +496,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": int64(22),
 					"to_port":   int64(22),
 					"protocol":  "tcp",
@@ -520,7 +521,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       int64(80),
 					"to_port":         int64(8000),
 					"protocol":        "tcp",
@@ -529,13 +530,13 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":   int64(80),
 					"to_port":     int64(8000),
 					"protocol":    "tcp",
 					"cidr_blocks": []string{"172.8.0.0/16", "192.168.0.0/16"},
 				},
-				{
+				map[string]interface{}{
 					"from_port":       int64(80),
 					"to_port":         int64(8000),
 					"protocol":        "tcp",
@@ -559,7 +560,7 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			remote: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port":       int64(80),
 					"to_port":         int64(8000),
 					"protocol":        "tcp",
@@ -569,13 +570,13 @@ func TestRulesMixedMatching(t *testing.T) {
 				},
 			},
 			saves: []map[string]interface{}{
-				{
+				map[string]interface{}{
 					"from_port": 80,
 					"to_port":   8000,
 					"protocol":  "tcp",
 					"self":      true,
 				},
-				{
+				map[string]interface{}{
 					"from_port":       int64(80),
 					"to_port":         int64(8000),
 					"protocol":        "tcp",
@@ -635,11 +636,11 @@ func TestRulesMixedMatching(t *testing.T) {
 
 				// skip early
 				if numExpectedSGs != numRemoteSGs {
-					log.Printf("\n\ncontinuing on numRemoteSGs \n\n")
+					log.Printf("\n\ncontinuning on numRemoteSGs \n\n")
 					continue
 				}
 				if numExpectedCidrs != numRemoteCidrs {
-					log.Printf("\n\ncontinuing numRemoteCidrs\n\n")
+					log.Printf("\n\ncontinuning numRemoteCidrs\n\n")
 					continue
 				}
 

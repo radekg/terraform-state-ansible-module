@@ -2,7 +2,6 @@ package aws
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -13,7 +12,7 @@ import (
 func TestAccDataSourceAwsSubnet_basic(t *testing.T) {
 	rInt := acctest.RandIntRange(0, 256)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckVpcDestroy,
@@ -34,7 +33,7 @@ func TestAccDataSourceAwsSubnet_basic(t *testing.T) {
 
 func TestAccDataSourceAwsSubnet_ipv6ByIpv6Filter(t *testing.T) {
 	rInt := acctest.RandIntRange(0, 256)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -56,7 +55,7 @@ func TestAccDataSourceAwsSubnet_ipv6ByIpv6Filter(t *testing.T) {
 
 func TestAccDataSourceAwsSubnet_ipv6ByIpv6CidrBlock(t *testing.T) {
 	rInt := acctest.RandIntRange(0, 256)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -116,13 +115,6 @@ func testAccDataSourceAwsSubnetCheck(name string, rInt int) resource.TestCheckFu
 		}
 		if attr["tags.Name"] != "tf-acc-subnet-data-source" {
 			return fmt.Errorf("bad Name tag %s", attr["tags.Name"])
-		}
-
-		arnformat := `^arn:[^:]+:ec2:[^:]+:\d{12}:subnet/subnet-.+`
-		arnregex := regexp.MustCompile(arnformat)
-
-		if !arnregex.MatchString(attr["arn"]) {
-			return fmt.Errorf("arn doesn't match format %s", attr["arn"])
 		}
 
 		return nil

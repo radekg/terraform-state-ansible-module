@@ -2,11 +2,10 @@ package aws
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/hashicorp/terraform/helper/schema"
+	"time"
 )
 
 func dataSourceAwsKmsKey() *schema.Resource {

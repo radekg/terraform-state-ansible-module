@@ -38,8 +38,6 @@ In addition to all arguments above, the following attributes are exported:
 
 * `arn` - The ARN for this account.
 
-* `id` - The AWS account id
-
 ## Import
 
 The AWS member account can be imported by using the `account_id`, e.g.

@@ -50,13 +50,12 @@ resource "aws_s3_bucket_policy" "hoge" {
     ]
 }
 EOF
-}
 
 resource "aws_ssm_resource_data_sync" "foo" {
   name = "foo"
   s3_destination = {
     bucket_name = "${aws_s3_bucket.hoge.bucket}"
-    region      = "${aws_s3_bucket.hoge.region}"
+    region = "${aws_s3_bucket.hoge.region}"
   }
 }
 ```
@@ -82,6 +81,6 @@ The following arguments are supported:
 
 SSM resource data sync can be imported using the `name`, e.g.
 
-```sh
+```
 $ terraform import aws_ssm_resource_data_sync.example example-name
 ```

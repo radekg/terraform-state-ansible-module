@@ -10,14 +10,14 @@ import (
 )
 
 func TestAccAWSSESActiveReceiptRuleSet_basic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSESActiveReceiptRuleSetDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSSESActiveReceiptRuleSetConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsSESActiveReceiptRuleSetExists("aws_ses_active_receipt_rule_set.test"),

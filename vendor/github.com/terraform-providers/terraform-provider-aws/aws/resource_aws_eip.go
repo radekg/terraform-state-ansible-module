@@ -31,51 +31,51 @@ func resourceAwsEip() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"vpc": {
+			"vpc": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 				Computed: true,
 			},
 
-			"instance": {
+			"instance": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"network_interface": {
+			"network_interface": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"allocation_id": {
+			"allocation_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"association_id": {
+			"association_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"domain": {
+			"domain": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"public_ip": {
+			"public_ip": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"private_ip": {
+			"private_ip": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"associate_with_private_ip": {
+			"associate_with_private_ip": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -181,22 +181,16 @@ func resourceAwsEipRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	var address *ec2.Address
-
-	// In the case that AWS returns more EIPs than we intend it to, we loop
-	// over the returned addresses to see if it's in the list of results
-	for _, addr := range describeAddresses.Addresses {
-		if (domain == "vpc" && aws.StringValue(addr.AllocationId) == id) || aws.StringValue(addr.PublicIp) == id {
-			address = addr
-			break
+	// Verify AWS returned our EIP
+	if len(describeAddresses.Addresses) != 1 ||
+		domain == "vpc" && *describeAddresses.Addresses[0].AllocationId != id ||
+		*describeAddresses.Addresses[0].PublicIp != id {
+		if err != nil {
+			return fmt.Errorf("Unable to find EIP: %#v", describeAddresses.Addresses)
 		}
 	}
 
-	if address == nil {
-		log.Printf("[WARN] EIP %q not found, removing from state", d.Id())
-		d.SetId("")
-		return nil
-	}
+	address := describeAddresses.Addresses[0]
 
 	d.Set("association_id", address.AssociationId)
 	if address.InstanceId != nil {

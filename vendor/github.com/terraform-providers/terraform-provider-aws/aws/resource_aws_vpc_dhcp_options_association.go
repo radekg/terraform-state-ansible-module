@@ -16,12 +16,12 @@ func resourceAwsVpcDhcpOptionsAssociation() *schema.Resource {
 		Delete: resourceAwsVpcDhcpOptionsAssociationDelete,
 
 		Schema: map[string]*schema.Schema{
-			"vpc_id": {
+			"vpc_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"dhcp_options_id": {
+			"dhcp_options_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},

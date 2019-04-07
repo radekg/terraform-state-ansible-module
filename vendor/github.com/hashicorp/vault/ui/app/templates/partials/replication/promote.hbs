@@ -74,12 +74,13 @@
     Promote cluster
   </h4>
   <div class="content">
-    <p>Promote the cluster to primary.</p>
+    <p>Promote the cluster to primary.
     <AlertInline
       @type="warning"
       @message="Vault replication is not designed for active-active usage and enabling two primaries should never be done, as it can lead to data loss if they or their secondaries are ever reconnected.
         If the cluster has a primary, be sure to demote it before promoting a secondary."
     />
+    </p>
     <div class="field">
       <label for="primary_cluster_addr" class="is-label">
         Primary cluster address <em class="is-optional">(optional)</em>

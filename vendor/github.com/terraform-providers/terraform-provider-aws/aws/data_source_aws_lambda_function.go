@@ -122,7 +122,7 @@ func dataSourceAwsLambdaFunction() *schema.Resource {
 						"variables": {
 							Type:     schema.TypeMap,
 							Computed: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Elem:     schema.TypeString,
 						},
 					},
 				},

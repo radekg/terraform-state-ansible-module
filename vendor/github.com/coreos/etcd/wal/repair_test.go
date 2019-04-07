@@ -21,10 +21,8 @@ import (
 	"os"
 	"testing"
 
-	"go.etcd.io/etcd/raft/raftpb"
-	"go.etcd.io/etcd/wal/walpb"
-
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/raft/raftpb"
+	"github.com/coreos/etcd/wal/walpb"
 )
 
 type corruptFunc func(string, int64) error
@@ -32,7 +30,7 @@ type corruptFunc func(string, int64) error
 // TestRepairTruncate ensures a truncated file can be repaired
 func TestRepairTruncate(t *testing.T) {
 	corruptf := func(p string, offset int64) error {
-		f, err := openLast(zap.NewExample(), p)
+		f, err := openLast(p)
 		if err != nil {
 			return err
 		}
@@ -49,9 +47,8 @@ func testRepair(t *testing.T, ents [][]raftpb.Entry, corrupt corruptFunc, expect
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(p)
-
 	// create WAL
-	w, err := Create(zap.NewExample(), p, nil)
+	w, err := Create(p, nil)
 	defer func() {
 		if err = w.Close(); err != nil {
 			t.Fatal(err)
@@ -79,7 +76,7 @@ func testRepair(t *testing.T, ents [][]raftpb.Entry, corrupt corruptFunc, expect
 	}
 
 	// verify we broke the wal
-	w, err = Open(zap.NewExample(), p, walpb.Snapshot{})
+	w, err = Open(p, walpb.Snapshot{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,12 +87,12 @@ func testRepair(t *testing.T, ents [][]raftpb.Entry, corrupt corruptFunc, expect
 	w.Close()
 
 	// repair the wal
-	if ok := Repair(zap.NewExample(), p); !ok {
-		t.Fatalf("'Repair' returned '%v', want 'true'", ok)
+	if ok := Repair(p); !ok {
+		t.Fatalf("fix = %t, want %t", ok, true)
 	}
 
 	// read it back
-	w, err = Open(zap.NewExample(), p, walpb.Snapshot{})
+	w, err = Open(p, walpb.Snapshot{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +114,7 @@ func testRepair(t *testing.T, ents [][]raftpb.Entry, corrupt corruptFunc, expect
 	w.Close()
 
 	// read back entries following repair, ensure it's all there
-	w, err = Open(zap.NewExample(), p, walpb.Snapshot{})
+	w, err = Open(p, walpb.Snapshot{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +138,7 @@ func makeEnts(ents int) (ret [][]raftpb.Entry) {
 // that straddled two sectors.
 func TestRepairWriteTearLast(t *testing.T) {
 	corruptf := func(p string, offset int64) error {
-		f, err := openLast(zap.NewExample(), p)
+		f, err := openLast(p)
 		if err != nil {
 			return err
 		}
@@ -153,7 +150,10 @@ func TestRepairWriteTearLast(t *testing.T) {
 		if terr := f.Truncate(1024); terr != nil {
 			return terr
 		}
-		return f.Truncate(offset)
+		if terr := f.Truncate(offset); terr != nil {
+			return terr
+		}
+		return nil
 	}
 	testRepair(t, makeEnts(50), corruptf, 40)
 }
@@ -162,7 +162,7 @@ func TestRepairWriteTearLast(t *testing.T) {
 // in the middle of a record.
 func TestRepairWriteTearMiddle(t *testing.T) {
 	corruptf := func(p string, offset int64) error {
-		f, err := openLast(zap.NewExample(), p)
+		f, err := openLast(p)
 		if err != nil {
 			return err
 		}
@@ -181,58 +181,4 @@ func TestRepairWriteTearMiddle(t *testing.T) {
 		ents[i][0].Data = dat
 	}
 	testRepair(t, ents, corruptf, 1)
-}
-
-func TestRepairFailDeleteDir(t *testing.T) {
-	p, err := ioutil.TempDir(os.TempDir(), "waltest")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(p)
-
-	w, err := Create(zap.NewExample(), p, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	oldSegmentSizeBytes := SegmentSizeBytes
-	SegmentSizeBytes = 64
-	defer func() {
-		SegmentSizeBytes = oldSegmentSizeBytes
-	}()
-	for _, es := range makeEnts(50) {
-		if err = w.Save(raftpb.HardState{}, es); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	_, serr := w.tail().Seek(0, io.SeekCurrent)
-	if serr != nil {
-		t.Fatal(serr)
-	}
-	w.Close()
-
-	f, err := openLast(zap.NewExample(), p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if terr := f.Truncate(20); terr != nil {
-		t.Fatal(err)
-	}
-	f.Close()
-
-	w, err = Open(zap.NewExample(), p, walpb.Snapshot{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, _, _, err = w.ReadAll()
-	if err != io.ErrUnexpectedEOF {
-		t.Fatalf("err = %v, want error %v", err, io.ErrUnexpectedEOF)
-	}
-	w.Close()
-
-	os.RemoveAll(p)
-	if Repair(zap.NewExample(), p) {
-		t.Fatal("expect 'Repair' fail on unexpected directory deletion")
-	}
 }

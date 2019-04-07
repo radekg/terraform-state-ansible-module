@@ -12,30 +12,9 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSGlueCatalogDatabase_importBasic(t *testing.T) {
-	resourceName := "aws_glue_catalog_database.test"
-	rInt := acctest.RandInt()
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckGlueDatabaseDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccGlueCatalogDatabase_full(rInt, "A test catalog from terraform"),
-			},
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSGlueCatalogDatabase_full(t *testing.T) {
 	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckGlueDatabaseDestroy,
@@ -134,41 +113,6 @@ func TestAccAWSGlueCatalogDatabase_full(t *testing.T) {
 	})
 }
 
-func TestAccAWSGlueCatalogDatabase_recreates(t *testing.T) {
-	resourceName := "aws_glue_catalog_database.test"
-	rInt := acctest.RandInt()
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckGlueDatabaseDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccGlueCatalogDatabase_basic(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGlueCatalogDatabaseExists(resourceName),
-				),
-			},
-			{
-				// Simulate deleting the database outside Terraform
-				PreConfig: func() {
-					conn := testAccProvider.Meta().(*AWSClient).glueconn
-					input := &glue.DeleteDatabaseInput{
-						Name: aws.String(fmt.Sprintf("my_test_catalog_database_%d", rInt)),
-					}
-					_, err := conn.DeleteDatabase(input)
-					if err != nil {
-						t.Fatalf("error deleting Glue Catalog Database: %s", err)
-					}
-				},
-				Config:             testAccGlueCatalogDatabase_basic(rInt),
-				ExpectNonEmptyPlan: true,
-				PlanOnly:           true,
-			},
-		},
-	})
-}
-
 func testAccCheckGlueDatabaseDestroy(s *terraform.State) error {
 	conn := testAccProvider.Meta().(*AWSClient).glueconn
 
@@ -177,10 +121,7 @@ func testAccCheckGlueDatabaseDestroy(s *terraform.State) error {
 			continue
 		}
 
-		catalogId, dbName, err := readAwsGlueCatalogID(rs.Primary.ID)
-		if err != nil {
-			return err
-		}
+		catalogId, dbName := readAwsGlueCatalogID(rs.Primary.ID)
 
 		input := &glue.GetDatabaseInput{
 			CatalogId: aws.String(catalogId),
@@ -233,10 +174,7 @@ func testAccCheckGlueCatalogDatabaseExists(name string) resource.TestCheckFunc {
 			return fmt.Errorf("No ID is set")
 		}
 
-		catalogId, dbName, err := readAwsGlueCatalogID(rs.Primary.ID)
-		if err != nil {
-			return err
-		}
+		catalogId, dbName := readAwsGlueCatalogID(rs.Primary.ID)
 
 		glueconn := testAccProvider.Meta().(*AWSClient).glueconn
 		out, err := glueconn.GetDatabase(&glue.GetDatabaseInput{

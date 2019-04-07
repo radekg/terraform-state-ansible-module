@@ -11,35 +11,15 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSDHCPOptions_importBasic(t *testing.T) {
-	resourceName := "aws_vpc_dhcp_options.foo"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccDHCPOptionsConfig,
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSDHCPOptions_basic(t *testing.T) {
 	var d ec2.DhcpOptions
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckDHCPOptionsDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccDHCPOptionsConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDHCPOptionsExists("aws_vpc_dhcp_options.foo", &d),
@@ -59,12 +39,12 @@ func TestAccAWSDHCPOptions_basic(t *testing.T) {
 func TestAccAWSDHCPOptions_deleteOptions(t *testing.T) {
 	var d ec2.DhcpOptions
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckDHCPOptionsDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccDHCPOptionsConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDHCPOptionsExists("aws_vpc_dhcp_options.foo", &d),

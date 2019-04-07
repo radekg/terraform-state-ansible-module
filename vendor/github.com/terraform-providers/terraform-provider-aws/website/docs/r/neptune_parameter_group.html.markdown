@@ -18,8 +18,8 @@ resource "aws_neptune_parameter_group" "example" {
   name   = "example"
 
   parameter {
-    name  = "neptune_query_timeout"
-    value = "25"
+    name         = "neptune_query_timeout"
+    value        = "25"
   }
 }
 ```
@@ -32,7 +32,6 @@ The following arguments are supported:
 * `family` - (Required) The family of the Neptune parameter group.
 * `description` - (Optional) The description of the Neptune parameter group. Defaults to "Managed by Terraform".
 * `parameter` - (Optional) A list of Neptune parameters to apply.
-* `tags` - (Optional) A mapping of tags to assign to the resource.
 
 Parameter blocks support the following:
 
@@ -43,10 +42,9 @@ Parameter blocks support the following:
 
 ## Attributes Reference
 
-In addition to all arguments above, the following attributes are exported:
+The following attributes are exported:
 
 * `id` - The Neptune parameter group name.
-* `arn` - The Neptune parameter group Amazon Resource Name (ARN).
 
 ## Import
 

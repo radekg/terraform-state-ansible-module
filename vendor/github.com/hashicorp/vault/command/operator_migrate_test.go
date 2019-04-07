@@ -23,6 +23,8 @@ import (
 	"github.com/hashicorp/vault/vault"
 )
 
+const trailing_slash_key = "trailing_slash/"
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -209,6 +211,9 @@ storage_destination "dest_type2" {
 			return nil
 		})
 
+		delete(data, trailing_slash_key)
+		delete(data, "")
+
 		var keys []string
 		for key := range data {
 			keys = append(keys, key)
@@ -255,7 +260,7 @@ func generateData() map[string][]byte {
 	for i := 0; i < 500; i++ {
 		segments := make([]string, rand.Intn(8)+1)
 		for j := 0; j < len(segments); j++ {
-			s, _ := base62.Random(6, false)
+			s, _ := base62.Random(6)
 			segments[j] = s
 		}
 		data := make([]byte, 100)
@@ -266,6 +271,11 @@ func generateData() map[string][]byte {
 	// Add special keys that should be excluded from migration
 	result[storageMigrationLock] = []byte{}
 	result[vault.CoreLockPath] = []byte{}
+
+	// Empty keys are now prevented in Vault, but older data sets
+	// might contain them.
+	result[""] = []byte{}
+	result[trailing_slash_key] = []byte{}
 
 	return result
 }
@@ -292,7 +302,7 @@ func compareStoredData(s physical.Backend, ref map[string][]byte, start string) 
 			return err
 		}
 
-		if k == storageMigrationLock || k == vault.CoreLockPath {
+		if k == storageMigrationLock || k == vault.CoreLockPath || k == "" || strings.HasSuffix(k, "/") {
 			if entry == nil {
 				continue
 			}

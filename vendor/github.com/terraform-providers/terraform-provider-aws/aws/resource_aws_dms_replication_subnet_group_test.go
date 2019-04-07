@@ -16,7 +16,7 @@ func TestAccAWSDmsReplicationSubnetGroupBasic(t *testing.T) {
 	resourceName := "aws_dms_replication_subnet_group.dms_replication_subnet_group"
 	randId := acctest.RandString(8)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: dmsReplicationSubnetGroupDestroy,

@@ -75,6 +75,73 @@ func TestBodyContent(t *testing.T) {
 				},
 			},
 		},
+		"block attributes": {
+			&Body{
+				ChildBlocks: []Block{
+					{
+						Type: "foo",
+						Body: Body{
+							Attributes: map[string]Attribute{
+								"bar": {
+									Expr: Expression{
+										Source:     []byte(`"hello"`),
+										SourceType: ExprNative,
+									},
+								},
+							},
+						},
+					},
+					{
+						Type: "foo",
+						Body: Body{
+							Attributes: map[string]Attribute{
+								"bar": {
+									Expr: Expression{
+										Source:     []byte(`"world"`),
+										SourceType: ExprNative,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			&hcl.BodySchema{
+				Blocks: []hcl.BlockHeaderSchema{
+					{Type: "foo"},
+				},
+			},
+			&hcl.BodyContent{
+				Blocks: hcl.Blocks{
+					{
+						Type: "foo",
+						Body: &Body{
+							Attributes: map[string]Attribute{
+								"bar": {
+									Expr: Expression{
+										Source:     []byte(`"hello"`),
+										SourceType: ExprNative,
+									},
+								},
+							},
+						},
+					},
+					{
+						Type: "foo",
+						Body: &Body{
+							Attributes: map[string]Attribute{
+								"bar": {
+									Expr: Expression{
+										Source:     []byte(`"world"`),
+										SourceType: ExprNative,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, test := range tests {
@@ -85,7 +152,53 @@ func TestBodyContent(t *testing.T) {
 			}
 
 			if !cmp.Equal(test.Want, got) {
-				t.Errorf("wrong result\n%s", cmp.Diff(test.Want, got))
+				bytesAsString := func(s []byte) string {
+					return string(s)
+				}
+				t.Errorf("wrong result\n%s", cmp.Diff(
+					test.Want, got,
+					cmp.Transformer("bytesAsString", bytesAsString),
+				))
+			}
+		})
+	}
+
+}
+
+func TestBodyPartialContent(t *testing.T) {
+	tests := map[string]struct {
+		Body       *Body
+		Schema     *hcl.BodySchema
+		WantRemain hcl.Body
+	}{
+		"missing range": {
+			&Body{
+				MissingItemRange_: hcl.Range{
+					Filename: "file.hcl",
+					Start:    hcl.Pos{Line: 3, Column: 2},
+					End:      hcl.Pos{Line: 3, Column: 2},
+				},
+			},
+			&hcl.BodySchema{},
+			&Body{
+				MissingItemRange_: hcl.Range{
+					Filename: "file.hcl",
+					Start:    hcl.Pos{Line: 3, Column: 2},
+					End:      hcl.Pos{Line: 3, Column: 2},
+				},
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, gotRemain, diags := test.Body.PartialContent(test.Schema)
+			for _, diag := range diags {
+				t.Errorf("unexpected diagnostic: %s", diag.Error())
+			}
+
+			if !cmp.Equal(test.WantRemain, gotRemain) {
+				t.Errorf("wrong remaining result\n%s", cmp.Diff(test.WantRemain, gotRemain))
 			}
 		})
 	}

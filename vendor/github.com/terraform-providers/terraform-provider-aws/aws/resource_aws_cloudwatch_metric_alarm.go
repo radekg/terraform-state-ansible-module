@@ -30,18 +30,13 @@ func resourceAwsCloudWatchMetricAlarm() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"arn": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"comparison_operator": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 			"evaluation_periods": {
-				Type:         schema.TypeInt,
-				Required:     true,
-				ValidateFunc: validation.IntAtLeast(1),
+				Type:     schema.TypeInt,
+				Required: true,
 			},
 			"metric_name": {
 				Type:     schema.TypeString,
@@ -72,23 +67,16 @@ func resourceAwsCloudWatchMetricAlarm() *schema.Resource {
 			"alarm_actions": {
 				Type:     schema.TypeSet,
 				Optional: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-					ValidateFunc: validateAny(
-						validateArn,
-						validateEC2AutomateARN,
-					),
-				},
-				Set: schema.HashString,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Set:      schema.HashString,
 			},
 			"alarm_description": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 			"datapoints_to_alarm": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(1),
+				Type:     schema.TypeInt,
+				Optional: true,
 			},
 			"dimensions": {
 				Type:     schema.TypeMap,
@@ -173,7 +161,6 @@ func resourceAwsCloudWatchMetricAlarmRead(d *schema.ResourceData, meta interface
 	}
 	d.Set("alarm_description", a.AlarmDescription)
 	d.Set("alarm_name", a.AlarmName)
-	d.Set("arn", a.AlarmArn)
 	d.Set("comparison_operator", a.ComparisonOperator)
 	d.Set("datapoints_to_alarm", a.DatapointsToAlarm)
 	if err := d.Set("dimensions", flattenDimensions(a.Dimensions)); err != nil {
@@ -334,7 +321,7 @@ func getAwsCloudWatchMetricAlarm(d *schema.ResourceData, meta interface{}) (*clo
 
 	// Find it and return it
 	for idx, ma := range resp.MetricAlarms {
-		if aws.StringValue(ma.AlarmName) == d.Id() {
+		if *ma.AlarmName == d.Id() {
 			return resp.MetricAlarms[idx], nil
 		}
 	}
@@ -345,7 +332,7 @@ func getAwsCloudWatchMetricAlarm(d *schema.ResourceData, meta interface{}) (*clo
 func _strArrPtrToList(strArrPtr []*string) []string {
 	var result []string
 	for _, elem := range strArrPtr {
-		result = append(result, aws.StringValue(elem))
+		result = append(result, *elem)
 	}
 	return result
 }

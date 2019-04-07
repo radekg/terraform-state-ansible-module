@@ -14,7 +14,7 @@ import (
 func TestAccAWSDefaultRouteTable_basic(t *testing.T) {
 	var v ec2.RouteTable
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_default_route_table.foo",
 		Providers:     testAccProviders,
@@ -34,7 +34,7 @@ func TestAccAWSDefaultRouteTable_basic(t *testing.T) {
 func TestAccAWSDefaultRouteTable_swap(t *testing.T) {
 	var v ec2.RouteTable
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_default_route_table.foo",
 		Providers:     testAccProviders,
@@ -68,7 +68,7 @@ func TestAccAWSDefaultRouteTable_swap(t *testing.T) {
 func TestAccAWSDefaultRouteTable_vpc_endpoint(t *testing.T) {
 	var v ec2.RouteTable
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_default_route_table.foo",
 		Providers:     testAccProviders,
@@ -115,6 +115,11 @@ func testAccCheckDefaultRouteTableDestroy(s *terraform.State) error {
 		}
 	}
 
+	return nil
+}
+
+func testAccCheckDefaultRouteTableExists(s *terraform.State) error {
+	// We can't destroy this resource; it comes and goes with the VPC itself.
 	return nil
 }
 

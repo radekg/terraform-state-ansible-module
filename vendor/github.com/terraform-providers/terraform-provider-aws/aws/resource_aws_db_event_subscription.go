@@ -39,11 +39,10 @@ func resourceAwsDbEventSubscription() *schema.Resource {
 				ValidateFunc:  validateDbEventSubscriptionName,
 			},
 			"name_prefix": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"name"},
-				ValidateFunc:  validateDbEventSubscriptionName,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validateDbEventSubscriptionName,
 			},
 			"sns_topic": {
 				Type:     schema.TypeString,

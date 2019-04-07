@@ -22,18 +22,18 @@ func resourceAwsElasticacheSecurityGroup() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"description": {
+			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  "Managed by Terraform",
 			},
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"security_group_names": {
+			"security_group_names": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
 				ForceNew: true,

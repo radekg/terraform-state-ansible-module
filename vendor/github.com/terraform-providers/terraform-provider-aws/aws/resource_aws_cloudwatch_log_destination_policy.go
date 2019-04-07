@@ -24,13 +24,13 @@ func resourceAwsCloudWatchLogDestinationPolicy() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"destination_name": {
+			"destination_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"access_policy": {
+			"access_policy": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},

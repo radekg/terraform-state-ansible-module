@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceAwsCognitoUserGroup() *schema.Resource {
@@ -28,7 +27,7 @@ func resourceAwsCognitoUserGroup() *schema.Resource {
 			"description": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringLenBetween(0, 2048),
+				ValidateFunc: validateMaxLength(2048),
 			},
 			"name": {
 				Type:         schema.TypeString,

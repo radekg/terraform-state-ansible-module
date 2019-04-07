@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/rds"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
@@ -60,9 +61,11 @@ func testSweepDbOptionGroups(region string) error {
 		ret := resource.Retry(1*time.Minute, func() *resource.RetryError {
 			_, err := conn.DeleteOptionGroup(deleteOpts)
 			if err != nil {
-				if isAWSErr(err, rds.ErrCodeInvalidOptionGroupStateFault, "") {
-					log.Printf("[DEBUG] AWS believes the RDS Option Group is still in use, retrying")
-					return resource.RetryableError(err)
+				if awsErr, ok := err.(awserr.Error); ok {
+					if awsErr.Code() == "InvalidOptionGroupStateFault" {
+						log.Printf("[DEBUG] AWS believes the RDS Option Group is still in use, retrying")
+						return resource.RetryableError(awsErr)
+					}
 				}
 				return resource.NonRetryableError(err)
 			}
@@ -76,33 +79,11 @@ func testSweepDbOptionGroups(region string) error {
 	return nil
 }
 
-func TestAccAWSDBOptionGroup_importBasic(t *testing.T) {
-	resourceName := "aws_db_option_group.bar"
-	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSDBOptionGroupBasicConfig(rName),
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSDBOptionGroup_basic(t *testing.T) {
 	var v rds.OptionGroup
 	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -112,7 +93,6 @@ func TestAccAWSDBOptionGroup_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSDBOptionGroupExists("aws_db_option_group.bar", &v),
 					testAccCheckAWSDBOptionGroupAttributes(&v),
-					resource.TestMatchResourceAttr("aws_db_option_group.bar", "arn", regexp.MustCompile(`^arn:[^:]+:rds:[^:]+:\d{12}:og:.+`)),
 					resource.TestCheckResourceAttr(
 						"aws_db_option_group.bar", "name", rName),
 				),
@@ -125,7 +105,7 @@ func TestAccAWSDBOptionGroup_timeoutBlock(t *testing.T) {
 	var v rds.OptionGroup
 	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -146,7 +126,7 @@ func TestAccAWSDBOptionGroup_timeoutBlock(t *testing.T) {
 func TestAccAWSDBOptionGroup_namePrefix(t *testing.T) {
 	var v rds.OptionGroup
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -167,7 +147,7 @@ func TestAccAWSDBOptionGroup_namePrefix(t *testing.T) {
 func TestAccAWSDBOptionGroup_generatedName(t *testing.T) {
 	var v rds.OptionGroup
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -186,7 +166,7 @@ func TestAccAWSDBOptionGroup_generatedName(t *testing.T) {
 func TestAccAWSDBOptionGroup_defaultDescription(t *testing.T) {
 	var v rds.OptionGroup
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -206,7 +186,7 @@ func TestAccAWSDBOptionGroup_defaultDescription(t *testing.T) {
 func TestAccAWSDBOptionGroup_basicDestroyWithInstance(t *testing.T) {
 	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -222,7 +202,7 @@ func TestAccAWSDBOptionGroup_OptionSettings(t *testing.T) {
 	var v rds.OptionGroup
 	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -255,35 +235,11 @@ func TestAccAWSDBOptionGroup_OptionSettings(t *testing.T) {
 	})
 }
 
-func TestAccAWSDBOptionGroup_OptionSettingsIAMRole(t *testing.T) {
-	var v rds.OptionGroup
-	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSDBOptionGroupOptionSettingsIAMRole(rName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSDBOptionGroupExists("aws_db_option_group.bar", &v),
-					resource.TestCheckResourceAttr(
-						"aws_db_option_group.bar", "name", rName),
-					resource.TestCheckResourceAttr(
-						"aws_db_option_group.bar", "option.#", "1"),
-					testAccCheckAWSDBOptionGroupOptionSettingsIAMRole(&v),
-				),
-			},
-		},
-	})
-}
-
 func TestAccAWSDBOptionGroup_sqlServerOptionsUpdate(t *testing.T) {
 	var v rds.OptionGroup
 	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -315,7 +271,7 @@ func TestAccAWSDBOptionGroup_OracleOptionsUpdate(t *testing.T) {
 	var v rds.OptionGroup
 	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -351,7 +307,7 @@ func TestAccAWSDBOptionGroup_multipleOptions(t *testing.T) {
 	var v rds.OptionGroup
 	rName := fmt.Sprintf("option-group-test-terraform-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDBOptionGroupDestroy,
@@ -385,32 +341,6 @@ func testAccCheckAWSDBOptionGroupAttributes(v *rds.OptionGroup) resource.TestChe
 			return fmt.Errorf("bad option_group_description: %#v", *v.OptionGroupDescription)
 		}
 
-		return nil
-	}
-}
-
-func testAccCheckAWSDBOptionGroupOptionSettingsIAMRole(optionGroup *rds.OptionGroup) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if optionGroup == nil {
-			return errors.New("Option Group does not exist")
-		}
-		if len(optionGroup.Options) == 0 {
-			return errors.New("Option Group does not have any options")
-		}
-		if len(optionGroup.Options[0].OptionSettings) == 0 {
-			return errors.New("Option Group does not have any option settings")
-		}
-
-		settingName := aws.StringValue(optionGroup.Options[0].OptionSettings[0].Name)
-		if settingName != "IAM_ROLE_ARN" {
-			return fmt.Errorf("Expected option setting IAM_ROLE_ARN and received %s", settingName)
-		}
-
-		settingValue := aws.StringValue(optionGroup.Options[0].OptionSettings[0].Value)
-		iamArnRegExp := regexp.MustCompile(`^arn:aws:iam::\d{12}:role/.+`)
-		if !iamArnRegExp.MatchString(settingValue) {
-			return fmt.Errorf("Expected option setting to be a valid IAM role but received %s", settingValue)
-		}
 		return nil
 	}
 }
@@ -486,7 +416,11 @@ func testAccCheckAWSDBOptionGroupDestroy(s *terraform.State) error {
 		}
 
 		// Verify the error
-		if !isAWSErr(err, rds.ErrCodeOptionGroupNotFoundFault, "") {
+		newerr, ok := err.(awserr.Error)
+		if !ok {
+			return err
+		}
+		if newerr.Code() != "OptionGroupNotFoundFault" {
 			return err
 		}
 	}
@@ -569,40 +503,6 @@ resource "aws_db_option_group" "bar" {
   }
 }
 `, r)
-}
-
-func testAccAWSDBOptionGroupOptionSettingsIAMRole(r string) string {
-	return fmt.Sprintf(`
-data "aws_iam_policy_document" "rds_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-	  type = "Service"
-      identifiers = ["rds.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "sql_server_backup" {
-  name = "rds-backup-%s"
-  assume_role_policy = "${data.aws_iam_policy_document.rds_assume_role.json}"
-}
-
-resource "aws_db_option_group" "bar" {
-  name                     = "%s"
-  option_group_description = "Test option group for terraform"
-  engine_name              = "sqlserver-ex"
-  major_engine_version     = "14.00"
-
-  option {
-    option_name = "SQLSERVER_BACKUP_RESTORE"
-    option_settings {
-      name  = "IAM_ROLE_ARN"
-      value = "${aws_iam_role.sql_server_backup.arn}"
-    }
-  }
-}
-`, r, r)
 }
 
 func testAccAWSDBOptionGroupOptionSettings_update(r string) string {

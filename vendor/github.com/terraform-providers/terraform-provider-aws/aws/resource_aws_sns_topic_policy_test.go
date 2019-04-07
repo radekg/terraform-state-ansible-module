@@ -10,7 +10,7 @@ import (
 func TestAccAWSSNSTopicPolicy_basic(t *testing.T) {
 	attributes := make(map[string]string)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSSNSTopicDestroy,

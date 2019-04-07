@@ -1,5 +1,5 @@
 import { later, run } from '@ember/runloop';
-import { module, test, skip } from 'qunit';
+import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { render, settled } from '@ember/test-helpers';
 import apiStub from 'vault/tests/helpers/noop-all-api-requests';
@@ -18,7 +18,7 @@ module('Integration | Component | mount backend form', function(hooks) {
   hooks.beforeEach(function() {
     component.setContext(this);
     this.owner.lookup('service:flash-messages').registerTypes(['success', 'danger']);
-    this.server = apiStub({ usePassthrough: true });
+    this.server = apiStub();
   });
 
   hooks.afterEach(function() {
@@ -55,32 +55,20 @@ module('Integration | Component | mount backend form', function(hooks) {
     assert.equal(component.pathValue, 'newpath', 'updates to the value of the type');
   });
 
-  skip('it calls mount success', async function(assert) {
+  test('it calls mount success', async function(assert) {
+    this.server.post('/v1/sys/auth/foo', () => {
+      return [204, { 'Content-Type': 'application/json' }];
+    });
     const spy = sinon.spy();
     this.set('onMountSuccess', spy);
     await render(hbs`{{mount-backend-form onMountSuccess=onMountSuccess}}`);
 
     await component.mount('approle', 'foo');
-    assert.equal(this.server.db.authMethods.length, 1, 'it enables an auth method');
-    assert.ok(spy.calledOnce, 'calls the passed success method');
-  });
 
-  skip('it calls mount config error', async function(assert) {
-    const spy = sinon.spy();
-    const spy2 = sinon.spy();
-    this.set('onMountSuccess', spy);
-    this.set('onConfigError', spy2);
-    await render(hbs`{{mount-backend-form onMountSuccess=onMountSuccess onConfigError=onConfigError}}`);
-
-    await component.selectType('kubernetes');
-    await component.next().path('bar');
-    // kubernetes requires a host + a cert / pem, so only filling the host will error
-    await component.fillIn('kubernetesHost', 'host');
-    component.submit();
     later(() => run.cancelTimers(), 50);
     await settled();
-    assert.equal(this.server.db.authMethods.length, 1, 'it still enables an auth method');
-    assert.equal(spy.callCount, 0, 'does not call the success method');
-    assert.ok(spy2.calledOnce, 'calls the passed error method');
+    let enableRequest = this.server.handledRequests.findBy('url', '/v1/sys/auth/foo');
+    assert.ok(enableRequest, 'it calls enable on an auth method');
+    assert.ok(spy.calledOnce, 'calls the passed success method');
   });
 });

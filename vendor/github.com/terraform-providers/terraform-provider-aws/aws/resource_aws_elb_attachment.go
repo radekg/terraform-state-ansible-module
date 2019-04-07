@@ -17,13 +17,13 @@ func resourceAwsElbAttachment() *schema.Resource {
 		Delete: resourceAwsElbAttachmentDelete,
 
 		Schema: map[string]*schema.Schema{
-			"elb": {
+			"elb": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Required: true,
 			},
 
-			"instance": {
+			"instance": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Required: true,

@@ -17,26 +17,15 @@ package command
 import (
 	"os"
 
-	v3 "go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/snapshot"
-
 	"github.com/olekukonko/tablewriter"
+
+	v3 "github.com/coreos/etcd/clientv3"
 )
 
 type tablePrinter struct{ printer }
 
 func (tp *tablePrinter) MemberList(r v3.MemberListResponse) {
 	hdr, rows := makeMemberListTable(r)
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(hdr)
-	for _, row := range rows {
-		table.Append(row)
-	}
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
-	table.Render()
-}
-func (tp *tablePrinter) EndpointHealth(r []epHealth) {
-	hdr, rows := makeEndpointHealthTable(r)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(hdr)
 	for _, row := range rows {
@@ -65,7 +54,7 @@ func (tp *tablePrinter) EndpointHashKV(r []epHashKV) {
 	table.SetAlignment(tablewriter.ALIGN_RIGHT)
 	table.Render()
 }
-func (tp *tablePrinter) DBStatus(r snapshot.Status) {
+func (tp *tablePrinter) DBStatus(r dbstatus) {
 	hdr, rows := makeDBStatusTable(r)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(hdr)

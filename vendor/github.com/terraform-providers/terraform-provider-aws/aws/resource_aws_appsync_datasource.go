@@ -18,9 +18,6 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 		Read:   resourceAwsAppsyncDatasourceRead,
 		Update: resourceAwsAppsyncDatasourceUpdate,
 		Delete: resourceAwsAppsyncDatasourceDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
 
 		Schema: map[string]*schema.Schema{
 			"api_id": {
@@ -45,7 +42,6 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 					appsync.DataSourceTypeAwsLambda,
 					appsync.DataSourceTypeAmazonDynamodb,
 					appsync.DataSourceTypeAmazonElasticsearch,
-					appsync.DataSourceTypeHttp,
 					appsync.DataSourceTypeNone,
 				}, true),
 				StateFunc: func(v interface{}) string {
@@ -64,8 +60,7 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"region": {
 							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Required: true,
 						},
 						"table_name": {
 							Type:     schema.TypeString,
@@ -77,7 +72,7 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 						},
 					},
 				},
-				ConflictsWith: []string{"elasticsearch_config", "http_config", "lambda_config"},
+				ConflictsWith: []string{"elasticsearch_config", "lambda_config"},
 			},
 			"elasticsearch_config": {
 				Type:     schema.TypeList,
@@ -87,8 +82,7 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"region": {
 							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Required: true,
 						},
 						"endpoint": {
 							Type:     schema.TypeString,
@@ -96,21 +90,7 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 						},
 					},
 				},
-				ConflictsWith: []string{"dynamodb_config", "http_config", "lambda_config"},
-			},
-			"http_config": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"endpoint": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
-				},
-				ConflictsWith: []string{"dynamodb_config", "elasticsearch_config", "lambda_config"},
+				ConflictsWith: []string{"dynamodb_config", "lambda_config"},
 			},
 			"lambda_config": {
 				Type:     schema.TypeList,
@@ -124,7 +104,7 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 						},
 					},
 				},
-				ConflictsWith: []string{"dynamodb_config", "elasticsearch_config", "http_config"},
+				ConflictsWith: []string{"dynamodb_config", "elasticsearch_config"},
 			},
 			"service_role_arn": {
 				Type:     schema.TypeString,
@@ -140,7 +120,6 @@ func resourceAwsAppsyncDatasource() *schema.Resource {
 
 func resourceAwsAppsyncDatasourceCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).appsyncconn
-	region := meta.(*AWSClient).region
 
 	input := &appsync.CreateDataSourceInput{
 		ApiId: aws.String(d.Get("api_id").(string)),
@@ -152,48 +131,39 @@ func resourceAwsAppsyncDatasourceCreate(d *schema.ResourceData, meta interface{}
 		input.Description = aws.String(v.(string))
 	}
 
-	if v, ok := d.GetOk("dynamodb_config"); ok {
-		input.DynamodbConfig = expandAppsyncDynamodbDataSourceConfig(v.([]interface{}), region)
-	}
-
-	if v, ok := d.GetOk("elasticsearch_config"); ok {
-		input.ElasticsearchConfig = expandAppsyncElasticsearchDataSourceConfig(v.([]interface{}), region)
-	}
-
-	if v, ok := d.GetOk("http_config"); ok {
-		input.HttpConfig = expandAppsyncHTTPDataSourceConfig(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("lambda_config"); ok {
-		input.LambdaConfig = expandAppsyncLambdaDataSourceConfig(v.([]interface{}))
-	}
-
 	if v, ok := d.GetOk("service_role_arn"); ok {
 		input.ServiceRoleArn = aws.String(v.(string))
 	}
 
-	_, err := conn.CreateDataSource(input)
+	ddbconfig := d.Get("dynamodb_config").([]interface{})
+	if len(ddbconfig) > 0 {
+		input.DynamodbConfig = expandAppsyncDynamodbDataSourceConfig(ddbconfig[0].(map[string]interface{}))
+	}
+	esconfig := d.Get("elasticsearch_config").([]interface{})
+	if len(esconfig) > 0 {
+		input.ElasticsearchConfig = expandAppsyncElasticsearchDataSourceConfig(esconfig[0].(map[string]interface{}))
+	}
+	lambdaconfig := d.Get("lambda_config").([]interface{})
+	if len(lambdaconfig) > 0 {
+		input.LambdaConfig = expandAppsyncLambdaDataSourceConfig(lambdaconfig[0].(map[string]interface{}))
+	}
+
+	resp, err := conn.CreateDataSource(input)
 	if err != nil {
 		return err
 	}
 
 	d.SetId(d.Get("api_id").(string) + "-" + d.Get("name").(string))
-
-	return resourceAwsAppsyncDatasourceRead(d, meta)
+	d.Set("arn", resp.DataSource.DataSourceArn)
+	return nil
 }
 
 func resourceAwsAppsyncDatasourceRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).appsyncconn
 
-	apiID, name, err := decodeAppsyncDataSourceID(d.Id())
-
-	if err != nil {
-		return err
-	}
-
 	input := &appsync.GetDataSourceInput{
-		ApiId: aws.String(apiID),
-		Name:  aws.String(name),
+		ApiId: aws.String(d.Get("api_id").(string)),
+		Name:  aws.String(d.Get("name").(string)),
 	}
 
 	resp, err := conn.GetDataSource(input)
@@ -206,26 +176,11 @@ func resourceAwsAppsyncDatasourceRead(d *schema.ResourceData, meta interface{}) 
 		return err
 	}
 
-	d.Set("api_id", apiID)
 	d.Set("arn", resp.DataSource.DataSourceArn)
 	d.Set("description", resp.DataSource.Description)
-
-	if err := d.Set("dynamodb_config", flattenAppsyncDynamodbDataSourceConfig(resp.DataSource.DynamodbConfig)); err != nil {
-		return fmt.Errorf("error setting dynamodb_config: %s", err)
-	}
-
-	if err := d.Set("elasticsearch_config", flattenAppsyncElasticsearchDataSourceConfig(resp.DataSource.ElasticsearchConfig)); err != nil {
-		return fmt.Errorf("error setting elasticsearch_config: %s", err)
-	}
-
-	if err := d.Set("http_config", flattenAppsyncHTTPDataSourceConfig(resp.DataSource.HttpConfig)); err != nil {
-		return fmt.Errorf("error setting http_config: %s", err)
-	}
-
-	if err := d.Set("lambda_config", flattenAppsyncLambdaDataSourceConfig(resp.DataSource.LambdaConfig)); err != nil {
-		return fmt.Errorf("error setting lambda_config: %s", err)
-	}
-
+	d.Set("dynamodb_config", flattenAppsyncDynamodbDataSourceConfig(resp.DataSource.DynamodbConfig))
+	d.Set("elasticsearch_config", flattenAppsyncElasticsearchDataSourceConfig(resp.DataSource.ElasticsearchConfig))
+	d.Set("lambda_config", flattenAppsyncLambdaDataSourceConfig(resp.DataSource.LambdaConfig))
 	d.Set("name", resp.DataSource.Name)
 	d.Set("service_role_arn", resp.DataSource.ServiceRoleArn)
 	d.Set("type", resp.DataSource.Type)
@@ -235,45 +190,42 @@ func resourceAwsAppsyncDatasourceRead(d *schema.ResourceData, meta interface{}) 
 
 func resourceAwsAppsyncDatasourceUpdate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).appsyncconn
-	region := meta.(*AWSClient).region
-
-	apiID, name, err := decodeAppsyncDataSourceID(d.Id())
-
-	if err != nil {
-		return err
-	}
 
 	input := &appsync.UpdateDataSourceInput{
-		ApiId: aws.String(apiID),
-		Name:  aws.String(name),
-		Type:  aws.String(d.Get("type").(string)),
+		ApiId: aws.String(d.Get("api_id").(string)),
+		Name:  aws.String(d.Get("name").(string)),
 	}
 
-	if v, ok := d.GetOk("description"); ok {
-		input.Description = aws.String(v.(string))
+	if d.HasChange("description") {
+		input.Description = aws.String(d.Get("description").(string))
+	}
+	if d.HasChange("service_role_arn") {
+		input.ServiceRoleArn = aws.String(d.Get("service_role_arn").(string))
+	}
+	if d.HasChange("type") {
+		input.Type = aws.String(d.Get("type").(string))
 	}
 
-	if v, ok := d.GetOk("dynamodb_config"); ok {
-		input.DynamodbConfig = expandAppsyncDynamodbDataSourceConfig(v.([]interface{}), region)
+	if d.HasChange("dynamodb_config") {
+		ddbconfig := d.Get("dynamodb_config").([]interface{})
+		if len(ddbconfig) > 0 {
+			input.DynamodbConfig = expandAppsyncDynamodbDataSourceConfig(ddbconfig[0].(map[string]interface{}))
+		}
+	}
+	if d.HasChange("elasticsearch_config") {
+		esconfig := d.Get("elasticsearch_config").([]interface{})
+		if len(esconfig) > 0 {
+			input.ElasticsearchConfig = expandAppsyncElasticsearchDataSourceConfig(esconfig[0].(map[string]interface{}))
+		}
+	}
+	if d.HasChange("lambda_config") {
+		lambdaconfig := d.Get("lambda_config").([]interface{})
+		if len(lambdaconfig) > 0 {
+			input.LambdaConfig = expandAppsyncLambdaDataSourceConfig(lambdaconfig[0].(map[string]interface{}))
+		}
 	}
 
-	if v, ok := d.GetOk("elasticsearch_config"); ok {
-		input.ElasticsearchConfig = expandAppsyncElasticsearchDataSourceConfig(v.([]interface{}), region)
-	}
-
-	if v, ok := d.GetOk("http_config"); ok {
-		input.HttpConfig = expandAppsyncHTTPDataSourceConfig(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("lambda_config"); ok {
-		input.LambdaConfig = expandAppsyncLambdaDataSourceConfig(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("service_role_arn"); ok {
-		input.ServiceRoleArn = aws.String(v.(string))
-	}
-
-	_, err = conn.UpdateDataSource(input)
+	_, err := conn.UpdateDataSource(input)
 	if err != nil {
 		return err
 	}
@@ -283,18 +235,12 @@ func resourceAwsAppsyncDatasourceUpdate(d *schema.ResourceData, meta interface{}
 func resourceAwsAppsyncDatasourceDelete(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).appsyncconn
 
-	apiID, name, err := decodeAppsyncDataSourceID(d.Id())
-
-	if err != nil {
-		return err
-	}
-
 	input := &appsync.DeleteDataSourceInput{
-		ApiId: aws.String(apiID),
-		Name:  aws.String(name),
+		ApiId: aws.String(d.Get("api_id").(string)),
+		Name:  aws.String(d.Get("name").(string)),
 	}
 
-	_, err = conn.DeleteDataSource(input)
+	_, err := conn.DeleteDataSource(input)
 	if err != nil {
 		if isAWSErr(err, appsync.ErrCodeNotFoundException, "") {
 			return nil
@@ -305,28 +251,10 @@ func resourceAwsAppsyncDatasourceDelete(d *schema.ResourceData, meta interface{}
 	return nil
 }
 
-func decodeAppsyncDataSourceID(id string) (string, string, error) {
-	idParts := strings.SplitN(id, "-", 2)
-	if len(idParts) != 2 {
-		return "", "", fmt.Errorf("expected ID in format ApiID-DataSourceName, received: %s", id)
-	}
-	return idParts[0], idParts[1], nil
-}
-
-func expandAppsyncDynamodbDataSourceConfig(l []interface{}, currentRegion string) *appsync.DynamodbDataSourceConfig {
-	if len(l) == 0 || l[0] == nil {
-		return nil
-	}
-
-	configured := l[0].(map[string]interface{})
-
+func expandAppsyncDynamodbDataSourceConfig(configured map[string]interface{}) *appsync.DynamodbDataSourceConfig {
 	result := &appsync.DynamodbDataSourceConfig{
-		AwsRegion: aws.String(currentRegion),
+		AwsRegion: aws.String(configured["region"].(string)),
 		TableName: aws.String(configured["table_name"].(string)),
-	}
-
-	if v, ok := configured["region"]; ok && v.(string) != "" {
-		result.AwsRegion = aws.String(v.(string))
 	}
 
 	if v, ok := configured["use_caller_credentials"]; ok {
@@ -341,32 +269,21 @@ func flattenAppsyncDynamodbDataSourceConfig(config *appsync.DynamodbDataSourceCo
 		return nil
 	}
 
-	result := map[string]interface{}{
-		"region":     aws.StringValue(config.AwsRegion),
-		"table_name": aws.StringValue(config.TableName),
-	}
+	result := map[string]interface{}{}
 
+	result["region"] = *config.AwsRegion
+	result["table_name"] = *config.TableName
 	if config.UseCallerCredentials != nil {
-		result["use_caller_credentials"] = aws.BoolValue(config.UseCallerCredentials)
+		result["use_caller_credentials"] = *config.UseCallerCredentials
 	}
 
 	return []map[string]interface{}{result}
 }
 
-func expandAppsyncElasticsearchDataSourceConfig(l []interface{}, currentRegion string) *appsync.ElasticsearchDataSourceConfig {
-	if len(l) == 0 || l[0] == nil {
-		return nil
-	}
-
-	configured := l[0].(map[string]interface{})
-
+func expandAppsyncElasticsearchDataSourceConfig(configured map[string]interface{}) *appsync.ElasticsearchDataSourceConfig {
 	result := &appsync.ElasticsearchDataSourceConfig{
-		AwsRegion: aws.String(currentRegion),
+		AwsRegion: aws.String(configured["region"].(string)),
 		Endpoint:  aws.String(configured["endpoint"].(string)),
-	}
-
-	if v, ok := configured["region"]; ok && v.(string) != "" {
-		result.AwsRegion = aws.String(v.(string))
 	}
 
 	return result
@@ -377,47 +294,15 @@ func flattenAppsyncElasticsearchDataSourceConfig(config *appsync.ElasticsearchDa
 		return nil
 	}
 
-	result := map[string]interface{}{
-		"endpoint": aws.StringValue(config.Endpoint),
-		"region":   aws.StringValue(config.AwsRegion),
-	}
+	result := map[string]interface{}{}
+
+	result["region"] = *config.AwsRegion
+	result["endpoint"] = *config.Endpoint
 
 	return []map[string]interface{}{result}
 }
 
-func expandAppsyncHTTPDataSourceConfig(l []interface{}) *appsync.HttpDataSourceConfig {
-	if len(l) == 0 || l[0] == nil {
-		return nil
-	}
-
-	configured := l[0].(map[string]interface{})
-
-	result := &appsync.HttpDataSourceConfig{
-		Endpoint: aws.String(configured["endpoint"].(string)),
-	}
-
-	return result
-}
-
-func flattenAppsyncHTTPDataSourceConfig(config *appsync.HttpDataSourceConfig) []map[string]interface{} {
-	if config == nil {
-		return nil
-	}
-
-	result := map[string]interface{}{
-		"endpoint": aws.StringValue(config.Endpoint),
-	}
-
-	return []map[string]interface{}{result}
-}
-
-func expandAppsyncLambdaDataSourceConfig(l []interface{}) *appsync.LambdaDataSourceConfig {
-	if len(l) == 0 || l[0] == nil {
-		return nil
-	}
-
-	configured := l[0].(map[string]interface{})
-
+func expandAppsyncLambdaDataSourceConfig(configured map[string]interface{}) *appsync.LambdaDataSourceConfig {
 	result := &appsync.LambdaDataSourceConfig{
 		LambdaFunctionArn: aws.String(configured["function_arn"].(string)),
 	}
@@ -430,9 +315,9 @@ func flattenAppsyncLambdaDataSourceConfig(config *appsync.LambdaDataSourceConfig
 		return nil
 	}
 
-	result := map[string]interface{}{
-		"function_arn": aws.StringValue(config.LambdaFunctionArn),
-	}
+	result := map[string]interface{}{}
+
+	result["function_arn"] = *config.LambdaFunctionArn
 
 	return []map[string]interface{}{result}
 }

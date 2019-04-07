@@ -10,29 +10,8 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSEmrSecurityConfiguration_importBasic(t *testing.T) {
-	resourceName := "aws_emr_security_configuration.foo"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckEmrSecurityConfigurationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccEmrSecurityConfigurationConfig,
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSEmrSecurityConfiguration_basic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckEmrSecurityConfigurationDestroy,

@@ -3,9 +3,7 @@ package aws
 import (
 	"fmt"
 	"log"
-	"sort"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -69,10 +67,7 @@ func dataSourceAwsEbsSnapshotIdsRead(d *schema.ResourceData, meta interface{}) e
 
 	snapshotIds := make([]string, 0)
 
-	sort.Slice(resp.Snapshots, func(i, j int) bool {
-		return aws.TimeValue(resp.Snapshots[i].StartTime).Unix() > aws.TimeValue(resp.Snapshots[j].StartTime).Unix()
-	})
-	for _, snapshot := range resp.Snapshots {
+	for _, snapshot := range sortSnapshots(resp.Snapshots) {
 		snapshotIds = append(snapshotIds, *snapshot.SnapshotId)
 	}
 

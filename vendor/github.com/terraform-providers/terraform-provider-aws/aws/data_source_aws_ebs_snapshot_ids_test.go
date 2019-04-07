@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/satori/uuid"
 )
 
 func TestAccDataSourceAwsEbsSnapshotIds_basic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -24,21 +24,21 @@ func TestAccDataSourceAwsEbsSnapshotIds_basic(t *testing.T) {
 }
 
 func TestAccDataSourceAwsEbsSnapshotIds_sorted(t *testing.T) {
-	rName := acctest.RandomWithPrefix("tf-acc-test")
+	uuid := uuid.NewV4().String()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceAwsEbsSnapshotIdsConfig_sorted1(rName),
+				Config: testAccDataSourceAwsEbsSnapshotIdsConfig_sorted1(uuid),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("aws_ebs_snapshot.a", "id"),
 					resource.TestCheckResourceAttrSet("aws_ebs_snapshot.b", "id"),
 				),
 			},
 			{
-				Config: testAccDataSourceAwsEbsSnapshotIdsConfig_sorted2(rName),
+				Config: testAccDataSourceAwsEbsSnapshotIdsConfig_sorted2(uuid),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsEbsSnapshotDataSourceID("data.aws_ebs_snapshot_ids.test"),
 					resource.TestCheckResourceAttr("data.aws_ebs_snapshot_ids.test", "ids.#", "2"),
@@ -55,7 +55,7 @@ func TestAccDataSourceAwsEbsSnapshotIds_sorted(t *testing.T) {
 }
 
 func TestAccDataSourceAwsEbsSnapshotIds_empty(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -85,7 +85,7 @@ data "aws_ebs_snapshot_ids" "test" {
 }
 `
 
-func testAccDataSourceAwsEbsSnapshotIdsConfig_sorted1(rName string) string {
+func testAccDataSourceAwsEbsSnapshotIdsConfig_sorted1(uuid string) string {
 	return fmt.Sprintf(`
 resource "aws_ebs_volume" "test" {
     availability_zone = "us-west-2a"
@@ -96,32 +96,32 @@ resource "aws_ebs_volume" "test" {
 
 resource "aws_ebs_snapshot" "a" {
     volume_id   = "${aws_ebs_volume.test.*.id[0]}"
-    description = %q
+    description = "tf-test-%s"
 }
 
 resource "aws_ebs_snapshot" "b" {
     volume_id   = "${aws_ebs_volume.test.*.id[1]}"
-    description = %q
+    description = "tf-test-%s"
 
     // We want to ensure that 'aws_ebs_snapshot.a.creation_date' is less than
     // 'aws_ebs_snapshot.b.creation_date'/ so that we can ensure that the
     // snapshots are being sorted correctly.
     depends_on = ["aws_ebs_snapshot.a"]
 }
-`, rName, rName)
+`, uuid, uuid)
 }
 
-func testAccDataSourceAwsEbsSnapshotIdsConfig_sorted2(rName string) string {
-	return testAccDataSourceAwsEbsSnapshotIdsConfig_sorted1(rName) + fmt.Sprintf(`
+func testAccDataSourceAwsEbsSnapshotIdsConfig_sorted2(uuid string) string {
+	return testAccDataSourceAwsEbsSnapshotIdsConfig_sorted1(uuid) + fmt.Sprintf(`
 data "aws_ebs_snapshot_ids" "test" {
     owners = ["self"]
 
     filter {
         name   = "description"
-        values = [%q]
+        values = ["tf-test-%s"]
     }
 }
-`, rName)
+`, uuid)
 }
 
 const testAccDataSourceAwsEbsSnapshotIdsConfig_empty = `

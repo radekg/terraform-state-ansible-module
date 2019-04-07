@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -278,7 +279,7 @@ func resourceAwsRoute53RecordUpdate(d *schema.ResourceData, meta interface{}) er
 		return err
 	}
 	if zoneRecord.HostedZone == nil {
-		return fmt.Errorf("No Route53 Zone found for id (%s)", zone)
+		return fmt.Errorf("[WARN] No Route53 Zone found for id (%s)", zone)
 	}
 
 	// Build the to be deleted record
@@ -352,7 +353,7 @@ func resourceAwsRoute53RecordUpdate(d *schema.ResourceData, meta interface{}) er
 
 	respRaw, err := changeRoute53RecordSet(conn, req)
 	if err != nil {
-		return fmt.Errorf("[ERR]: Error building changeset: %s", err)
+		return errwrap.Wrapf("[ERR]: Error building changeset: {{err}}", err)
 	}
 
 	changeInfo := respRaw.(*route53.ChangeResourceRecordSetsOutput).ChangeInfo
@@ -388,7 +389,7 @@ func resourceAwsRoute53RecordCreate(d *schema.ResourceData, meta interface{}) er
 		return err
 	}
 	if zoneRecord.HostedZone == nil {
-		return fmt.Errorf("No Route53 Zone found for id (%s)", zone)
+		return fmt.Errorf("[WARN] No Route53 Zone found for id (%s)", zone)
 	}
 
 	// Build the record
@@ -430,7 +431,7 @@ func resourceAwsRoute53RecordCreate(d *schema.ResourceData, meta interface{}) er
 
 	respRaw, err := changeRoute53RecordSet(conn, req)
 	if err != nil {
-		return fmt.Errorf("[ERR]: Error building changeset: %s", err)
+		return errwrap.Wrapf("[ERR]: Error building changeset: {{err}}", err)
 	}
 
 	changeInfo := respRaw.(*route53.ChangeResourceRecordSetsOutput).ChangeInfo
@@ -533,15 +534,15 @@ func resourceAwsRoute53RecordRead(d *schema.ResourceData, meta interface{}) erro
 
 	err = d.Set("records", flattenResourceRecords(record.ResourceRecords, *record.Type))
 	if err != nil {
-		return fmt.Errorf("Error setting records for: %s, error: %#v", d.Id(), err)
+		return fmt.Errorf("[DEBUG] Error setting records for: %s, error: %#v", d.Id(), err)
 	}
 
 	if alias := record.AliasTarget; alias != nil {
 		name := normalizeAwsAliasName(*alias.DNSName)
 		d.Set("alias", []interface{}{
 			map[string]interface{}{
-				"zone_id":                *alias.HostedZoneId,
-				"name":                   name,
+				"zone_id": *alias.HostedZoneId,
+				"name":    name,
 				"evaluate_target_health": *alias.EvaluateTargetHealth,
 			},
 		})
@@ -554,7 +555,7 @@ func resourceAwsRoute53RecordRead(d *schema.ResourceData, meta interface{}) erro
 			"type": aws.StringValue(record.Failover),
 		}}
 		if err := d.Set("failover_routing_policy", v); err != nil {
-			return fmt.Errorf("Error setting failover records for: %s, error: %#v", d.Id(), err)
+			return fmt.Errorf("[DEBUG] Error setting failover records for: %s, error: %#v", d.Id(), err)
 		}
 	}
 
@@ -565,7 +566,7 @@ func resourceAwsRoute53RecordRead(d *schema.ResourceData, meta interface{}) erro
 			"subdivision": aws.StringValue(record.GeoLocation.SubdivisionCode),
 		}}
 		if err := d.Set("geolocation_routing_policy", v); err != nil {
-			return fmt.Errorf("Error setting gelocation records for: %s, error: %#v", d.Id(), err)
+			return fmt.Errorf("[DEBUG] Error setting gelocation records for: %s, error: %#v", d.Id(), err)
 		}
 	}
 
@@ -574,7 +575,7 @@ func resourceAwsRoute53RecordRead(d *schema.ResourceData, meta interface{}) erro
 			"region": aws.StringValue(record.Region),
 		}}
 		if err := d.Set("latency_routing_policy", v); err != nil {
-			return fmt.Errorf("Error setting latency records for: %s, error: %#v", d.Id(), err)
+			return fmt.Errorf("[DEBUG] Error setting latency records for: %s, error: %#v", d.Id(), err)
 		}
 	}
 
@@ -583,13 +584,13 @@ func resourceAwsRoute53RecordRead(d *schema.ResourceData, meta interface{}) erro
 			"weight": aws.Int64Value((record.Weight)),
 		}}
 		if err := d.Set("weighted_routing_policy", v); err != nil {
-			return fmt.Errorf("Error setting weighted records for: %s, error: %#v", d.Id(), err)
+			return fmt.Errorf("[DEBUG] Error setting weighted records for: %s, error: %#v", d.Id(), err)
 		}
 	}
 
 	if record.MultiValueAnswer != nil {
 		if err := d.Set("multivalue_answer_routing_policy", *record.MultiValueAnswer); err != nil {
-			return fmt.Errorf("Error setting multivalue answer records for: %s, error: %#v", d.Id(), err)
+			return fmt.Errorf("[DEBUG] Error setting multivalue answer records for: %s, error: %#v", d.Id(), err)
 		}
 	}
 
@@ -726,7 +727,7 @@ func resourceAwsRoute53RecordDelete(d *schema.ResourceData, meta interface{}) er
 
 	respRaw, err := deleteRoute53RecordSet(conn, req)
 	if err != nil {
-		return fmt.Errorf("[ERR]: Error building changeset: %s", err)
+		return errwrap.Wrapf("[ERR]: Error building changeset: {{err}}", err)
 	}
 
 	changeInfo := respRaw.(*route53.ChangeResourceRecordSetsOutput).ChangeInfo
@@ -928,7 +929,7 @@ func expandRecordName(name, zone string) string {
 		if len(name) == 0 {
 			rn = zone
 		} else {
-			rn = strings.Join([]string{rn, zone}, ".")
+			rn = strings.Join([]string{name, zone}, ".")
 		}
 	}
 	return rn

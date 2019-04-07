@@ -24,17 +24,15 @@ import (
 	"strconv"
 	"time"
 
-	"go.etcd.io/etcd/etcdserver/api/rafthttp"
-	"go.etcd.io/etcd/etcdserver/api/snap"
-	stats "go.etcd.io/etcd/etcdserver/api/v2stats"
-	"go.etcd.io/etcd/pkg/fileutil"
-	"go.etcd.io/etcd/pkg/types"
-	"go.etcd.io/etcd/raft"
-	"go.etcd.io/etcd/raft/raftpb"
-	"go.etcd.io/etcd/wal"
-	"go.etcd.io/etcd/wal/walpb"
-
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/etcdserver/stats"
+	"github.com/coreos/etcd/pkg/fileutil"
+	"github.com/coreos/etcd/pkg/types"
+	"github.com/coreos/etcd/raft"
+	"github.com/coreos/etcd/raft/raftpb"
+	"github.com/coreos/etcd/rafthttp"
+	"github.com/coreos/etcd/snap"
+	"github.com/coreos/etcd/wal"
+	"github.com/coreos/etcd/wal/walpb"
 )
 
 // A key-value stream backed by raft
@@ -71,7 +69,7 @@ type raftNode struct {
 	httpdonec chan struct{} // signals http server shutdown complete
 }
 
-var defaultSnapshotCount uint64 = 10000
+var defaultSnapCount uint64 = 10000
 
 // newRaftNode initiates a raft instance and returns a committed log entry
 // channel and error channel. Proposals for log updates are sent over the
@@ -95,7 +93,7 @@ func newRaftNode(id int, peers []string, join bool, getSnapshot func() ([]byte, 
 		waldir:      fmt.Sprintf("raftexample-%d", id),
 		snapdir:     fmt.Sprintf("raftexample-%d-snap", id),
 		getSnapshot: getSnapshot,
-		snapCount:   defaultSnapshotCount,
+		snapCount:   defaultSnapCount,
 		stopc:       make(chan struct{}),
 		httpstopc:   make(chan struct{}),
 		httpdonec:   make(chan struct{}),
@@ -130,7 +128,7 @@ func (rc *raftNode) entriesToApply(ents []raftpb.Entry) (nents []raftpb.Entry) {
 	}
 	firstIdx := ents[0].Index
 	if firstIdx > rc.appliedIndex+1 {
-		log.Fatalf("first index of committed entry[%d] should <= progress.appliedIndex[%d]+1", firstIdx, rc.appliedIndex)
+		log.Fatalf("first index of committed entry[%d] should <= progress.appliedIndex[%d] 1", firstIdx, rc.appliedIndex)
 	}
 	if rc.appliedIndex-firstIdx+1 < uint64(len(ents)) {
 		nents = ents[rc.appliedIndex-firstIdx+1:]
@@ -203,7 +201,7 @@ func (rc *raftNode) openWAL(snapshot *raftpb.Snapshot) *wal.WAL {
 			log.Fatalf("raftexample: cannot create dir for wal (%v)", err)
 		}
 
-		w, err := wal.Create(zap.NewExample(), rc.waldir, nil)
+		w, err := wal.Create(rc.waldir, nil)
 		if err != nil {
 			log.Fatalf("raftexample: create wal error (%v)", err)
 		}
@@ -215,7 +213,7 @@ func (rc *raftNode) openWAL(snapshot *raftpb.Snapshot) *wal.WAL {
 		walsnap.Index, walsnap.Term = snapshot.Metadata.Index, snapshot.Metadata.Term
 	}
 	log.Printf("loading WAL at term %d and index %d", walsnap.Term, walsnap.Index)
-	w, err := wal.Open(zap.NewExample(), rc.waldir, walsnap)
+	w, err := wal.Open(rc.waldir, walsnap)
 	if err != nil {
 		log.Fatalf("raftexample: error loading wal (%v)", err)
 	}
@@ -263,7 +261,7 @@ func (rc *raftNode) startRaft() {
 			log.Fatalf("raftexample: cannot create dir for snapshot (%v)", err)
 		}
 	}
-	rc.snapshotter = snap.New(zap.NewExample(), rc.snapdir)
+	rc.snapshotter = snap.New(rc.snapdir)
 	rc.snapshotterReady <- rc.snapshotter
 
 	oldwal := wal.Exist(rc.waldir)
@@ -274,13 +272,12 @@ func (rc *raftNode) startRaft() {
 		rpeers[i] = raft.Peer{ID: uint64(i + 1)}
 	}
 	c := &raft.Config{
-		ID:                        uint64(rc.id),
-		ElectionTick:              10,
-		HeartbeatTick:             1,
-		Storage:                   rc.raftStorage,
-		MaxSizePerMsg:             1024 * 1024,
-		MaxInflightMsgs:           256,
-		MaxUncommittedEntriesSize: 1 << 30,
+		ID:              uint64(rc.id),
+		ElectionTick:    10,
+		HeartbeatTick:   1,
+		Storage:         rc.raftStorage,
+		MaxSizePerMsg:   1024 * 1024,
+		MaxInflightMsgs: 256,
 	}
 
 	if oldwal {
@@ -294,7 +291,6 @@ func (rc *raftNode) startRaft() {
 	}
 
 	rc.transport = &rafthttp.Transport{
-		Logger:      zap.NewExample(),
 		ID:          types.ID(rc.id),
 		ClusterID:   0x1000,
 		Raft:        rc,
@@ -337,7 +333,7 @@ func (rc *raftNode) publishSnapshot(snapshotToSave raftpb.Snapshot) {
 	defer log.Printf("finished publishing snapshot at index %d", rc.snapshotIndex)
 
 	if snapshotToSave.Metadata.Index <= rc.appliedIndex {
-		log.Fatalf("snapshot index [%d] should > progress.appliedIndex [%d]", snapshotToSave.Metadata.Index, rc.appliedIndex)
+		log.Fatalf("snapshot index [%d] should > progress.appliedIndex [%d] + 1", snapshotToSave.Metadata.Index, rc.appliedIndex)
 	}
 	rc.commitC <- nil // trigger kvstore to load snapshot
 
@@ -394,7 +390,7 @@ func (rc *raftNode) serveChannels() {
 
 	// send proposals over raft
 	go func() {
-		confChangeCount := uint64(0)
+		var confChangeCount uint64 = 0
 
 		for rc.proposeC != nil && rc.confChangeC != nil {
 			select {
@@ -410,7 +406,7 @@ func (rc *raftNode) serveChannels() {
 				if !ok {
 					rc.confChangeC = nil
 				} else {
-					confChangeCount++
+					confChangeCount += 1
 					cc.ID = confChangeCount
 					rc.node.ProposeConfChange(context.TODO(), cc)
 				}

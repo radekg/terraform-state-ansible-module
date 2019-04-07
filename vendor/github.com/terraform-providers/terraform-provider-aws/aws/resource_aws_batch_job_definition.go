@@ -40,7 +40,7 @@ func resourceAwsBatchJobDefinition() *schema.Resource {
 				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Elem:     schema.TypeString,
 			},
 			"retry_strategy": {
 				Type:     schema.TypeList,
@@ -52,7 +52,6 @@ func resourceAwsBatchJobDefinition() *schema.Resource {
 						"attempts": {
 							Type:         schema.TypeInt,
 							Optional:     true,
-							ForceNew:     true,
 							ValidateFunc: validation.IntBetween(1, 10),
 						},
 					},

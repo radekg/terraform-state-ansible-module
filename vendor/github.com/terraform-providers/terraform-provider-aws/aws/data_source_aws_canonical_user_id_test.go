@@ -9,7 +9,7 @@ import (
 )
 
 func TestAccDataSourceAwsCanonicalUserId_basic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

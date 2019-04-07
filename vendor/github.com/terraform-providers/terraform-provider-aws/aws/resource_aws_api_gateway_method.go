@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,87 +20,71 @@ func resourceAwsApiGatewayMethod() *schema.Resource {
 		Read:   resourceAwsApiGatewayMethodRead,
 		Update: resourceAwsApiGatewayMethodUpdate,
 		Delete: resourceAwsApiGatewayMethodDelete,
-		Importer: &schema.ResourceImporter{
-			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				idParts := strings.Split(d.Id(), "/")
-				if len(idParts) != 3 || idParts[0] == "" || idParts[1] == "" || idParts[2] == "" {
-					return nil, fmt.Errorf("Unexpected format of ID (%q), expected REST-API-ID/RESOURCE-ID/HTTP-METHOD", d.Id())
-				}
-				restApiID := idParts[0]
-				resourceID := idParts[1]
-				httpMethod := idParts[2]
-				d.Set("http_method", httpMethod)
-				d.Set("resource_id", resourceID)
-				d.Set("rest_api_id", restApiID)
-				d.SetId(fmt.Sprintf("agm-%s-%s-%s", restApiID, resourceID, httpMethod))
-				return []*schema.ResourceData{d}, nil
-			},
-		},
 
 		Schema: map[string]*schema.Schema{
-			"rest_api_id": {
+			"rest_api_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"resource_id": {
+			"resource_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"http_method": {
+			"http_method": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateHTTPMethod(),
 			},
 
-			"authorization": {
+			"authorization": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"authorizer_id": {
+			"authorizer_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"authorization_scopes": {
+			"authorization_scopes": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
 				Optional: true,
 			},
 
-			"api_key_required": {
+			"api_key_required": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"request_models": {
+			"request_models": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Elem:     schema.TypeString,
 			},
 
-			"request_parameters": {
+			"request_parameters": &schema.Schema{
 				Type:          schema.TypeMap,
-				Elem:          &schema.Schema{Type: schema.TypeBool},
+				Elem:          schema.TypeBool,
 				Optional:      true,
 				ConflictsWith: []string{"request_parameters_in_json"},
 			},
 
-			"request_parameters_in_json": {
+			"request_parameters_in_json": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"request_parameters"},
 				Deprecated:    "Use field request_parameters instead",
 			},
 
-			"request_validator_id": {
+			"request_validator_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -187,33 +170,18 @@ func resourceAwsApiGatewayMethodRead(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 	log.Printf("[DEBUG] Received API Gateway Method: %s", out)
-
+	d.SetId(fmt.Sprintf("agm-%s-%s-%s", d.Get("rest_api_id").(string), d.Get("resource_id").(string), d.Get("http_method").(string)))
+	d.Set("request_parameters", aws.BoolValueMap(out.RequestParameters))
+	d.Set("request_parameters_in_json", aws.BoolValueMap(out.RequestParameters))
 	d.Set("api_key_required", out.ApiKeyRequired)
+	d.Set("authorization", out.AuthorizationType)
+	d.Set("authorizer_id", out.AuthorizerId)
+	d.Set("request_models", aws.StringValueMap(out.RequestModels))
+	d.Set("request_validator_id", out.RequestValidatorId)
 
 	if err := d.Set("authorization_scopes", flattenStringList(out.AuthorizationScopes)); err != nil {
 		return fmt.Errorf("error setting authorization_scopes: %s", err)
 	}
-
-	d.Set("authorization", out.AuthorizationType)
-	d.Set("authorizer_id", out.AuthorizerId)
-
-	if err := d.Set("request_models", aws.StringValueMap(out.RequestModels)); err != nil {
-		return fmt.Errorf("error setting request_models: %s", err)
-	}
-
-	// KNOWN ISSUE: This next d.Set() is broken as it should be a JSON string of the map,
-	//              however leaving as-is since this attribute has been deprecated
-	//              for a very long time and will be removed soon in the next major release.
-	//              Not worth the effort of fixing, acceptance testing, and potential JSON equivalence bugs.
-	if _, ok := d.GetOk("request_parameters_in_json"); ok {
-		d.Set("request_parameters_in_json", aws.BoolValueMap(out.RequestParameters))
-	}
-
-	if err := d.Set("request_parameters", aws.BoolValueMap(out.RequestParameters)); err != nil {
-		return fmt.Errorf("error setting request_models: %s", err)
-	}
-
-	d.Set("request_validator_id", out.RequestValidatorId)
 
 	return nil
 }

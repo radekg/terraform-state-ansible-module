@@ -31,11 +31,6 @@ func dataSourceAwsRegion() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			"description": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -85,8 +80,6 @@ func dataSourceAwsRegionRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("endpoint", strings.TrimPrefix(regionEndpointEc2.URL, "https://"))
 
 	d.Set("name", region.ID())
-
-	d.Set("description", region.Description())
 
 	return nil
 }

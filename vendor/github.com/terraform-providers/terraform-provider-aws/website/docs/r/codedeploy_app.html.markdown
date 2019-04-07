@@ -23,7 +23,6 @@ resource "aws_codedeploy_app" "foo" {
 The following arguments are supported:
 
 * `name` - (Required) The name of the application.
-* `compute_platform` - (Optional) The compute platform can either be `Server` or `Lambda`. Default is `Server`.
 
 ## Attribute Reference
 
@@ -31,11 +30,3 @@ The following arguments are exported:
 
 * `id` - Amazon's assigned ID for the application.
 * `name` - The application's name.
-
-## Import
-
-CodeDeploy Applications can be imported using the `name`, e.g.
-
-```
-$ terraform import aws_codedeploy_app.example my-application
-```

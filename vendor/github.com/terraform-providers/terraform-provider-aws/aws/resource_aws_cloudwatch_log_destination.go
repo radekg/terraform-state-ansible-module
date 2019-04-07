@@ -27,23 +27,23 @@ func resourceAwsCloudWatchLogDestination() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"role_arn": {
+			"role_arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"target_arn": {
+			"target_arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

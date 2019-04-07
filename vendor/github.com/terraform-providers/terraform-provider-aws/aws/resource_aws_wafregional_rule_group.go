@@ -110,9 +110,6 @@ func resourceAwsWafRegionalRuleGroupRead(d *schema.ResourceData, meta interface{
 	rResp, err := conn.ListActivatedRulesInRuleGroup(&waf.ListActivatedRulesInRuleGroupInput{
 		RuleGroupId: aws.String(d.Id()),
 	})
-	if err != nil {
-		return fmt.Errorf("error listing activated rules in WAF Regional Rule Group (%s): %s", d.Id(), err)
-	}
 
 	d.Set("activated_rule", flattenWafActivatedRules(rResp.ActivatedRules))
 	d.Set("name", resp.RuleGroup.Name)
@@ -144,8 +141,11 @@ func resourceAwsWafRegionalRuleGroupDelete(d *schema.ResourceData, meta interfac
 
 	oldRules := d.Get("activated_rule").(*schema.Set).List()
 	err := deleteWafRegionalRuleGroup(d.Id(), oldRules, conn, region)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func deleteWafRegionalRuleGroup(id string, oldRules []interface{}, conn *wafregional.WAFRegional, region string) error {

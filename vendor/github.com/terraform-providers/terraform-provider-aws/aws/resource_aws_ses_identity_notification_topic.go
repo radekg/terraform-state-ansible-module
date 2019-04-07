@@ -91,16 +91,7 @@ func resourceAwsSesNotificationTopicRead(d *schema.ResourceData, meta interface{
 		return fmt.Errorf("Error reading SES Identity Notification Topic: %s", err)
 	}
 
-	d.Set("topic_arn", "")
-	if response == nil {
-		return nil
-	}
-
-	notificationAttributes, notificationAttributesOk := response.NotificationAttributes[identity]
-	if !notificationAttributesOk {
-		return nil
-	}
-
+	notificationAttributes := response.NotificationAttributes[identity]
 	switch notificationType {
 	case ses.NotificationTypeBounce:
 		d.Set("topic_arn", notificationAttributes.BounceTopic)

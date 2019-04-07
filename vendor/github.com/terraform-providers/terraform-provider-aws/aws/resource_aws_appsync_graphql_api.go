@@ -30,7 +30,6 @@ func resourceAwsAppsyncGraphqlApi() *schema.Resource {
 					appsync.AuthenticationTypeApiKey,
 					appsync.AuthenticationTypeAwsIam,
 					appsync.AuthenticationTypeAmazonCognitoUserPools,
-					appsync.AuthenticationTypeOpenidConnect,
 				}, false),
 			},
 			"name": {
@@ -42,53 +41,6 @@ func resourceAwsAppsyncGraphqlApi() *schema.Resource {
 						errors = append(errors, fmt.Errorf("%q must match [_A-Za-z][_0-9A-Za-z]*", k))
 					}
 					return
-				},
-			},
-			"log_config": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"cloudwatch_logs_role_arn": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"field_log_level": {
-							Type:     schema.TypeString,
-							Required: true,
-							ValidateFunc: validation.StringInSlice([]string{
-								appsync.FieldLogLevelAll,
-								appsync.FieldLogLevelError,
-								appsync.FieldLogLevelNone,
-							}, false),
-						},
-					},
-				},
-			},
-			"openid_connect_config": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"auth_ttl": {
-							Type:     schema.TypeInt,
-							Optional: true,
-						},
-						"client_id": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"iat_ttl": {
-							Type:     schema.TypeInt,
-							Optional: true,
-						},
-						"issuer": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
 				},
 			},
 			"user_pool_config": {
@@ -103,8 +55,7 @@ func resourceAwsAppsyncGraphqlApi() *schema.Resource {
 						},
 						"aws_region": {
 							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Required: true,
 						},
 						"default_action": {
 							Type:     schema.TypeString,
@@ -125,11 +76,6 @@ func resourceAwsAppsyncGraphqlApi() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"uris": {
-				Type:     schema.TypeMap,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
 		},
 	}
 }
@@ -142,16 +88,8 @@ func resourceAwsAppsyncGraphqlApiCreate(d *schema.ResourceData, meta interface{}
 		Name:               aws.String(d.Get("name").(string)),
 	}
 
-	if v, ok := d.GetOk("log_config"); ok {
-		input.LogConfig = expandAppsyncGraphqlApiLogConfig(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("openid_connect_config"); ok {
-		input.OpenIDConnectConfig = expandAppsyncGraphqlApiOpenIDConnectConfig(v.([]interface{}))
-	}
-
 	if v, ok := d.GetOk("user_pool_config"); ok {
-		input.UserPoolConfig = expandAppsyncGraphqlApiUserPoolConfig(v.([]interface{}), meta.(*AWSClient).region)
+		input.UserPoolConfig = expandAppsyncGraphqlApiUserPoolConfig(v.([]interface{}))
 	}
 
 	resp, err := conn.CreateGraphqlApi(input)
@@ -160,8 +98,8 @@ func resourceAwsAppsyncGraphqlApiCreate(d *schema.ResourceData, meta interface{}
 	}
 
 	d.SetId(*resp.GraphqlApi.ApiId)
-
-	return resourceAwsAppsyncGraphqlApiRead(d, meta)
+	d.Set("arn", resp.GraphqlApi.Arn)
+	return nil
 }
 
 func resourceAwsAppsyncGraphqlApiRead(d *schema.ResourceData, meta interface{}) error {
@@ -181,26 +119,10 @@ func resourceAwsAppsyncGraphqlApiRead(d *schema.ResourceData, meta interface{}) 
 		return err
 	}
 
-	d.Set("arn", resp.GraphqlApi.Arn)
 	d.Set("authentication_type", resp.GraphqlApi.AuthenticationType)
 	d.Set("name", resp.GraphqlApi.Name)
-
-	if err := d.Set("log_config", flattenAppsyncGraphqlApiLogConfig(resp.GraphqlApi.LogConfig)); err != nil {
-		return fmt.Errorf("error setting log_config: %s", err)
-	}
-
-	if err := d.Set("openid_connect_config", flattenAppsyncGraphqlApiOpenIDConnectConfig(resp.GraphqlApi.OpenIDConnectConfig)); err != nil {
-		return fmt.Errorf("error setting openid_connect_config: %s", err)
-	}
-
-	if err := d.Set("user_pool_config", flattenAppsyncGraphqlApiUserPoolConfig(resp.GraphqlApi.UserPoolConfig)); err != nil {
-		return fmt.Errorf("error setting user_pool_config: %s", err)
-	}
-
-	if err := d.Set("uris", aws.StringValueMap(resp.GraphqlApi.Uris)); err != nil {
-		return fmt.Errorf("error setting uris")
-	}
-
+	d.Set("user_pool_config", flattenAppsyncGraphqlApiUserPoolConfig(resp.GraphqlApi.UserPoolConfig))
+	d.Set("arn", resp.GraphqlApi.Arn)
 	return nil
 }
 
@@ -208,21 +130,15 @@ func resourceAwsAppsyncGraphqlApiUpdate(d *schema.ResourceData, meta interface{}
 	conn := meta.(*AWSClient).appsyncconn
 
 	input := &appsync.UpdateGraphqlApiInput{
-		ApiId:              aws.String(d.Id()),
-		AuthenticationType: aws.String(d.Get("authentication_type").(string)),
-		Name:               aws.String(d.Get("name").(string)),
+		ApiId: aws.String(d.Id()),
+		Name:  aws.String(d.Get("name").(string)),
 	}
 
-	if v, ok := d.GetOk("log_config"); ok {
-		input.LogConfig = expandAppsyncGraphqlApiLogConfig(v.([]interface{}))
+	if d.HasChange("authentication_type") {
+		input.AuthenticationType = aws.String(d.Get("authentication_type").(string))
 	}
-
-	if v, ok := d.GetOk("openid_connect_config"); ok {
-		input.OpenIDConnectConfig = expandAppsyncGraphqlApiOpenIDConnectConfig(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("user_pool_config"); ok {
-		input.UserPoolConfig = expandAppsyncGraphqlApiUserPoolConfig(v.([]interface{}), meta.(*AWSClient).region)
+	if d.HasChange("user_pool_config") {
+		input.UserPoolConfig = expandAppsyncGraphqlApiUserPoolConfig(d.Get("user_pool_config").([]interface{}))
 	}
 
 	_, err := conn.UpdateGraphqlApi(input)
@@ -250,112 +166,33 @@ func resourceAwsAppsyncGraphqlApiDelete(d *schema.ResourceData, meta interface{}
 	return nil
 }
 
-func expandAppsyncGraphqlApiLogConfig(l []interface{}) *appsync.LogConfig {
-	if len(l) < 1 || l[0] == nil {
+func expandAppsyncGraphqlApiUserPoolConfig(config []interface{}) *appsync.UserPoolConfig {
+	if len(config) < 1 {
 		return nil
 	}
-
-	m := l[0].(map[string]interface{})
-
-	logConfig := &appsync.LogConfig{
-		CloudWatchLogsRoleArn: aws.String(m["cloudwatch_logs_role_arn"].(string)),
-		FieldLogLevel:         aws.String(m["field_log_level"].(string)),
+	cg := config[0].(map[string]interface{})
+	upc := &appsync.UserPoolConfig{
+		AwsRegion:     aws.String(cg["aws_region"].(string)),
+		DefaultAction: aws.String(cg["default_action"].(string)),
+		UserPoolId:    aws.String(cg["user_pool_id"].(string)),
 	}
-
-	return logConfig
+	if v, ok := cg["app_id_client_regex"].(string); ok && v != "" {
+		upc.AppIdClientRegex = aws.String(v)
+	}
+	return upc
 }
 
-func expandAppsyncGraphqlApiOpenIDConnectConfig(l []interface{}) *appsync.OpenIDConnectConfig {
-	if len(l) < 1 || l[0] == nil {
-		return nil
-	}
-
-	m := l[0].(map[string]interface{})
-
-	openIDConnectConfig := &appsync.OpenIDConnectConfig{
-		Issuer: aws.String(m["issuer"].(string)),
-	}
-
-	if v, ok := m["auth_ttl"].(int); ok && v != 0 {
-		openIDConnectConfig.AuthTTL = aws.Int64(int64(v))
-	}
-
-	if v, ok := m["client_id"].(string); ok && v != "" {
-		openIDConnectConfig.ClientId = aws.String(v)
-	}
-
-	if v, ok := m["iat_ttl"].(int); ok && v != 0 {
-		openIDConnectConfig.IatTTL = aws.Int64(int64(v))
-	}
-
-	return openIDConnectConfig
-}
-
-func expandAppsyncGraphqlApiUserPoolConfig(l []interface{}, currentRegion string) *appsync.UserPoolConfig {
-	if len(l) < 1 || l[0] == nil {
-		return nil
-	}
-
-	m := l[0].(map[string]interface{})
-
-	userPoolConfig := &appsync.UserPoolConfig{
-		AwsRegion:     aws.String(currentRegion),
-		DefaultAction: aws.String(m["default_action"].(string)),
-		UserPoolId:    aws.String(m["user_pool_id"].(string)),
-	}
-
-	if v, ok := m["app_id_client_regex"].(string); ok && v != "" {
-		userPoolConfig.AppIdClientRegex = aws.String(v)
-	}
-
-	if v, ok := m["aws_region"].(string); ok && v != "" {
-		userPoolConfig.AwsRegion = aws.String(v)
-	}
-
-	return userPoolConfig
-}
-
-func flattenAppsyncGraphqlApiLogConfig(logConfig *appsync.LogConfig) []interface{} {
-	if logConfig == nil {
+func flattenAppsyncGraphqlApiUserPoolConfig(upc *appsync.UserPoolConfig) []interface{} {
+	if upc == nil {
 		return []interface{}{}
 	}
+	m := make(map[string]interface{}, 1)
 
-	m := map[string]interface{}{
-		"cloudwatch_logs_role_arn": aws.StringValue(logConfig.CloudWatchLogsRoleArn),
-		"field_log_level":          aws.StringValue(logConfig.FieldLogLevel),
-	}
-
-	return []interface{}{m}
-}
-
-func flattenAppsyncGraphqlApiOpenIDConnectConfig(openIDConnectConfig *appsync.OpenIDConnectConfig) []interface{} {
-	if openIDConnectConfig == nil {
-		return []interface{}{}
-	}
-
-	m := map[string]interface{}{
-		"auth_ttl":  aws.Int64Value(openIDConnectConfig.AuthTTL),
-		"client_id": aws.StringValue(openIDConnectConfig.ClientId),
-		"iat_ttl":   aws.Int64Value(openIDConnectConfig.IatTTL),
-		"issuer":    aws.StringValue(openIDConnectConfig.Issuer),
-	}
-
-	return []interface{}{m}
-}
-
-func flattenAppsyncGraphqlApiUserPoolConfig(userPoolConfig *appsync.UserPoolConfig) []interface{} {
-	if userPoolConfig == nil {
-		return []interface{}{}
-	}
-
-	m := map[string]interface{}{
-		"aws_region":     aws.StringValue(userPoolConfig.AwsRegion),
-		"default_action": aws.StringValue(userPoolConfig.DefaultAction),
-		"user_pool_id":   aws.StringValue(userPoolConfig.UserPoolId),
-	}
-
-	if userPoolConfig.AppIdClientRegex != nil {
-		m["app_id_client_regex"] = aws.StringValue(userPoolConfig.AppIdClientRegex)
+	m["aws_region"] = *upc.AwsRegion
+	m["default_action"] = *upc.DefaultAction
+	m["user_pool_id"] = *upc.UserPoolId
+	if upc.AppIdClientRegex != nil {
+		m["app_id_client_regex"] = *upc.AppIdClientRegex
 	}
 
 	return []interface{}{m}

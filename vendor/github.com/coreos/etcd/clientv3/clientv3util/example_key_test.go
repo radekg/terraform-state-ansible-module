@@ -18,11 +18,11 @@ import (
 	"context"
 	"log"
 
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/clientv3util"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/clientv3util"
 )
 
-func ExampleKeyMissing() {
+func ExampleKeyExists_put() {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints: []string{"127.0.0.1:2379"},
 	})
@@ -45,7 +45,7 @@ func ExampleKeyMissing() {
 	}
 }
 
-func ExampleKeyExists() {
+func ExampleKeyExists_delete() {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints: []string{"127.0.0.1:2379"},
 	})

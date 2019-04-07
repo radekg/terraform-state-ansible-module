@@ -28,11 +28,12 @@ package raft
 
 import (
 	"fmt"
-	"reflect"
-	"sort"
 	"testing"
 
-	pb "go.etcd.io/etcd/raft/raftpb"
+	"reflect"
+	"sort"
+
+	pb "github.com/coreos/etcd/raft/raftpb"
 )
 
 func TestFollowerUpdateTermFromMessage(t *testing.T) {
@@ -78,9 +79,8 @@ func testUpdateTermFromMessage(t *testing.T, state StateType) {
 // Reference: section 5.1
 func TestRejectStaleTermMessage(t *testing.T) {
 	called := false
-	fakeStep := func(r *raft, m pb.Message) error {
+	fakeStep := func(r *raft, m pb.Message) {
 		called = true
-		return nil
 	}
 	r := newTestRaft(1, []uint64{1, 2, 3}, 10, 1, NewMemoryStorage())
 	r.step = fakeStep
@@ -103,8 +103,8 @@ func TestStartAsFollower(t *testing.T) {
 }
 
 // TestLeaderBcastBeat tests that if the leader receives a heartbeat tick,
-// it will send a MsgHeartbeat with m.Index = 0, m.LogTerm=0 and empty entries
-// as heartbeat to all followers.
+// it will send a msgApp with m.Index = 0, m.LogTerm=0 and empty entries as
+// heartbeat to all followers.
 // Reference: section 5.2
 func TestLeaderBcastBeat(t *testing.T) {
 	// heartbeat interval
@@ -113,7 +113,7 @@ func TestLeaderBcastBeat(t *testing.T) {
 	r.becomeCandidate()
 	r.becomeLeader()
 	for i := 0; i < 10; i++ {
-		mustAppendEntry(r, pb.Entry{Index: uint64(i) + 1})
+		r.appendEntry(pb.Entry{Index: uint64(i) + 1})
 	}
 
 	for i := 0; i < hi; i++ {
@@ -219,7 +219,7 @@ func TestLeaderElectionInOneRoundRPC(t *testing.T) {
 
 		r.Step(pb.Message{From: 1, To: 1, Type: pb.MsgHup})
 		for id, vote := range tt.votes {
-			r.Step(pb.Message{From: id, To: 1, Term: r.Term, Type: pb.MsgVoteResp, Reject: !vote})
+			r.Step(pb.Message{From: id, To: 1, Type: pb.MsgVoteResp, Reject: !vote})
 		}
 
 		if r.state != tt.state {
@@ -332,7 +332,7 @@ func testNonleaderElectionTimeoutRandomized(t *testing.T, state StateType) {
 	}
 }
 
-func TestFollowersElectionTimeoutNonconflict(t *testing.T) {
+func TestFollowersElectioinTimeoutNonconflict(t *testing.T) {
 	SetLogger(discardLogger)
 	defer SetLogger(defaultLogger)
 	testNonleadersElectionTimeoutNonconflict(t, StateFollower)

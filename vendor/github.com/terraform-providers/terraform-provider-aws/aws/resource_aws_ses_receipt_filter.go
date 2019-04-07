@@ -19,19 +19,19 @@ func resourceAwsSesReceiptFilter() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"cidr": {
+			"cidr": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"policy": {
+			"policy": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,

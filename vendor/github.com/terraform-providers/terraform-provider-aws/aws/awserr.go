@@ -19,13 +19,12 @@ func isAWSErr(err error, code string, message string) bool {
 	return false
 }
 
-// IsAWSErrExtended returns true if the error matches all conditions
+// Returns true if the error matches all these conditions:
 //  * err is of type awserr.Error
 //  * Error.Code() matches code
 //  * Error.Message() contains message
 //  * Error.OrigErr() contains origErrMessage
-// Note: This function will be moved out of the aws package in the future.
-func IsAWSErrExtended(err error, code string, message string, origErrMessage string) bool {
+func isAWSErrExtended(err error, code string, message string, origErrMessage string) bool {
 	if !isAWSErr(err, code, message) {
 		return false
 	}
@@ -49,9 +48,7 @@ func retryOnAwsCode(code string, f func() (interface{}, error)) (interface{}, er
 	return resp, err
 }
 
-// RetryOnAwsCodes retries AWS error codes for one minute
-// Note: This function will be moved out of the aws package in the future.
-func RetryOnAwsCodes(codes []string, f func() (interface{}, error)) (interface{}, error) {
+func retryOnAwsCodes(codes []string, f func() (interface{}, error)) (interface{}, error) {
 	var resp interface{}
 	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
 		var err error

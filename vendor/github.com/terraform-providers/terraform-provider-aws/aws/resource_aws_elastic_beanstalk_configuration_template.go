@@ -20,33 +20,33 @@ func resourceAwsElasticBeanstalkConfigurationTemplate() *schema.Resource {
 		Delete: resourceAwsElasticBeanstalkConfigurationTemplateDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"application": {
+			"application": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"description": {
+			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"environment_id": {
+			"environment_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"setting": {
+			"setting": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true,
 				Elem:     resourceAwsElasticBeanstalkOptionSetting(),
 				Set:      optionSettingValueHash,
 			},
-			"solution_stack_name": {
+			"solution_stack_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,

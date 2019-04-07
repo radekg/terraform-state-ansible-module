@@ -18,8 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-
-	"go.etcd.io/etcd/clientv3/snapshot"
 )
 
 type jsonPrinter struct{ printer }
@@ -30,10 +28,9 @@ func newJSONPrinter() printer {
 	}
 }
 
-func (p *jsonPrinter) EndpointHealth(r []epHealth) { printJSON(r) }
 func (p *jsonPrinter) EndpointStatus(r []epStatus) { printJSON(r) }
 func (p *jsonPrinter) EndpointHashKV(r []epHashKV) { printJSON(r) }
-func (p *jsonPrinter) DBStatus(r snapshot.Status)  { printJSON(r) }
+func (p *jsonPrinter) DBStatus(r dbstatus)         { printJSON(r) }
 
 func printJSON(v interface{}) {
 	b, err := json.Marshal(v)

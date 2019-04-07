@@ -9,9 +9,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func dataSourceAwsIAMServerCertificate() *schema.Resource {
@@ -25,7 +25,7 @@ func dataSourceAwsIAMServerCertificate() *schema.Resource {
 				Computed:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"name_prefix"},
-				ValidateFunc:  validation.StringLenBetween(0, 128),
+				ValidateFunc:  validateMaxLength(128),
 			},
 
 			"name_prefix": {
@@ -33,7 +33,7 @@ func dataSourceAwsIAMServerCertificate() *schema.Resource {
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"name"},
-				ValidateFunc:  validation.StringLenBetween(0, 128-resource.UniqueIDSuffixLength),
+				ValidateFunc:  validateMaxLength(128 - resource.UniqueIDSuffixLength),
 			},
 
 			"path_prefix": {
@@ -123,7 +123,7 @@ func dataSourceAwsIAMServerCertificateRead(d *schema.ResourceData, meta interfac
 		return true
 	})
 	if err != nil {
-		return fmt.Errorf("Error describing certificates: %s", err)
+		return errwrap.Wrapf("Error describing certificates: {{err}}", err)
 	}
 
 	if len(metadatas) == 0 {

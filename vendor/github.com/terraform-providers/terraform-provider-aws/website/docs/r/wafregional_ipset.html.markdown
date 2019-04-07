@@ -17,7 +17,7 @@ resource "aws_wafregional_ipset" "ipset" {
   name = "tfIPSet"
 
   ip_set_descriptor {
-    type  = "IPV4"
+    type = "IPV4"
     value = "192.0.7.0/24"
   }
 
@@ -33,7 +33,7 @@ resource "aws_wafregional_ipset" "ipset" {
 The following arguments are supported:
 
 * `name` - (Required) The name or description of the IPSet.
-* `ip_set_descriptor` - (Optional) One or more pairs specifying the IP address type (IPV4 or IPV6) and the IP address range (in CIDR notation) from which web requests originate.
+* `ip_set_descriptor` - (Optional) One or more pairs specifying the IP address type (IPV4 or IPV5) and the IP address range (in CIDR notation) from which web requests originate.
 
 ## Nested Blocks
 

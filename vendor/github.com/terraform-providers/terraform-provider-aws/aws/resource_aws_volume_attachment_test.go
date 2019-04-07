@@ -16,7 +16,7 @@ func TestAccAWSVolumeAttachment_basic(t *testing.T) {
 	var i ec2.Instance
 	var v ec2.Volume
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckVolumeAttachmentDestroy,
@@ -42,7 +42,7 @@ func TestAccAWSVolumeAttachment_skipDestroy(t *testing.T) {
 	var i ec2.Instance
 	var v ec2.Volume
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckVolumeAttachmentDestroy,
@@ -72,11 +72,8 @@ func TestAccAWSVolumeAttachment_attachStopped(t *testing.T) {
 		conn := testAccProvider.Meta().(*AWSClient).ec2conn
 
 		_, err := conn.StopInstances(&ec2.StopInstancesInput{
-			InstanceIds: []*string{i.InstanceId},
+			InstanceIds: []*string{aws.String(*i.InstanceId)},
 		})
-		if err != nil {
-			t.Fatalf("error stopping instance (%s): %s", aws.StringValue(i.InstanceId), err)
-		}
 
 		stateConf := &resource.StateChangeConf{
 			Pending:    []string{"pending", "running", "stopping"},
@@ -93,7 +90,7 @@ func TestAccAWSVolumeAttachment_attachStopped(t *testing.T) {
 		}
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckVolumeAttachmentDestroy,
@@ -124,7 +121,7 @@ func TestAccAWSVolumeAttachment_attachStopped(t *testing.T) {
 }
 
 func TestAccAWSVolumeAttachment_update(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckVolumeAttachmentDestroy,

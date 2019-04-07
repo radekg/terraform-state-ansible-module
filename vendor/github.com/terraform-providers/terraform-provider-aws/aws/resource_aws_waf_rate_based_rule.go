@@ -19,32 +19,32 @@ func resourceAwsWafRateBasedRule() *schema.Resource {
 		Delete: resourceAwsWafRateBasedRuleDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"metric_name": {
+			"metric_name": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateWafMetricName,
 			},
-			"predicates": {
+			"predicates": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"negated": {
+						"negated": &schema.Schema{
 							Type:     schema.TypeBool,
 							Required: true,
 						},
-						"data_id": {
+						"data_id": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validation.StringLenBetween(0, 128),
+							ValidateFunc: validateMaxLength(128),
 						},
-						"type": {
+						"type": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validateWafPredicatesType(),
@@ -52,11 +52,11 @@ func resourceAwsWafRateBasedRule() *schema.Resource {
 					},
 				},
 			},
-			"rate_key": {
+			"rate_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"rate_limit": {
+			"rate_limit": &schema.Schema{
 				Type:         schema.TypeInt,
 				Required:     true,
 				ValidateFunc: validation.IntAtLeast(2000),
@@ -68,7 +68,7 @@ func resourceAwsWafRateBasedRule() *schema.Resource {
 func resourceAwsWafRateBasedRuleCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).wafconn
 
-	wr := newWafRetryer(conn)
+	wr := newWafRetryer(conn, "global")
 	out, err := wr.RetryWithToken(func(token *string) (interface{}, error) {
 		params := &waf.CreateRateBasedRuleInput{
 			ChangeToken: token,
@@ -157,7 +157,7 @@ func resourceAwsWafRateBasedRuleDelete(d *schema.ResourceData, meta interface{})
 		}
 	}
 
-	wr := newWafRetryer(conn)
+	wr := newWafRetryer(conn, "global")
 	_, err := wr.RetryWithToken(func(token *string) (interface{}, error) {
 		req := &waf.DeleteRateBasedRuleInput{
 			ChangeToken: token,
@@ -174,7 +174,7 @@ func resourceAwsWafRateBasedRuleDelete(d *schema.ResourceData, meta interface{})
 }
 
 func updateWafRateBasedRuleResource(id string, oldP, newP []interface{}, rateLimit interface{}, conn *waf.WAF) error {
-	wr := newWafRetryer(conn)
+	wr := newWafRetryer(conn, "global")
 	_, err := wr.RetryWithToken(func(token *string) (interface{}, error) {
 		req := &waf.UpdateRateBasedRuleInput{
 			ChangeToken: token,

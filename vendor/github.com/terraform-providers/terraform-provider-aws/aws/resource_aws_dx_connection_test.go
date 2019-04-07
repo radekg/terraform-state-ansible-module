@@ -11,31 +11,10 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSDxConnection_importBasic(t *testing.T) {
-	resourceName := "aws_dx_connection.hoge"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAwsDxConnectionDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccDxConnectionConfig(acctest.RandString(5)),
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSDxConnection_basic(t *testing.T) {
 	connectionName := fmt.Sprintf("tf-dx-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAwsDxConnectionDestroy,
@@ -57,7 +36,7 @@ func TestAccAWSDxConnection_basic(t *testing.T) {
 func TestAccAWSDxConnection_tags(t *testing.T) {
 	connectionName := fmt.Sprintf("tf-dx-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAwsDxConnectionDestroy,

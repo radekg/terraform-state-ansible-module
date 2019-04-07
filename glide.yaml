@@ -1,5 +1,0 @@
-package: github.com/radekg/terraform-state-ansible-module
-import:
-- package: github.com/hashicorp/terraform
-  version: v0.11.10
-- package: github.com/hashicorp/hcl2

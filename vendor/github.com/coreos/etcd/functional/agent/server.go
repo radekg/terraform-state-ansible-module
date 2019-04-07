@@ -21,9 +21,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"go.etcd.io/etcd/embed"
-	"go.etcd.io/etcd/functional/rpcpb"
-	"go.etcd.io/etcd/pkg/proxy"
+	"github.com/coreos/etcd/functional/rpcpb"
+	"github.com/coreos/etcd/pkg/proxy"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -34,9 +33,8 @@ import (
 // no need to lock fields since request operations are
 // serialized in tester-side
 type Server struct {
-	lg *zap.Logger
-
 	grpcServer *grpc.Server
+	lg         *zap.Logger
 
 	network string
 	address string
@@ -48,7 +46,6 @@ type Server struct {
 	*rpcpb.Member
 	*rpcpb.Tester
 
-	etcdServer  *embed.Etcd
 	etcdCmd     *exec.Cmd
 	etcdLogFile *os.File
 
@@ -64,10 +61,10 @@ func NewServer(
 	address string,
 ) *Server {
 	return &Server{
-		lg:                         lg,
-		network:                    network,
-		address:                    address,
-		last:                       rpcpb.Operation_NOT_STARTED,
+		lg:      lg,
+		network: network,
+		address: address,
+		last:    rpcpb.Operation_NOT_STARTED,
 		advertiseClientPortToProxy: make(map[int]proxy.Server),
 		advertisePeerPortToProxy:   make(map[int]proxy.Server),
 	}

@@ -46,10 +46,6 @@ func dataSourceAwsEksCluster() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"platform_version": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"role_arn": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -114,7 +110,6 @@ func dataSourceAwsEksClusterRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("created_at", aws.TimeValue(cluster.CreatedAt).String())
 	d.Set("endpoint", cluster.Endpoint)
 	d.Set("name", cluster.Name)
-	d.Set("platform_version", cluster.PlatformVersion)
 	d.Set("role_arn", cluster.RoleArn)
 	d.Set("version", cluster.Version)
 

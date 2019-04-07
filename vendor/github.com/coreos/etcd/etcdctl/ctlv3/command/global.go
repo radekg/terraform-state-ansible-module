@@ -25,37 +25,33 @@ import (
 	"time"
 
 	"github.com/bgentry/speakeasy"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/pkg/flags"
-	"go.etcd.io/etcd/pkg/srv"
-	"go.etcd.io/etcd/pkg/transport"
-
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/pkg/flags"
+	"github.com/coreos/etcd/pkg/srv"
+	"github.com/coreos/etcd/pkg/transport"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 	"google.golang.org/grpc/grpclog"
 )
 
 // GlobalFlags are flags that defined globally
 // and are inherited to all sub-commands.
 type GlobalFlags struct {
-	Insecure              bool
-	InsecureSkipVerify    bool
-	InsecureDiscovery     bool
-	Endpoints             []string
-	DialTimeout           time.Duration
-	CommandTimeOut        time.Duration
-	KeepAliveTime         time.Duration
-	KeepAliveTimeout      time.Duration
-	DNSClusterServiceName string
+	Insecure           bool
+	InsecureSkipVerify bool
+	InsecureDiscovery  bool
+	Endpoints          []string
+	DialTimeout        time.Duration
+	CommandTimeOut     time.Duration
+	KeepAliveTime      time.Duration
+	KeepAliveTimeout   time.Duration
 
 	TLS transport.TLSInfo
 
 	OutputFormat string
 	IsHex        bool
 
-	User     string
-	Password string
+	User string
 
 	Debug bool
 }
@@ -76,9 +72,8 @@ type authCfg struct {
 }
 
 type discoveryCfg struct {
-	domain      string
-	insecure    bool
-	serviceName string
+	domain   string
+	insecure bool
 }
 
 var display printer = &simplePrinter{}
@@ -132,11 +127,7 @@ func clientConfigFromCmd(cmd *cobra.Command) *clientConfig {
 			fmt.Fprintf(os.Stderr, "%s=%v\n", flags.FlagToEnv("ETCDCTL", f.Name), f.Value)
 		})
 	} else {
-		// WARNING logs contain important information like TLS misconfirugation, but spams
-		// too many routine connection disconnects to turn on by default.
-		//
-		// See https://github.com/etcd-io/etcd/pull/9623 for background
-		clientv3.SetLogger(grpclog.NewLoggerV2(ioutil.Discard, ioutil.Discard, os.Stderr))
+		clientv3.SetLogger(grpclog.NewLoggerV2(ioutil.Discard, ioutil.Discard, ioutil.Discard))
 	}
 
 	cfg := &clientConfig{}
@@ -153,15 +144,6 @@ func clientConfigFromCmd(cmd *cobra.Command) *clientConfig {
 	cfg.acfg = authCfgFromCmd(cmd)
 
 	initDisplayFromCmd(cmd)
-	return cfg
-}
-
-func mustClientCfgFromCmd(cmd *cobra.Command) *clientv3.Config {
-	cc := clientConfigFromCmd(cmd)
-	cfg, err := newClientCfg(cc.endpoints, cc.dialTimeout, cc.keepAliveTime, cc.keepAliveTimeout, cc.scfg, cc.acfg)
-	if err != nil {
-		ExitWithError(ExitBadArgs, err)
-	}
 	return cfg
 }
 
@@ -188,7 +170,6 @@ func newClientCfg(endpoints []string, dialTimeout, keepAliveTime, keepAliveTimeo
 	// set tls if any one tls option set
 	var cfgtls *transport.TLSInfo
 	tlsinfo := transport.TLSInfo{}
-	tlsinfo.Logger, _ = zap.NewProduction()
 	if scfg.cert != "" {
 		tlsinfo.CertFile = scfg.cert
 		cfgtls = &tlsinfo
@@ -200,7 +181,7 @@ func newClientCfg(endpoints []string, dialTimeout, keepAliveTime, keepAliveTimeo
 	}
 
 	if scfg.cacert != "" {
-		tlsinfo.TrustedCAFile = scfg.cacert
+		tlsinfo.CAFile = scfg.cacert
 		cfgtls = &tlsinfo
 	}
 
@@ -345,10 +326,6 @@ func authCfgFromCmd(cmd *cobra.Command) *authCfg {
 	if err != nil {
 		ExitWithError(ExitBadArgs, err)
 	}
-	passwordFlag, err := cmd.Flags().GetString("password")
-	if err != nil {
-		ExitWithError(ExitBadArgs, err)
-	}
 
 	if userFlag == "" {
 		return nil
@@ -356,21 +333,16 @@ func authCfgFromCmd(cmd *cobra.Command) *authCfg {
 
 	var cfg authCfg
 
-	if passwordFlag == "" {
-		splitted := strings.SplitN(userFlag, ":", 2)
-		if len(splitted) < 2 {
-			cfg.username = userFlag
-			cfg.password, err = speakeasy.Ask("Password: ")
-			if err != nil {
-				ExitWithError(ExitError, err)
-			}
-		} else {
-			cfg.username = splitted[0]
-			cfg.password = splitted[1]
+	splitted := strings.SplitN(userFlag, ":", 2)
+	if len(splitted) < 2 {
+		cfg.username = userFlag
+		cfg.password, err = speakeasy.Ask("Password: ")
+		if err != nil {
+			ExitWithError(ExitError, err)
 		}
 	} else {
-		cfg.username = userFlag
-		cfg.password = passwordFlag
+		cfg.username = splitted[0]
+		cfg.password = splitted[1]
 	}
 
 	return &cfg
@@ -392,19 +364,10 @@ func discoverySrvFromCmd(cmd *cobra.Command) string {
 	return domainStr
 }
 
-func discoveryDNSClusterServiceNameFromCmd(cmd *cobra.Command) string {
-	serviceNameStr, err := cmd.Flags().GetString("discovery-srv-name")
-	if err != nil {
-		ExitWithError(ExitBadArgs, err)
-	}
-	return serviceNameStr
-}
-
 func discoveryCfgFromCmd(cmd *cobra.Command) *discoveryCfg {
 	return &discoveryCfg{
-		domain:      discoverySrvFromCmd(cmd),
-		insecure:    insecureDiscoveryFromCmd(cmd),
-		serviceName: discoveryDNSClusterServiceNameFromCmd(cmd),
+		domain:   discoverySrvFromCmd(cmd),
+		insecure: insecureDiscoveryFromCmd(cmd),
 	}
 }
 
@@ -416,11 +379,6 @@ func endpointsFromCmd(cmd *cobra.Command) ([]string, error) {
 	// If domain discovery returns no endpoints, check endpoints flag
 	if len(eps) == 0 {
 		eps, err = cmd.Flags().GetStringSlice("endpoints")
-		if err == nil {
-			for i, ip := range eps {
-				eps[i] = strings.TrimSpace(ip)
-			}
-		}
 	}
 	return eps, err
 }
@@ -433,7 +391,7 @@ func endpointsFromFlagValue(cmd *cobra.Command) ([]string, error) {
 		return []string{}, nil
 	}
 
-	srvs, err := srv.GetClient("etcd-client", discoveryCfg.domain, discoveryCfg.serviceName)
+	srvs, err := srv.GetClient("etcd-client", discoveryCfg.domain)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +402,7 @@ func endpointsFromFlagValue(cmd *cobra.Command) ([]string, error) {
 	// strip insecure connections
 	ret := []string{}
 	for _, ep := range eps {
-		if strings.HasPrefix("http://", ep) {
+		if strings.HasPrefix(ep, "http://") {
 			fmt.Fprintf(os.Stderr, "ignoring discovered insecure endpoint %q\n", ep)
 			continue
 		}

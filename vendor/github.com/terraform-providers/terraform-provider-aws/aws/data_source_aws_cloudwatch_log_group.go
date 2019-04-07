@@ -3,6 +3,8 @@ package aws
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -31,10 +33,27 @@ func dataSourceAwsCloudwatchLogGroupRead(d *schema.ResourceData, meta interface{
 	name := d.Get("name").(string)
 	conn := meta.(*AWSClient).cloudwatchlogsconn
 
-	logGroup, err := lookupCloudWatchLogGroup(conn, name)
+	input := &cloudwatchlogs.DescribeLogGroupsInput{
+		LogGroupNamePrefix: aws.String(name),
+	}
+
+	var logGroup *cloudwatchlogs.LogGroup
+	// iterate over the pages of log groups until we find the one we are looking for
+	err := conn.DescribeLogGroupsPages(input,
+		func(resp *cloudwatchlogs.DescribeLogGroupsOutput, _ bool) bool {
+			for _, lg := range resp.LogGroups {
+				if aws.StringValue(lg.LogGroupName) == name {
+					logGroup = lg
+					return false
+				}
+			}
+			return true
+		})
+
 	if err != nil {
 		return err
 	}
+
 	if logGroup == nil {
 		return fmt.Errorf("No log group named %s found\n", name)
 	}

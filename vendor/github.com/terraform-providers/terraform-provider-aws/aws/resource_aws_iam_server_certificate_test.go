@@ -68,37 +68,12 @@ func testSweepIamServerCertificates(region string) error {
 	return nil
 }
 
-func TestAccAWSIAMServerCertificate_importBasic(t *testing.T) {
-	resourceName := "aws_iam_server_certificate.test_cert"
-	rInt := acctest.RandInt()
-	resourceId := fmt.Sprintf("terraform-test-cert-%d", rInt)
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProvidersWithTLS,
-		CheckDestroy: testAccCheckIAMServerCertificateDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccIAMServerCertConfig(rInt),
-			},
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateId:     resourceId,
-				ImportStateVerifyIgnore: []string{
-					"private_key"},
-			},
-		},
-	})
-}
-
 func TestAccAWSIAMServerCertificate_basic(t *testing.T) {
 	var cert iam.ServerCertificate
 	rInt := acctest.RandInt()
 	var certBody string
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckIAMServerCertificateDestroy,
@@ -120,7 +95,7 @@ func TestAccAWSIAMServerCertificate_name_prefix(t *testing.T) {
 	var certBody string
 	rInt := acctest.RandInt()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckIAMServerCertificateDestroy,
@@ -155,7 +130,7 @@ func TestAccAWSIAMServerCertificate_disappears(t *testing.T) {
 		return nil
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckIAMServerCertificateDestroy,
@@ -179,7 +154,7 @@ func TestAccAWSIAMServerCertificate_file(t *testing.T) {
 	unixFile := "test-fixtures/iam-ssl-unix-line-endings.pem"
 	winFile := "test-fixtures/iam-ssl-windows-line-endings.pem.winfile"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckIAMServerCertificateDestroy,

@@ -11,7 +11,7 @@ import (
 func TestAccAWSDefaultVpcDhcpOptions_basic(t *testing.T) {
 	var d ec2.DhcpOptions
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSDefaultVpcDhcpOptionsDestroy,

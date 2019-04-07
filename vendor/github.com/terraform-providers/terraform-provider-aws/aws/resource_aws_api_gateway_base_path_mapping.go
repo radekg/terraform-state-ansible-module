@@ -3,7 +3,6 @@ package aws
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -20,9 +19,6 @@ func resourceAwsApiGatewayBasePathMapping() *schema.Resource {
 		Create: resourceAwsApiGatewayBasePathMappingCreate,
 		Read:   resourceAwsApiGatewayBasePathMappingRead,
 		Delete: resourceAwsApiGatewayBasePathMappingDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
 
 		Schema: map[string]*schema.Schema{
 			"api_id": {
@@ -86,9 +82,15 @@ func resourceAwsApiGatewayBasePathMappingCreate(d *schema.ResourceData, meta int
 func resourceAwsApiGatewayBasePathMappingRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).apigateway
 
-	domainName, basePath, err := decodeApiGatewayBasePathMappingId(d.Id())
-	if err != nil {
-		return err
+	domainName := d.Get("domain_name").(string)
+	basePath := d.Get("base_path").(string)
+
+	if domainName == "" {
+		return nil
+	}
+
+	if basePath == "" {
+		basePath = emptyBasePathMappingValue
 	}
 
 	mapping, err := conn.GetBasePathMapping(&apigateway.GetBasePathMappingInput{
@@ -112,7 +114,6 @@ func resourceAwsApiGatewayBasePathMappingRead(d *schema.ResourceData, meta inter
 	}
 
 	d.Set("base_path", mappingBasePath)
-	d.Set("domain_name", domainName)
 	d.Set("api_id", mapping.RestApiId)
 	d.Set("stage_name", mapping.Stage)
 
@@ -122,13 +123,14 @@ func resourceAwsApiGatewayBasePathMappingRead(d *schema.ResourceData, meta inter
 func resourceAwsApiGatewayBasePathMappingDelete(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).apigateway
 
-	domainName, basePath, err := decodeApiGatewayBasePathMappingId(d.Id())
-	if err != nil {
-		return err
+	basePath := d.Get("base_path").(string)
+
+	if basePath == "" {
+		basePath = emptyBasePathMappingValue
 	}
 
-	_, err = conn.DeleteBasePathMapping(&apigateway.DeleteBasePathMappingInput{
-		DomainName: aws.String(domainName),
+	_, err := conn.DeleteBasePathMapping(&apigateway.DeleteBasePathMappingInput{
+		DomainName: aws.String(d.Get("domain_name").(string)),
 		BasePath:   aws.String(basePath),
 	})
 
@@ -141,26 +143,4 @@ func resourceAwsApiGatewayBasePathMappingDelete(d *schema.ResourceData, meta int
 	}
 
 	return nil
-}
-
-func decodeApiGatewayBasePathMappingId(id string) (string, string, error) {
-	idFormatErr := fmt.Errorf("Unexpected format of ID (%q), expected DOMAIN/BASEPATH", id)
-
-	parts := strings.SplitN(id, "/", 2)
-	if len(parts) != 2 {
-		return "", "", idFormatErr
-	}
-
-	domainName := parts[0]
-	basePath := parts[1]
-
-	if domainName == "" {
-		return "", "", idFormatErr
-	}
-
-	if basePath == "" {
-		basePath = emptyBasePathMappingValue
-	}
-
-	return domainName, basePath, nil
 }

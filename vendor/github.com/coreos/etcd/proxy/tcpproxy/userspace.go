@@ -23,10 +23,11 @@ import (
 	"time"
 
 	"github.com/coreos/pkg/capnslog"
-	"go.uber.org/zap"
 )
 
-var plog = capnslog.NewPackageLogger("go.etcd.io/etcd", "proxy/tcpproxy")
+var (
+	plog = capnslog.NewPackageLogger("github.com/coreos/etcd", "proxy/tcpproxy")
+)
 
 type remote struct {
 	mu       sync.Mutex
@@ -60,7 +61,6 @@ func (r *remote) isActive() bool {
 }
 
 type TCPProxy struct {
-	Logger          *zap.Logger
 	Listener        net.Listener
 	Endpoints       []*net.SRV
 	MonitorInterval time.Duration
@@ -86,11 +86,7 @@ func (tp *TCPProxy) Run() error {
 	for _, ep := range tp.Endpoints {
 		eps = append(eps, fmt.Sprintf("%s:%d", ep.Target, ep.Port))
 	}
-	if tp.Logger != nil {
-		tp.Logger.Info("ready to proxy client requests", zap.Strings("endpoints", eps))
-	} else {
-		plog.Printf("ready to proxy client requests to %+v", eps)
-	}
+	plog.Printf("ready to proxy client requests to %+v", eps)
 
 	go tp.runMonitor()
 	for {
@@ -179,11 +175,7 @@ func (tp *TCPProxy) serve(in net.Conn) {
 			break
 		}
 		remote.inactivate()
-		if tp.Logger != nil {
-			tp.Logger.Warn("deactivated endpoint", zap.String("address", remote.addr), zap.Duration("interval", tp.MonitorInterval), zap.Error(err))
-		} else {
-			plog.Warningf("deactivated endpoint [%s] due to %v for %v", remote.addr, err, tp.MonitorInterval)
-		}
+		plog.Warningf("deactivated endpoint [%s] due to %v for %v", remote.addr, err, tp.MonitorInterval)
 	}
 
 	if out == nil {
@@ -213,17 +205,9 @@ func (tp *TCPProxy) runMonitor() {
 				}
 				go func(r *remote) {
 					if err := r.tryReactivate(); err != nil {
-						if tp.Logger != nil {
-							tp.Logger.Warn("failed to activate endpoint (stay inactive for another interval)", zap.String("address", r.addr), zap.Duration("interval", tp.MonitorInterval), zap.Error(err))
-						} else {
-							plog.Warningf("failed to activate endpoint [%s] due to %v (stay inactive for another %v)", r.addr, err, tp.MonitorInterval)
-						}
+						plog.Warningf("failed to activate endpoint [%s] due to %v (stay inactive for another %v)", r.addr, err, tp.MonitorInterval)
 					} else {
-						if tp.Logger != nil {
-							tp.Logger.Info("activated", zap.String("address", r.addr))
-						} else {
-							plog.Printf("activated %s", r.addr)
-						}
+						plog.Printf("activated %s", r.addr)
 					}
 				}(rem)
 			}

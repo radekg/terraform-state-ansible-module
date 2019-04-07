@@ -20,25 +20,25 @@ func resourceAwsIamUserSshKey() *schema.Resource {
 		Delete: resourceAwsIamUserSshKeyDelete,
 
 		Schema: map[string]*schema.Schema{
-			"ssh_public_key_id": {
+			"ssh_public_key_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"fingerprint": {
+			"fingerprint": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"username": {
+			"username": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"public_key": {
+			"public_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"encoding": {
+			"encoding": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -47,7 +47,7 @@ func resourceAwsIamUserSshKey() *schema.Resource {
 				}, false),
 			},
 
-			"status": {
+			"status": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,

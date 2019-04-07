@@ -22,36 +22,36 @@ func resourceAwsLBSSLNegotiationPolicy() *schema.Resource {
 		Delete: resourceAwsLBSSLNegotiationPolicyDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"load_balancer": {
+			"load_balancer": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"lb_port": {
+			"lb_port": &schema.Schema{
 				Type:     schema.TypeInt,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"attribute": {
+			"attribute": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
+						"name": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 						},
 
-						"value": {
+						"value": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 						},

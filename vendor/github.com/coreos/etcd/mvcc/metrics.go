@@ -101,39 +101,33 @@ var (
 			Help:      "Total number of pending events to be sent.",
 		})
 
-	indexCompactionPauseMs = prometheus.NewHistogram(
+	indexCompactionPauseDurations = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
 			Namespace: "etcd_debugging",
 			Subsystem: "mvcc",
 			Name:      "index_compaction_pause_duration_milliseconds",
 			Help:      "Bucketed histogram of index compaction pause duration.",
-
-			// lowest bucket start of upper bound 0.5 ms with factor 2
-			// highest bucket start of 0.5 ms * 2^13 == 4.096 sec
-			Buckets: prometheus.ExponentialBuckets(0.5, 2, 14),
+			// 0.5ms -> 1second
+			Buckets: prometheus.ExponentialBuckets(0.5, 2, 12),
 		})
 
-	dbCompactionPauseMs = prometheus.NewHistogram(
+	dbCompactionPauseDurations = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
 			Namespace: "etcd_debugging",
 			Subsystem: "mvcc",
 			Name:      "db_compaction_pause_duration_milliseconds",
 			Help:      "Bucketed histogram of db compaction pause duration.",
-
-			// lowest bucket start of upper bound 1 ms with factor 2
-			// highest bucket start of 1 ms * 2^12 == 4.096 sec
+			// 1ms -> 4second
 			Buckets: prometheus.ExponentialBuckets(1, 2, 13),
 		})
 
-	dbCompactionTotalMs = prometheus.NewHistogram(
+	dbCompactionTotalDurations = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
 			Namespace: "etcd_debugging",
 			Subsystem: "mvcc",
 			Name:      "db_compaction_total_duration_milliseconds",
 			Help:      "Bucketed histogram of db compaction total duration.",
-
-			// lowest bucket start of upper bound 100 ms with factor 2
-			// highest bucket start of 100 ms * 2^13 == 8.192 sec
+			// 100ms -> 800second
 			Buckets: prometheus.ExponentialBuckets(100, 2, 14),
 		})
 
@@ -145,6 +139,18 @@ var (
 			Help:      "Total number of db keys compacted.",
 		})
 
+	dbTotalSizeDebugging = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "etcd_debugging",
+		Subsystem: "mvcc",
+		Name:      "db_total_size_in_bytes",
+		Help:      "Total size of the underlying database physically allocated in bytes. Use etcd_mvcc_db_total_size_in_bytes",
+	},
+		func() float64 {
+			reportDbTotalSizeInBytesMu.RLock()
+			defer reportDbTotalSizeInBytesMu.RUnlock()
+			return reportDbTotalSizeInBytes()
+		},
+	)
 	dbTotalSize = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace: "etcd",
 		Subsystem: "mvcc",
@@ -161,23 +167,6 @@ var (
 	reportDbTotalSizeInBytesMu sync.RWMutex
 	reportDbTotalSizeInBytes   = func() float64 { return 0 }
 
-	// TODO: remove this in v3.5
-	dbTotalSizeDebugging = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace: "etcd_debugging",
-		Subsystem: "mvcc",
-		Name:      "db_total_size_in_bytes",
-		Help:      "Total size of the underlying database physically allocated in bytes.",
-	},
-		func() float64 {
-			reportDbTotalSizeInBytesDebuggingMu.RLock()
-			defer reportDbTotalSizeInBytesDebuggingMu.RUnlock()
-			return reportDbTotalSizeInBytesDebugging()
-		},
-	)
-	// overridden by mvcc initialization
-	reportDbTotalSizeInBytesDebuggingMu sync.RWMutex
-	reportDbTotalSizeInBytesDebugging   = func() float64 { return 0 }
-
 	dbTotalSizeInUse = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace: "etcd",
 		Subsystem: "mvcc",
@@ -192,9 +181,9 @@ var (
 	)
 	// overridden by mvcc initialization
 	reportDbTotalSizeInUseInBytesMu sync.RWMutex
-	reportDbTotalSizeInUseInBytes   = func() float64 { return 0 }
+	reportDbTotalSizeInUseInBytes   func() float64 = func() float64 { return 0 }
 
-	hashSec = prometheus.NewHistogram(prometheus.HistogramOpts{
+	hashDurations = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "etcd",
 		Subsystem: "mvcc",
 		Name:      "hash_duration_seconds",
@@ -206,7 +195,7 @@ var (
 		Buckets: prometheus.ExponentialBuckets(.01, 2, 15),
 	})
 
-	hashRevSec = prometheus.NewHistogram(prometheus.HistogramOpts{
+	hashRevDurations = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "etcd",
 		Subsystem: "mvcc",
 		Name:      "hash_rev_duration_seconds",
@@ -230,15 +219,15 @@ func init() {
 	prometheus.MustRegister(slowWatcherGauge)
 	prometheus.MustRegister(totalEventsCounter)
 	prometheus.MustRegister(pendingEventsGauge)
-	prometheus.MustRegister(indexCompactionPauseMs)
-	prometheus.MustRegister(dbCompactionPauseMs)
-	prometheus.MustRegister(dbCompactionTotalMs)
+	prometheus.MustRegister(indexCompactionPauseDurations)
+	prometheus.MustRegister(dbCompactionPauseDurations)
+	prometheus.MustRegister(dbCompactionTotalDurations)
 	prometheus.MustRegister(dbCompactionKeysCounter)
-	prometheus.MustRegister(dbTotalSize)
 	prometheus.MustRegister(dbTotalSizeDebugging)
+	prometheus.MustRegister(dbTotalSize)
 	prometheus.MustRegister(dbTotalSizeInUse)
-	prometheus.MustRegister(hashSec)
-	prometheus.MustRegister(hashRevSec)
+	prometheus.MustRegister(hashDurations)
+	prometheus.MustRegister(hashRevDurations)
 }
 
 // ReportEventReceived reports that an event is received.

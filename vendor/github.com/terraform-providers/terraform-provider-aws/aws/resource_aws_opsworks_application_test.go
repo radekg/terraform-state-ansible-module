@@ -19,7 +19,7 @@ func TestAccAWSOpsworksApplication(t *testing.T) {
 	rInt := acctest.RandInt()
 	name := fmt.Sprintf("tf-ops-acc-application-%d", rInt)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAwsOpsworksApplicationDestroy,

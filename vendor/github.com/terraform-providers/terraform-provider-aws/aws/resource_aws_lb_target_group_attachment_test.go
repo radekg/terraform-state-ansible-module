@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
@@ -16,7 +17,7 @@ import (
 func TestAccAWSLBTargetGroupAttachment_basic(t *testing.T) {
 	targetGroupName := fmt.Sprintf("test-target-group-%s", acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_lb_target_group.test",
 		Providers:     testAccProviders,
@@ -35,7 +36,7 @@ func TestAccAWSLBTargetGroupAttachment_basic(t *testing.T) {
 func TestAccAWSLBTargetGroupAttachmentBackwardsCompatibility(t *testing.T) {
 	targetGroupName := fmt.Sprintf("test-target-group-%s", acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_alb_target_group.test",
 		Providers:     testAccProviders,
@@ -54,7 +55,7 @@ func TestAccAWSLBTargetGroupAttachmentBackwardsCompatibility(t *testing.T) {
 func TestAccAWSLBTargetGroupAttachment_withoutPort(t *testing.T) {
 	targetGroupName := fmt.Sprintf("test-target-group-%s", acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_lb_target_group.test",
 		Providers:     testAccProviders,
@@ -73,7 +74,7 @@ func TestAccAWSLBTargetGroupAttachment_withoutPort(t *testing.T) {
 func TestAccAWSALBTargetGroupAttachment_ipAddress(t *testing.T) {
 	targetGroupName := fmt.Sprintf("test-target-group-%s", acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_lb_target_group.test",
 		Providers:     testAccProviders,
@@ -160,10 +161,10 @@ func testAccCheckAWSLBTargetGroupAttachmentDestroy(s *terraform.State) error {
 		}
 
 		// Verify the error
-		if isAWSErr(err, elbv2.ErrCodeTargetGroupNotFoundException, "") || isAWSErr(err, elbv2.ErrCodeInvalidTargetException, "") {
+		if isTargetGroupNotFound(err) || isInvalidTarget(err) {
 			return nil
 		} else {
-			return fmt.Errorf("Unexpected error checking LB destroyed: %s", err)
+			return errwrap.Wrapf("Unexpected error checking LB destroyed: {{err}}", err)
 		}
 	}
 

@@ -49,13 +49,6 @@ func TestLambdaPermissionUnmarshalling(t *testing.T) {
 			v.Statement[0].Condition["StringEquals"]["AWS:SourceAccount"],
 			expectedSourceAccount)
 	}
-
-	expectedEventSourceToken := "test-event-source-token"
-	if v.Statement[0].Condition["StringEquals"]["lambda:EventSourceToken"] != expectedEventSourceToken {
-		t.Fatalf("Expected Event Source Token to match (%q != %q)",
-			v.Statement[0].Condition["StringEquals"]["lambda:EventSourceToken"],
-			expectedEventSourceToken)
-	}
 }
 
 func TestLambdaPermissionGetQualifierFromLambdaAliasOrVersionArn_alias(t *testing.T) {
@@ -171,7 +164,7 @@ func TestAccAWSLambdaPermission_basic(t *testing.T) {
 	roleName := fmt.Sprintf("tf_acc_role_lambda_perm_basic_%s", rString)
 	funcArnRe := regexp.MustCompile(":function:" + funcName + "$")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -185,7 +178,6 @@ func TestAccAWSLambdaPermission_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_lambda_permission.allow_cloudwatch", "statement_id", "AllowExecutionFromCloudWatch"),
 					resource.TestCheckResourceAttr("aws_lambda_permission.allow_cloudwatch", "qualifier", ""),
 					resource.TestMatchResourceAttr("aws_lambda_permission.allow_cloudwatch", "function_name", funcArnRe),
-					resource.TestCheckResourceAttr("aws_lambda_permission.allow_cloudwatch", "event_source_token", "test-event-source-token"),
 				),
 			},
 		},
@@ -200,7 +192,7 @@ func TestAccAWSLambdaPermission_withRawFunctionName(t *testing.T) {
 	roleName := fmt.Sprintf("tf_acc_role_lambda_perm_w_raw_fname_%s", rString)
 	funcArnRe := regexp.MustCompile(":function:" + funcName + "$")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -225,7 +217,7 @@ func TestAccAWSLambdaPermission_withStatementIdPrefix(t *testing.T) {
 	endsWithFuncName := regexp.MustCompile(":function:lambda_function_name_perm$")
 	startsWithPrefix := regexp.MustCompile("^AllowExecutionWithStatementIdPrefix-")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -253,7 +245,7 @@ func TestAccAWSLambdaPermission_withQualifier(t *testing.T) {
 	roleName := fmt.Sprintf("tf_acc_role_lambda_perm_w_qualifier_%s", rString)
 	funcArnRe := regexp.MustCompile(":function:" + funcName + "$")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -285,7 +277,7 @@ func TestAccAWSLambdaPermission_multiplePerms(t *testing.T) {
 	roleName := fmt.Sprintf("tf_acc_role_lambda_perm_multi_%s", rString)
 	funcArnRe := regexp.MustCompile(":function:" + funcName + "$")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -343,7 +335,7 @@ func TestAccAWSLambdaPermission_withS3(t *testing.T) {
 	roleName := fmt.Sprintf("tf_acc_role_lambda_perm_w_s3_%s", rString)
 	funcArnRe := regexp.MustCompile(":function:" + funcName + "$")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -375,7 +367,7 @@ func TestAccAWSLambdaPermission_withSNS(t *testing.T) {
 	funcArnRe := regexp.MustCompile(":function:" + funcName + "$")
 	topicArnRe := regexp.MustCompile(":" + topicName + "$")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -404,7 +396,7 @@ func TestAccAWSLambdaPermission_withIAMRole(t *testing.T) {
 	funcArnRe := regexp.MustCompile(":function:" + funcName + "$")
 	roleArnRe := regexp.MustCompile("/" + roleName + "$")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLambdaPermissionDestroy,
@@ -559,7 +551,6 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
     action = "lambda:InvokeFunction"
     function_name = "${aws_lambda_function.test_lambda.arn}"
     principal = "events.amazonaws.com"
-    event_source_token = "test-event-source-token"
 }
 
 resource "aws_lambda_function" "test_lambda" {
@@ -910,7 +901,7 @@ var testLambdaPolicy = []byte(`{
 	"Statement": [
 		{
 			"Condition": {
-				"StringEquals": {"AWS:SourceAccount": "319201112229", "lambda:EventSourceToken": "test-event-source-token"},
+				"StringEquals": {"AWS:SourceAccount": "319201112229"},
 				"ArnLike":{"AWS:SourceArn":"arn:aws:events:eu-west-1:319201112229:rule/RunDaily"}
 			},
 			"Action": "lambda:InvokeFunction",

@@ -1572,7 +1572,7 @@
       }
     }
   },
-  "revision": "20181020",
+  "revision": "20190214",
   "rootUrl": "https://appengine.googleapis.com/",
   "schemas": {
     "ApiConfigHandler": {
@@ -2061,7 +2061,7 @@
         },
         "cloudBuildOptions": {
           "$ref": "CloudBuildOptions",
-          "description": "Options for any Google Cloud Build builds created as a part of this deployment.Note that this is orthogonal to the build parameter, where the deployment depends on an already existing cloud build. These options will only be used if a new build is created, such as when deploying to the App Engine flexible environment using files or zip."
+          "description": "Options for any Google Cloud Build builds created as a part of this deployment.These options will only be used if a new build is created, such as when deploying to the App Engine flexible environment using files or zip."
         },
         "container": {
           "$ref": "ContainerInfo",
@@ -2771,7 +2771,7 @@
           "type": "string"
         },
         "sessionAffinity": {
-          "description": "Enable session affinity.",
+          "description": "Enable session affinity. Only applicable in the App Engine flexible environment.",
           "type": "boolean"
         },
         "subnetworkName": {
@@ -2857,39 +2857,6 @@
           },
           "description": "The normal response of the operation in case of success. If the original method returns no data on success, such as Delete, the response is google.protobuf.Empty. If the original method is standard Get/Create/Update, the response should be the resource. For other methods, the response should have the type XxxResponse, where Xxx is the original method name. For example, if the original method name is TakeSnapshot(), the inferred response type is TakeSnapshotResponse.",
           "type": "object"
-        }
-      },
-      "type": "object"
-    },
-    "OperationMetadata": {
-      "description": "Metadata for the given google.longrunning.Operation.",
-      "id": "OperationMetadata",
-      "properties": {
-        "endTime": {
-          "description": "Timestamp that this operation completed.@OutputOnly",
-          "format": "google-datetime",
-          "type": "string"
-        },
-        "insertTime": {
-          "description": "Timestamp that this operation was created.@OutputOnly",
-          "format": "google-datetime",
-          "type": "string"
-        },
-        "method": {
-          "description": "API method that initiated this operation. Example: google.appengine.v1beta4.Version.CreateVersion.@OutputOnly",
-          "type": "string"
-        },
-        "operationType": {
-          "description": "Type of this operation. Deprecated, use method field instead. Example: \"create_version\".@OutputOnly",
-          "type": "string"
-        },
-        "target": {
-          "description": "Name of the resource that this operation is acting on. Example: apps/myapp/modules/default.@OutputOnly",
-          "type": "string"
-        },
-        "user": {
-          "description": "User who requested this operation.@OutputOnly",
-          "type": "string"
         }
       },
       "type": "object"
@@ -3019,35 +2986,6 @@
             "type": "string"
           },
           "type": "array"
-        }
-      },
-      "type": "object"
-    },
-    "OperationMetadataV1Beta5": {
-      "description": "Metadata for the given google.longrunning.Operation.",
-      "id": "OperationMetadataV1Beta5",
-      "properties": {
-        "endTime": {
-          "description": "Timestamp that this operation completed.@OutputOnly",
-          "format": "google-datetime",
-          "type": "string"
-        },
-        "insertTime": {
-          "description": "Timestamp that this operation was created.@OutputOnly",
-          "format": "google-datetime",
-          "type": "string"
-        },
-        "method": {
-          "description": "API method name that initiated this operation. Example: google.appengine.v1beta5.Version.CreateVersion.@OutputOnly",
-          "type": "string"
-        },
-        "target": {
-          "description": "Name of the resource that this operation is acting on. Example: apps/myapp/services/default.@OutputOnly",
-          "type": "string"
-        },
-        "user": {
-          "description": "User who requested this operation.@OutputOnly",
-          "type": "string"
         }
       },
       "type": "object"
@@ -3629,6 +3567,10 @@
           "description": "The channel of the runtime to use. Only available for some runtimes. Defaults to the default channel.",
           "type": "string"
         },
+        "runtimeMainExecutablePath": {
+          "description": "The path or name of the app's main executable.",
+          "type": "string"
+        },
         "servingStatus": {
           "description": "Current serving status of this version. Only the versions with a SERVING status create instances and can be billed.SERVING_STATUS_UNSPECIFIED is an invalid value. Defaults to SERVING.",
           "enum": [
@@ -3660,7 +3602,7 @@
           "description": "Enables VPC connectivity for standard apps."
         },
         "zones": {
-          "description": "The Google Compute Engine zones that are supported by this version in the App Engine flexible environment.",
+          "description": "The Google Compute Engine zones that are supported by this version in the App Engine flexible environment. Deprecated.",
           "items": {
             "type": "string"
           },

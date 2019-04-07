@@ -150,6 +150,21 @@ path "secret/zip-*" {
 }
 ```
 
+In addition, a `+` can be used to denote any number of characters bounded
+within a single path segment (this appeared in Vault 1.1):
+
+```ruby
+# Permit reading the "teamb" path under any top-level path under secret/
+path "secret/+/teamb" {
+  capabilities = ["read"]
+}
+
+# Permit reading secret/foo/bar/teamb, secret/bar/foo/teamb, etc.
+path "secret/+/+/teamb" {
+  capabilities = ["read"]
+}
+```
+
 Vault's architecture is similar to a filesystem. Every action in Vault has a
 corresponding path and capability - even Vault's internal core configuration
 endpoints live under the "sys/" path. Policies define access to these paths and
@@ -244,7 +259,7 @@ injected, and currently the `path` keys in policies allow injection.
 | `identity.entity.aliases.<<mount accessor>>.metadata.<<metadata key>>` | Metadata associated with the alias for the given mount and metadata key      |
 | `identity.groups.ids.<<group id>>.name`                                | The group name for the given group ID                                        |
 | `identity.groups.names.<<group name>>.id`                              | The group ID for the given group name                                        |
-| `identity.groups.names.<<group id>>.metadata.<<metadata key>>`         | Metadata associated with the group for the given key                                        |
+| `identity.groups.ids.<<group id>>.metadata.<<metadata key>>`           | Metadata associated with the group for the given key                                        |
 | `identity.groups.names.<<group name>>.metadata.<<metadata key>>`       | Metadata associated with the group for the given key                                        |
 
 ### Examples

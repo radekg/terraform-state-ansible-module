@@ -15,19 +15,19 @@ func resourceAwsIotPolicy() *schema.Resource {
 		Update: resourceAwsIotPolicyUpdate,
 		Delete: resourceAwsIotPolicyDelete,
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"policy": {
+			"policy": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"default_version_id": {
+			"default_version_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

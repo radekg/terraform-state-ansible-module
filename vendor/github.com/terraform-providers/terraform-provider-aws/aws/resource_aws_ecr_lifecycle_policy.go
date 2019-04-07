@@ -4,7 +4,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceAwsEcrLifecyclePolicy() *schema.Resource {
@@ -18,19 +17,19 @@ func resourceAwsEcrLifecyclePolicy() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"repository": {
+			"repository": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"policy": {
+			"policy": &schema.Schema{
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateFunc:     validation.ValidateJsonString,
+				ValidateFunc:     validateJsonString,
 				DiffSuppressFunc: suppressEquivalentJsonDiffs,
 			},
-			"registry_id": {
+			"registry_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

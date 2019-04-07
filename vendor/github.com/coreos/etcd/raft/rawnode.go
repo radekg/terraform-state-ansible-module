@@ -17,7 +17,7 @@ package raft
 import (
 	"errors"
 
-	pb "go.etcd.io/etcd/raft/raftpb"
+	pb "github.com/coreos/etcd/raft/raftpb"
 )
 
 // ErrStepLocalMsg is returned when try to step a local raft message
@@ -47,15 +47,18 @@ func (rn *RawNode) commitReady(rd Ready) {
 	if !IsEmptyHardState(rd.HardState) {
 		rn.prevHardSt = rd.HardState
 	}
-
-	// If entries were applied (or a snapshot), update our cursor for
-	// the next Ready. Note that if the current HardState contains a
-	// new Commit index, this does not mean that we're also applying
-	// all of the new entries due to commit pagination by size.
-	if index := rd.appliedCursor(); index > 0 {
-		rn.raft.raftLog.appliedTo(index)
+	if rn.prevHardSt.Commit != 0 {
+		// In most cases, prevHardSt and rd.HardState will be the same
+		// because when there are new entries to apply we just sent a
+		// HardState with an updated Commit value. However, on initial
+		// startup the two are different because we don't send a HardState
+		// until something changes, but we do send any un-applied but
+		// committed entries (and previously-committed entries may be
+		// incorporated into the snapshot, even if rd.CommittedEntries is
+		// empty). Therefore we mark all committed entries as applied
+		// whether they were included in rd.HardState or not.
+		rn.raft.raftLog.appliedTo(rn.prevHardSt.Commit)
 	}
-
 	if len(rd.Entries) > 0 {
 		e := rd.Entries[len(rd.Entries)-1]
 		rn.raft.raftLog.stableTo(e.Index, e.Term)
@@ -166,7 +169,8 @@ func (rn *RawNode) ProposeConfChange(cc pb.ConfChange) error {
 // ApplyConfChange applies a config change to the local node.
 func (rn *RawNode) ApplyConfChange(cc pb.ConfChange) *pb.ConfState {
 	if cc.NodeID == None {
-		return &pb.ConfState{Nodes: rn.raft.nodes(), Learners: rn.raft.learnerNodes()}
+		rn.raft.resetPendingConf()
+		return &pb.ConfState{Nodes: rn.raft.nodes()}
 	}
 	switch cc.Type {
 	case pb.ConfChangeAddNode:
@@ -176,10 +180,11 @@ func (rn *RawNode) ApplyConfChange(cc pb.ConfChange) *pb.ConfState {
 	case pb.ConfChangeRemoveNode:
 		rn.raft.removeNode(cc.NodeID)
 	case pb.ConfChangeUpdateNode:
+		rn.raft.resetPendingConf()
 	default:
 		panic("unexpected conf type")
 	}
-	return &pb.ConfState{Nodes: rn.raft.nodes(), Learners: rn.raft.learnerNodes()}
+	return &pb.ConfState{Nodes: rn.raft.nodes()}
 }
 
 // Step advances the state machine using the given message.
@@ -198,7 +203,6 @@ func (rn *RawNode) Step(m pb.Message) error {
 func (rn *RawNode) Ready() Ready {
 	rd := rn.newReady()
 	rn.raft.msgs = nil
-	rn.raft.reduceUncommittedSize(rd.CommittedEntries)
 	return rd
 }
 

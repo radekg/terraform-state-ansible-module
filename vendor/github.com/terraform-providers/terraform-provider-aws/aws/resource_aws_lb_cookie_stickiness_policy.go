@@ -21,25 +21,25 @@ func resourceAwsLBCookieStickinessPolicy() *schema.Resource {
 		Delete: resourceAwsLBCookieStickinessPolicyDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"load_balancer": {
+			"load_balancer": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"lb_port": {
+			"lb_port": &schema.Schema{
 				Type:     schema.TypeInt,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"cookie_expiration_period": {
+			"cookie_expiration_period": &schema.Schema{
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,

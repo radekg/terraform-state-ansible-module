@@ -17,7 +17,7 @@ package tester
 import (
 	"time"
 
-	"go.etcd.io/etcd/functional/rpcpb"
+	"github.com/coreos/etcd/functional/rpcpb"
 
 	"go.uber.org/zap"
 )

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
@@ -13,7 +14,7 @@ import (
 )
 
 func TestAccAwsLbListenerCertificate_basic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAwsLbListenerCertificateDestroy,
@@ -40,7 +41,7 @@ func TestAccAwsLbListenerCertificate_cycle(t *testing.T) {
 	rName := acctest.RandString(5)
 	suffix := acctest.RandString(5)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAwsLbListenerCertificateDestroy,
@@ -110,7 +111,7 @@ func testAccCheckAwsLbListenerCertificateDestroy(s *terraform.State) error {
 
 		resp, err := conn.DescribeListenerCertificates(input)
 		if err != nil {
-			if isAWSErr(err, elbv2.ErrCodeListenerNotFoundException, "") {
+			if wserr, ok := err.(awserr.Error); ok && wserr.Code() == "ListenerNotFound" {
 				return nil
 			}
 			return err
@@ -118,11 +119,11 @@ func testAccCheckAwsLbListenerCertificateDestroy(s *terraform.State) error {
 
 		for _, cert := range resp.Certificates {
 			// We only care about additional certificates.
-			if aws.BoolValue(cert.IsDefault) {
+			if *cert.IsDefault {
 				continue
 			}
 
-			if aws.StringValue(cert.CertificateArn) == rs.Primary.Attributes["certificate_arn"] {
+			if *cert.CertificateArn == rs.Primary.Attributes["certificate_arn"] {
 				return errors.New("LB listener certificate not destroyed")
 			}
 		}

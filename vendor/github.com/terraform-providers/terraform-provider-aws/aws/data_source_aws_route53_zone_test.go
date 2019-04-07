@@ -16,7 +16,7 @@ func TestAccDataSourceAwsRoute53Zone(t *testing.T) {
 	privateResourceName := "aws_route53_zone.test_private"
 	privateDomain := fmt.Sprintf("test.acc-%d.", rInt)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckRoute53ZoneDestroy,

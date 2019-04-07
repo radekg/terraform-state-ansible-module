@@ -12,7 +12,7 @@ import (
 func TestAccAWSDataSourceIAMPolicy_basic(t *testing.T) {
 	policyName := fmt.Sprintf("test-policy-%s", acctest.RandString(10))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

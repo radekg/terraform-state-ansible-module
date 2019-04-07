@@ -82,7 +82,7 @@ func TestAccAWSGameliftBuild_basic(t *testing.T) {
 	roleArn := *loc.RoleArn
 	key := *loc.Key
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSGameliftBuildDestroy,

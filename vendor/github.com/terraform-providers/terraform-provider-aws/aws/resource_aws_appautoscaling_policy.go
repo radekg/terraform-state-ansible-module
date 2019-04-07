@@ -23,32 +23,32 @@ func resourceAwsAppautoscalingPolicy() *schema.Resource {
 		Delete: resourceAwsAppautoscalingPolicyDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 				// https://github.com/boto/botocore/blob/9f322b1/botocore/data/autoscaling/2011-01-01/service-2.json#L1862-L1873
-				ValidateFunc: validation.StringLenBetween(0, 255),
+				ValidateFunc: validateMaxLength(255),
 			},
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"policy_type": {
+			"policy_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "StepScaling",
 			},
-			"resource_id": {
+			"resource_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"scalable_dimension": {
+			"scalable_dimension": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"service_namespace": {
+			"service_namespace": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -62,32 +62,34 @@ func resourceAwsAppautoscalingPolicy() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"cooldown": {
+						"cooldown": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"metric_aggregation_type": {
+						"metric_aggregation_type": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"min_adjustment_magnitude": {
+						"min_adjustment_magnitude": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"step_adjustment": {
+						"step_adjustment": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"metric_interval_lower_bound": {
-										Type:     schema.TypeString,
+									"metric_interval_lower_bound": &schema.Schema{
+										Type:     schema.TypeFloat,
 										Optional: true,
+										Default:  -1,
 									},
-									"metric_interval_upper_bound": {
-										Type:     schema.TypeString,
+									"metric_interval_upper_bound": &schema.Schema{
+										Type:     schema.TypeFloat,
 										Optional: true,
+										Default:  -1,
 									},
-									"scaling_adjustment": {
+									"scaling_adjustment": &schema.Schema{
 										Type:     schema.TypeInt,
 										Required: true,
 									},
@@ -97,49 +99,49 @@ func resourceAwsAppautoscalingPolicy() *schema.Resource {
 					},
 				},
 			},
-			"alarms": {
+			"alarms": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"adjustment_type": {
+			"adjustment_type": &schema.Schema{
 				Type:       schema.TypeString,
 				Optional:   true,
 				Deprecated: "Use step_scaling_policy_configuration -> adjustment_type instead",
 			},
-			"cooldown": {
+			"cooldown": &schema.Schema{
 				Type:       schema.TypeInt,
 				Optional:   true,
 				Deprecated: "Use step_scaling_policy_configuration -> cooldown instead",
 			},
-			"metric_aggregation_type": {
+			"metric_aggregation_type": &schema.Schema{
 				Type:       schema.TypeString,
 				Optional:   true,
 				Deprecated: "Use step_scaling_policy_configuration -> metric_aggregation_type instead",
 			},
-			"min_adjustment_magnitude": {
+			"min_adjustment_magnitude": &schema.Schema{
 				Type:       schema.TypeInt,
 				Optional:   true,
 				Deprecated: "Use step_scaling_policy_configuration -> min_adjustment_magnitude instead",
 			},
-			"step_adjustment": {
+			"step_adjustment": &schema.Schema{
 				Type:       schema.TypeSet,
 				Optional:   true,
 				Deprecated: "Use step_scaling_policy_configuration -> step_adjustment instead",
 				Set:        resourceAwsAppautoscalingAdjustmentHash,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"metric_interval_lower_bound": {
+						"metric_interval_lower_bound": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"metric_interval_upper_bound": {
+						"metric_interval_upper_bound": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"scaling_adjustment": {
+						"scaling_adjustment": &schema.Schema{
 							Type:     schema.TypeInt,
 							Required: true,
 						},
@@ -152,14 +154,14 @@ func resourceAwsAppautoscalingPolicy() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"customized_metric_specification": {
+						"customized_metric_specification": &schema.Schema{
 							Type:          schema.TypeList,
 							MaxItems:      1,
 							Optional:      true,
 							ConflictsWith: []string{"target_tracking_scaling_policy_configuration.0.predefined_metric_specification"},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"dimensions": {
+									"dimensions": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
 										Elem: &schema.Resource{
@@ -175,15 +177,15 @@ func resourceAwsAppautoscalingPolicy() *schema.Resource {
 											},
 										},
 									},
-									"metric_name": {
+									"metric_name": &schema.Schema{
 										Type:     schema.TypeString,
 										Required: true,
 									},
-									"namespace": {
+									"namespace": &schema.Schema{
 										Type:     schema.TypeString,
 										Required: true,
 									},
-									"statistic": {
+									"statistic": &schema.Schema{
 										Type:     schema.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
@@ -194,46 +196,46 @@ func resourceAwsAppautoscalingPolicy() *schema.Resource {
 											applicationautoscaling.MetricStatisticSum,
 										}, false),
 									},
-									"unit": {
+									"unit": &schema.Schema{
 										Type:     schema.TypeString,
 										Optional: true,
 									},
 								},
 							},
 						},
-						"predefined_metric_specification": {
+						"predefined_metric_specification": &schema.Schema{
 							Type:          schema.TypeList,
 							MaxItems:      1,
 							Optional:      true,
 							ConflictsWith: []string{"target_tracking_scaling_policy_configuration.0.customized_metric_specification"},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"predefined_metric_type": {
+									"predefined_metric_type": &schema.Schema{
 										Type:     schema.TypeString,
 										Required: true,
 									},
-									"resource_label": {
+									"resource_label": &schema.Schema{
 										Type:         schema.TypeString,
 										Optional:     true,
-										ValidateFunc: validation.StringLenBetween(0, 1023),
+										ValidateFunc: validateMaxLength(1023),
 									},
 								},
 							},
 						},
-						"disable_scale_in": {
+						"disable_scale_in": &schema.Schema{
 							Type:     schema.TypeBool,
 							Default:  false,
 							Optional: true,
 						},
-						"scale_in_cooldown": {
+						"scale_in_cooldown": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"scale_out_cooldown": {
+						"scale_out_cooldown": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"target_value": {
+						"target_value": &schema.Schema{
 							Type:     schema.TypeFloat,
 							Required: true,
 						},
@@ -400,6 +402,10 @@ func expandAppautoscalingStepAdjustments(configured []interface{}) ([]*applicati
 		if data["metric_interval_lower_bound"] != "" {
 			bound := data["metric_interval_lower_bound"]
 			switch bound := bound.(type) {
+			case float64:
+				if bound >= 0 {
+					a.MetricIntervalLowerBound = aws.Float64(bound)
+				}
 			case string:
 				f, err := strconv.ParseFloat(bound, 64)
 				if err != nil {
@@ -415,6 +421,10 @@ func expandAppautoscalingStepAdjustments(configured []interface{}) ([]*applicati
 		if data["metric_interval_upper_bound"] != "" {
 			bound := data["metric_interval_upper_bound"]
 			switch bound := bound.(type) {
+			case float64:
+				if bound >= 0 {
+					a.MetricIntervalUpperBound = aws.Float64(bound)
+				}
 			case string:
 				f, err := strconv.ParseFloat(bound, 64)
 				if err != nil {

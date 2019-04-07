@@ -47,7 +47,6 @@ func NewUserCommand() *cobra.Command {
 
 var (
 	passwordInteractive bool
-	passwordFromFlag    string
 )
 
 func newUserAddCommand() *cobra.Command {
@@ -58,7 +57,6 @@ func newUserAddCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&passwordInteractive, "interactive", true, "Read password from stdin instead of interactive terminal")
-	cmd.Flags().StringVar(&passwordFromFlag, "new-user-password", "", "Supply password from the command line flag")
 
 	return &cmd
 }
@@ -128,24 +126,19 @@ func userAddCommandFunc(cmd *cobra.Command, args []string) {
 	var password string
 	var user string
 
-	if passwordFromFlag != "" {
+	splitted := strings.SplitN(args[0], ":", 2)
+	if len(splitted) < 2 {
 		user = args[0]
-		password = passwordFromFlag
-	} else {
-		splitted := strings.SplitN(args[0], ":", 2)
-		if len(splitted) < 2 {
-			user = args[0]
-			if !passwordInteractive {
-				fmt.Scanf("%s", &password)
-			} else {
-				password = readPasswordInteractive(args[0])
-			}
+		if !passwordInteractive {
+			fmt.Scanf("%s", &password)
 		} else {
-			user = splitted[0]
-			password = splitted[1]
-			if len(user) == 0 {
-				ExitWithError(ExitBadArgs, fmt.Errorf("empty user name is not allowed."))
-			}
+			password = readPasswordInteractive(args[0])
+		}
+	} else {
+		user = splitted[0]
+		password = splitted[1]
+		if len(user) == 0 {
+			ExitWithError(ExitBadArgs, fmt.Errorf("empty user name is not allowed."))
 		}
 	}
 
@@ -279,7 +272,7 @@ func readPasswordInteractive(name string) string {
 		ExitWithError(ExitBadArgs, fmt.Errorf("failed to ask password: %s.", err2))
 	}
 
-	if password1 != password2 {
+	if strings.Compare(password1, password2) != 0 {
 		ExitWithError(ExitBadArgs, fmt.Errorf("given passwords are different."))
 	}
 

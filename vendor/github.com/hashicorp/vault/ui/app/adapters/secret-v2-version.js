@@ -3,25 +3,26 @@ import { isEmpty } from '@ember/utils';
 import { get } from '@ember/object';
 import ApplicationAdapter from './application';
 import DS from 'ember-data';
+import { encodePath } from 'vault/utils/path-encoding-helpers';
 
 export default ApplicationAdapter.extend({
   namespace: 'v1',
   _url(backend, id, infix = 'data') {
-    let url = `${this.buildURL()}/${backend}/${infix}/`;
+    let url = `${this.buildURL()}/${encodePath(backend)}/${infix}/`;
     if (!isEmpty(id)) {
-      url = url + id;
+      url = url + encodePath(id);
     }
     return url;
   },
 
   urlForFindRecord(id) {
     let [backend, path, version] = JSON.parse(id);
-    return this._url(backend, path) + `?version=${version}`;
+    let base = this._url(backend, path);
+    return version ? base + `?version=${version}` : base;
   },
 
   urlForQueryRecord(id) {
-    let [backend, path, version] = JSON.parse(id);
-    return this._url(backend, path) + `?version=${version}`;
+    return this.urlForFindRecord(id);
   },
 
   findRecord() {

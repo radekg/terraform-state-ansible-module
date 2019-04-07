@@ -19,7 +19,6 @@ const teststrucflexChanCap = 64
 
 // Some unused types just stored here
 type Bbool bool
-type Aarray [1]string
 type Sstring string
 type Sstructsmall struct {
 	A int
@@ -67,36 +66,6 @@ type AnonInTestStrucIntf struct {
 	Tptr   *time.Time
 }
 
-type missingFielderT1 struct {
-	S string
-	B bool
-	f float64
-	i int64
-}
-
-func (t *missingFielderT1) CodecMissingField(field []byte, value interface{}) bool {
-	switch string(field) {
-	case "F":
-		t.f = value.(float64)
-	case "I":
-		t.i = value.(int64)
-	default:
-		return false
-	}
-	return true
-}
-
-func (t *missingFielderT1) CodecMissingFields() map[string]interface{} {
-	return map[string]interface{}{"F": t.f, "I": t.i}
-}
-
-type missingFielderT2 struct {
-	S string
-	B bool
-	F float64
-	I int64
-}
-
 var testWRepeated512 wrapBytes
 var testStrucTime = time.Date(2012, 2, 2, 2, 2, 2, 2000, time.UTC).UTC()
 
@@ -130,8 +99,6 @@ type TestStrucFlex struct {
 
 	Ui64array      [4]uint64
 	Ui64slicearray []*[4]uint64
-
-	SintfAarray []interface{}
 
 	// make this a ptr, so that it could be set or not.
 	// for comparison (e.g. with msgp), give it a struct tag (so it is not inlined),
@@ -204,7 +171,6 @@ func newTestStrucFlex(depth, n int, bench, useInterface, useStringKeyOnly bool) 
 		},
 		Ui64array:   [4]uint64{4, 16, 64, 256},
 		ArrStrUi64T: [4]stringUint64T{{"4", 4}, {"3", 3}, {"2", 2}, {"1", 1}},
-		SintfAarray: []interface{}{Aarray{"s"}},
 	}
 
 	numChanSend := cap(ts.Chstr) / 4 // 8

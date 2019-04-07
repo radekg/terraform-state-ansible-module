@@ -21,7 +21,7 @@ func TestAccAWSEIP_importEc2Classic(t *testing.T) {
 
 	resourceName := "aws_eip.bar"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t); testAccEC2ClassicPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEIPDestroy,
@@ -41,7 +41,7 @@ func TestAccAWSEIP_importEc2Classic(t *testing.T) {
 func TestAccAWSEIP_importVpc(t *testing.T) {
 	resourceName := "aws_eip.bar"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEIPDestroy,
@@ -61,13 +61,13 @@ func TestAccAWSEIP_importVpc(t *testing.T) {
 func TestAccAWSEIP_basic(t *testing.T) {
 	var conf ec2.Address
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_eip.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &conf),
@@ -81,13 +81,13 @@ func TestAccAWSEIP_basic(t *testing.T) {
 func TestAccAWSEIP_instance(t *testing.T) {
 	var conf ec2.Address
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_eip.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPInstanceConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &conf),
@@ -95,7 +95,7 @@ func TestAccAWSEIP_instance(t *testing.T) {
 				),
 			},
 
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPInstanceConfig2,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &conf),
@@ -109,13 +109,13 @@ func TestAccAWSEIP_instance(t *testing.T) {
 func TestAccAWSEIP_network_interface(t *testing.T) {
 	var conf ec2.Address
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_eip.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPNetworkInterfaceConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &conf),
@@ -130,13 +130,13 @@ func TestAccAWSEIP_network_interface(t *testing.T) {
 func TestAccAWSEIP_twoEIPsOneNetworkInterface(t *testing.T) {
 	var one, two ec2.Address
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_eip.one",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPMultiNetworkInterfaceConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.one", &one),
@@ -156,13 +156,13 @@ func TestAccAWSEIP_twoEIPsOneNetworkInterface(t *testing.T) {
 func TestAccAWSEIP_associated_user_private_ip(t *testing.T) {
 	var one ec2.Address
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_eip.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPInstanceConfig_associated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &one),
@@ -171,7 +171,7 @@ func TestAccAWSEIP_associated_user_private_ip(t *testing.T) {
 				),
 			},
 
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPInstanceConfig_associated_switch,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &one),
@@ -186,17 +186,13 @@ func TestAccAWSEIP_associated_user_private_ip(t *testing.T) {
 // Regression test for https://github.com/hashicorp/terraform/issues/3429 (now
 // https://github.com/terraform-providers/terraform-provider-aws/issues/42)
 func TestAccAWSEIP_classic_disassociate(t *testing.T) {
-	oldvar := os.Getenv("AWS_DEFAULT_REGION")
-	os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
-	defer os.Setenv("AWS_DEFAULT_REGION", oldvar)
-
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t); testAccEC2ClassicPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSEIP_classic_disassociate("instance-store"),
+			resource.TestStep{
+				Config: testAccAWSEIP_classic_disassociate("ami-408c7f28"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(
 						"aws_eip.ip.0",
@@ -206,8 +202,8 @@ func TestAccAWSEIP_classic_disassociate(t *testing.T) {
 						"instance"),
 				),
 			},
-			{
-				Config: testAccAWSEIP_classic_disassociate("ebs"),
+			resource.TestStep{
+				Config: testAccAWSEIP_classic_disassociate("ami-8c6ea9e4"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(
 						"aws_eip.ip.0",
@@ -224,12 +220,12 @@ func TestAccAWSEIP_classic_disassociate(t *testing.T) {
 func TestAccAWSEIP_disappears(t *testing.T) {
 	var conf ec2.Address
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &conf),
@@ -244,13 +240,13 @@ func TestAccAWSEIP_disappears(t *testing.T) {
 func TestAccAWSEIPAssociate_not_associated(t *testing.T) {
 	var conf ec2.Address
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_eip.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPAssociate_not_associated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &conf),
@@ -258,7 +254,7 @@ func TestAccAWSEIPAssociate_not_associated(t *testing.T) {
 				),
 			},
 
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPAssociate_associated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists("aws_eip.bar", &conf),
@@ -276,13 +272,13 @@ func TestAccAWSEIP_tags(t *testing.T) {
 	rName1 := fmt.Sprintf("%s-%d", t.Name(), acctest.RandInt())
 	rName2 := fmt.Sprintf("%s-%d", t.Name(), acctest.RandInt())
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_eip.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSEIPDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPConfig_tags(rName1, t.Name()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists(resourceName, &conf),
@@ -292,7 +288,7 @@ func TestAccAWSEIP_tags(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "tags.TestName", t.Name()),
 				),
 			},
-			{
+			resource.TestStep{
 				Config: testAccAWSEIPConfig_tags(rName2, t.Name()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEIPExists(resourceName, &conf),
@@ -458,25 +454,8 @@ const testAccAWSEIPInstanceEc2Classic = `
 provider "aws" {
 	region = "us-east-1"
 }
-
-data "aws_ami" "amzn-ami-minimal-pv" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-pv-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = ["instance-store"]
-  }
-}
-
 resource "aws_instance" "foo" {
-	ami = "${data.aws_ami.amzn-ami-minimal-pv.id}"
+	ami = "ami-5469ae3c"
 	instance_type = "m1.small"
 	tags {
 		Name = "testAccAWSEIPInstanceEc2Classic"
@@ -489,24 +468,9 @@ resource "aws_eip" "bar" {
 `
 
 const testAccAWSEIPInstanceConfig = `
-data "aws_ami" "amzn-ami-minimal-pv" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-pv-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = ["instance-store"]
-  }
-}
-
 resource "aws_instance" "foo" {
-	ami = "${data.aws_ami.amzn-ami-minimal-pv.id}"
+	# us-west-2
+	ami = "ami-4fccb37f"
 	instance_type = "m1.small"
 }
 
@@ -516,24 +480,9 @@ resource "aws_eip" "bar" {
 `
 
 const testAccAWSEIPInstanceConfig2 = `
-data "aws_ami" "amzn-ami-minimal-pv" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-pv-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = ["instance-store"]
-  }
-}
-
 resource "aws_instance" "bar" {
-	ami = "${data.aws_ami.amzn-ami-minimal-pv.id}"
+	# us-west-2
+	ami = "ami-4fccb37f"
 	instance_type = "m1.small"
 }
 
@@ -543,22 +492,6 @@ resource "aws_eip" "bar" {
 `
 
 const testAccAWSEIPInstanceConfig_associated = `
-data "aws_ami" "amzn-ami-minimal-hvm" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-hvm-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = ["ebs"]
-  }
-}
-
 resource "aws_vpc" "default" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -589,7 +522,8 @@ resource "aws_subnet" "tf_test_subnet" {
 }
 
 resource "aws_instance" "foo" {
-  ami           = "${data.aws_ami.amzn-ami-minimal-hvm.id}"
+  # us-west-2
+  ami           = "ami-5189a661"
   instance_type = "t2.micro"
 
   private_ip = "10.0.0.12"
@@ -601,7 +535,9 @@ resource "aws_instance" "foo" {
 }
 
 resource "aws_instance" "bar" {
-  ami = "${data.aws_ami.amzn-ami-minimal-hvm.id}"
+  # us-west-2
+
+  ami = "ami-5189a661"
 
   instance_type = "t2.micro"
 
@@ -621,22 +557,6 @@ resource "aws_eip" "bar" {
 }
 `
 const testAccAWSEIPInstanceConfig_associated_switch = `
-data "aws_ami" "amzn-ami-minimal-hvm" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-hvm-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = ["ebs"]
-  }
-}
-
 resource "aws_vpc" "default" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -667,7 +587,8 @@ resource "aws_subnet" "tf_test_subnet" {
 }
 
 resource "aws_instance" "foo" {
-  ami           = "${data.aws_ami.amzn-ami-minimal-hvm.id}"
+  # us-west-2
+  ami           = "ami-5189a661"
   instance_type = "t2.micro"
 
   private_ip = "10.0.0.12"
@@ -679,7 +600,9 @@ resource "aws_instance" "foo" {
 }
 
 resource "aws_instance" "bar" {
-  ami = "${data.aws_ami.amzn-ami-minimal-hvm.id}"
+  # us-west-2
+
+  ami = "ami-5189a661"
 
   instance_type = "t2.micro"
 
@@ -696,6 +619,18 @@ resource "aws_eip" "bar" {
 
   instance                  = "${aws_instance.foo.id}"
   associate_with_private_ip = "10.0.0.12"
+}
+`
+
+const testAccAWSEIPInstanceConfig_associated_update = `
+resource "aws_instance" "bar" {
+	# us-west-2
+	ami = "ami-4fccb37f"
+	instance_type = "m1.small"
+}
+
+resource "aws_eip" "bar" {
+	instance = "${aws_instance.bar.id}"
 }
 `
 
@@ -775,7 +710,7 @@ resource "aws_eip" "two" {
 }
 `
 
-func testAccAWSEIP_classic_disassociate(rootDeviceType string) string {
+func testAccAWSEIP_classic_disassociate(ami string) string {
 	return fmt.Sprintf(`
 provider "aws" {
   region = "us-east-1"
@@ -783,22 +718,6 @@ provider "aws" {
 
 variable "server_count" {
   default = 2
-}
-
-data "aws_ami" "amzn-ami-minimal-pv" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-pv-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = [%q]
-  }
 }
 
 resource "aws_eip" "ip" {
@@ -810,7 +729,7 @@ resource "aws_eip" "ip" {
 resource "aws_instance" "example" {
   count = "${var.server_count}"
 
-  ami                         = "${data.aws_ami.amzn-ami-minimal-pv.id}"
+  ami                         = "%s"
   instance_type               = "m1.small"
   associate_public_ip_address = true
   subnet_id                   = "${aws_subnet.us-east-1b-public.id}"
@@ -858,28 +777,13 @@ resource "aws_route_table" "us-east-1-public" {
 resource "aws_route_table_association" "us-east-1b-public" {
   subnet_id      = "${aws_subnet.us-east-1b-public.id}"
   route_table_id = "${aws_route_table.us-east-1-public.id}"
-}`, rootDeviceType)
+}`, ami)
 }
 
 const testAccAWSEIPAssociate_not_associated = `
-data "aws_ami" "amzn-ami-minimal-pv" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-pv-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = ["instance-store"]
-  }
-}
-
 resource "aws_instance" "foo" {
-	ami = "${data.aws_ami.amzn-ami-minimal-pv.id}"
+	# us-west-2
+	ami = "ami-4fccb37f"
 	instance_type = "m1.small"
 }
 
@@ -888,24 +792,9 @@ resource "aws_eip" "bar" {
 `
 
 const testAccAWSEIPAssociate_associated = `
-data "aws_ami" "amzn-ami-minimal-pv" {
-  most_recent = true
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name = "name"
-    values = ["amzn-ami-minimal-pv-*"]
-  }
-  filter {
-    name = "root-device-type"
-    values = ["instance-store"]
-  }
-}
-
 resource "aws_instance" "foo" {
-	ami = "${data.aws_ami.amzn-ami-minimal-pv.id}"
+	# us-west-2
+	ami = "ami-4fccb37f"
 	instance_type = "m1.small"
 }
 

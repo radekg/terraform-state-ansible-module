@@ -475,22 +475,14 @@ func resourceAwsDirectoryServiceDirectoryDelete(d *schema.ResourceData, meta int
 		DirectoryId: aws.String(d.Id()),
 	}
 
-	log.Printf("[DEBUG] Deleting Directory Service Directory: %s", input)
+	log.Printf("[DEBUG] Delete Directory input: %s", input)
 	_, err := dsconn.DeleteDirectory(&input)
 	if err != nil {
-		return fmt.Errorf("error deleting Directory Service Directory (%s): %s", d.Id(), err)
+		return err
 	}
 
-	log.Printf("[DEBUG] Waiting for Directory Service Directory (%q) to be deleted", d.Id())
-	err = waitForDirectoryServiceDirectoryDeletion(dsconn, d.Id())
-	if err != nil {
-		return fmt.Errorf("error waiting for Directory Service (%s) to be deleted: %s", d.Id(), err)
-	}
-
-	return nil
-}
-
-func waitForDirectoryServiceDirectoryDeletion(conn *directoryservice.DirectoryService, directoryID string) error {
+	// Wait for deletion
+	log.Printf("[DEBUG] Waiting for DS (%q) to be deleted", d.Id())
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{
 			directoryservice.DirectoryStageActive,
@@ -498,8 +490,8 @@ func waitForDirectoryServiceDirectoryDeletion(conn *directoryservice.DirectorySe
 		},
 		Target: []string{directoryservice.DirectoryStageDeleted},
 		Refresh: func() (interface{}, string, error) {
-			resp, err := conn.DescribeDirectories(&directoryservice.DescribeDirectoriesInput{
-				DirectoryIds: []*string{aws.String(directoryID)},
+			resp, err := dsconn.DescribeDirectories(&directoryservice.DescribeDirectoriesInput{
+				DirectoryIds: []*string{aws.String(d.Id())},
 			})
 			if err != nil {
 				if isAWSErr(err, directoryservice.ErrCodeEntityDoesNotExistException, "") {
@@ -508,17 +500,22 @@ func waitForDirectoryServiceDirectoryDeletion(conn *directoryservice.DirectorySe
 				return nil, "error", err
 			}
 
-			if len(resp.DirectoryDescriptions) == 0 || resp.DirectoryDescriptions[0] == nil {
+			if len(resp.DirectoryDescriptions) == 0 {
 				return 42, directoryservice.DirectoryStageDeleted, nil
 			}
 
 			ds := resp.DirectoryDescriptions[0]
-			log.Printf("[DEBUG] Deletion of Directory Service Directory %q is in following stage: %q.", directoryID, aws.StringValue(ds.Stage))
-			return ds, aws.StringValue(ds.Stage), nil
+			log.Printf("[DEBUG] Deletion of DS %q is in following stage: %q.",
+				d.Id(), *ds.Stage)
+			return ds, *ds.Stage, nil
 		},
 		Timeout: 60 * time.Minute,
 	}
-	_, err := stateConf.WaitForState()
+	if _, err := stateConf.WaitForState(); err != nil {
+		return fmt.Errorf(
+			"Error waiting for Directory Service (%s) to be deleted: %q",
+			d.Id(), err.Error())
+	}
 
-	return err
+	return nil
 }

@@ -10,42 +10,25 @@ description: |-
 
 `aws_eip` provides details about a specific Elastic IP.
 
+This resource can prove useful when a module accepts an allocation ID or
+public IP as an input variable and needs to determine the other.
+
 ## Example Usage
 
-### Search By Allocation ID (VPC only)
+The following example shows how one might accept a public IP as a variable
+and use this data source to obtain the allocation ID.
 
 ```hcl
-data "aws_eip" "by_allocation_id" {
-  id = "eipalloc-12345678"
+variable "instance_id" {}
+variable "public_ip" {}
+
+data "aws_eip" "proxy_ip" {
+  public_ip = "${var.public_ip}"
 }
-```
 
-### Search By Filters (EC2-Classic or VPC)
-
-```hcl
-data "aws_eip" "by_filter" {
-  filter {
-    name   = "tag:Name"
-    values = ["exampleNameTagValue"]
-  }
-}
-```
-
-### Search By Public IP (EC2-Classic or VPC)
-
-```hcl
-data "aws_eip" "by_public_ip" {
-  public_ip = "1.2.3.4"
-}
-```
-
-### Search By Tags (EC2-Classic or VPC)
-
-```hcl
-data "aws_eip" "by_tags" {
-  tags {
-    Name = "exampleNameTagValue"
-  }
+resource "aws_eip_association" "proxy_eip" {
+  instance_id   = "${var.instance_id}"
+  allocation_id = "${data.aws_eip.proxy_ip.id}"
 }
 ```
 
@@ -55,15 +38,13 @@ The arguments of this data source act as filters for querying the available
 Elastic IPs in the current region. The given filters must match exactly one
 Elastic IP whose data will be exported as attributes.
 
-* `filter` - (Optional) One or more name/value pairs to use as filters. There are several valid keys, for a full reference, check out the [EC2 API Reference](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAddresses.html).
-* `id` - (Optional) The allocation id of the specific VPC EIP to retrieve. If a classic EIP is required, do NOT set `id`, only set `public_ip`
+* `id` - (Optional) The allocation id of the specific EIP to retrieve.
+
 * `public_ip` - (Optional) The public IP of the specific EIP to retrieve.
-* `tags` - (Optional) A mapping of tags, each pair of which must exactly match a pair on the desired Elastic IP
 
 ## Attributes Reference
 
-In addition to all arguments above, the following attributes are exported:
+All of the argument attributes are also exported as result attributes. This
+data source will complete the data by populating any fields that are not
+included in the configuration with the data for the selected Elastic IP.
 
-* `id` - If VPC Elastic IP, the allocation identifier. If EC2-Classic Elastic IP, the public IP address.
-* `public_ip` - Public IP address of Elastic IP.
-* `tags` - Key-value map of tags associated with Elastic IP.

@@ -33,10 +33,6 @@ func testSweepEksClusters(region string) error {
 	for {
 		out, err := conn.ListClusters(input)
 		if err != nil {
-			if testSweepSkipSweepError(err) {
-				log.Printf("[WARN] Skipping EKS Clusters sweep for %s: %s", region, err)
-				return nil
-			}
 			return fmt.Errorf("Error retrieving EKS Clusters: %s", err)
 		}
 
@@ -81,7 +77,7 @@ func TestAccAWSEksCluster_basic(t *testing.T) {
 	rName := fmt.Sprintf("tf-acc-test-%s", acctest.RandString(5))
 	resourceName := "aws_eks_cluster.test"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEksClusterDestroy,
@@ -95,7 +91,6 @@ func TestAccAWSEksCluster_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "certificate_authority.0.data"),
 					resource.TestMatchResourceAttr(resourceName, "endpoint", regexp.MustCompile(`^https://`)),
 					resource.TestCheckResourceAttr(resourceName, "name", rName),
-					resource.TestMatchResourceAttr(resourceName, "platform_version", regexp.MustCompile(`^eks\.\d+$`)),
 					resource.TestMatchResourceAttr(resourceName, "role_arn", regexp.MustCompile(fmt.Sprintf("%s$", rName))),
 					resource.TestMatchResourceAttr(resourceName, "version", regexp.MustCompile(`^\d+\.\d+$`)),
 					resource.TestCheckResourceAttr(resourceName, "vpc_config.#", "1"),
@@ -119,7 +114,7 @@ func TestAccAWSEksCluster_Version(t *testing.T) {
 	rName := fmt.Sprintf("tf-acc-test-%s", acctest.RandString(5))
 	resourceName := "aws_eks_cluster.test"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEksClusterDestroy,
@@ -146,7 +141,7 @@ func TestAccAWSEksCluster_VpcConfig_SecurityGroupIds(t *testing.T) {
 	rName := fmt.Sprintf("tf-acc-test-%s", acctest.RandString(5))
 	resourceName := "aws_eks_cluster.test"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEksClusterDestroy,

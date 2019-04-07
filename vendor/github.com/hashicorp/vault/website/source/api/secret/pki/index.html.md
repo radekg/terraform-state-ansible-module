@@ -797,7 +797,7 @@ request is denied.
   server use.
 
 - `client_flag` `(bool: true)` – Specifies if certificates are flagged for
-  client use.  
+  client use.
 
 - `code_signing_flag` `(bool: false)` – Specifies if certificates are flagged
   for code signing use.
@@ -827,6 +827,8 @@ request is denied.
   values can be found at https://golang.org/pkg/crypto/x509/#ExtKeyUsage - simply 
   drop the `ExtKeyUsage` part of the value. Values are not case-sensitive. To 
   specify no key usage constraints, set this to an empty list.
+
+- `ext_key_usage_oids` `(string: "")` - A comma-separated string or list of extended key usage oids.
 
 - `use_csr_common_name` `(bool: true)` – When used with the CSR signing
   endpoint, the common name in the CSR will be used instead of taken from the
@@ -871,10 +873,7 @@ request is denied.
   added to the CRL by `vault revoke <lease_id>` when certificates are associated
   with leases.  It can also be done using the `pki/revoke` endpoint. However,
   when lease generation is disabled, invoking `pki/revoke` would be the only way
-  to add the certificates to the CRL. When large number of certificates are
-  generated with long lifetimes, it is recommended that lease generation be
-  disabled, as large amount of leases adversely affect the startup time of
-  Vault.
+  to add the certificates to the CRL.
 
 - `no_store` `(bool: false)` – If set, certificates issued/signed against this
   role will not be stored in the storage backend. This can improve performance
@@ -1023,9 +1022,9 @@ As with other issued certificates, Vault will automatically revoke the
 generated root at the end of its lease period; the CA certificate will sign its
 own CRL.
 
-As of Vault 0.8.1, if a CA cert/key already exists, this function will return a
-204 and will not overwrite it. Previous versions of Vault would overwrite the
-existing cert/key with new values.
+As of Vault 0.8.1, if a CA cert/key already exists, this function will not
+overwrite it; it must be deleted first. Previous versions of Vault would
+overwrite the existing cert/key with new values.
 
 | Method   | Path                         | Produces               |
 | :------- | :--------------------------- | :--------------------- |
@@ -1151,7 +1150,7 @@ $ curl \
   "data": {
     "certificate": "-----BEGIN CERTIFICATE-----\nMIIDzDCCAragAwIBAgIUOd0ukLcjH43TfTHFG9qE0FtlMVgwCwYJKoZIhvcNAQEL\n...\numkqeYeO30g1uYvDuWLXVA==\n-----END CERTIFICATE-----\n",
     "issuing_ca": "-----BEGIN CERTIFICATE-----\nMIIDzDCCAragAwIBAgIUOd0ukLcjH43TfTHFG9qE0FtlMVgwCwYJKoZIhvcNAQEL\n...\numkqeYeO30g1uYvDuWLXVA==\n-----END CERTIFICATE-----\n",
-    "serial": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
+    "serial_number": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
   },
   "auth": null
 }
@@ -1307,7 +1306,7 @@ $ curl \
     "certificate": "-----BEGIN CERTIFICATE-----\nMIIDzDCCAragAwIBAgIUOd0ukLcjH43TfTHFG9qE0FtlMVgwCwYJKoZIhvcNAQEL\n...\numkqeYeO30g1uYvDuWLXVA==\n-----END CERTIFICATE-----\n",
     "issuing_ca": "-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n",
     "ca_chain": ["-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n"],
-    "serial": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
+    "serial_number": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
   },
   "auth": null
 }
@@ -1445,7 +1444,7 @@ root CA need be in a client's trust store.
     "certificate": "-----BEGIN CERTIFICATE-----\nMIIDzDCCAragAwIBAgIUOd0ukLcjH43TfTHFG9qE0FtlMVgwCwYJKoZIhvcNAQEL\n...\numkqeYeO30g1uYvDuWLXVA==\n-----END CERTIFICATE-----\n",
     "issuing_ca": "-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n",
     "ca_chain": ["-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n"],
-    "serial": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
+    "serial_number": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
   },
   "auth": null
 }
@@ -1484,6 +1483,8 @@ have access.**
   values can be found at https://golang.org/pkg/crypto/x509/#ExtKeyUsage - simply 
   drop the `ExtKeyUsage` part of the value. Values are not case-sensitive. To 
   specify no key usage constraints, set this to an empty list.
+
+- `ext_key_usage_oids` `(string: "")` - A comma-separated string or list of extended key usage oids.  
 
 - `ttl` `(string: "")` – Specifies the requested Time To Live. Cannot be greater
   than the engine's `max_ttl` value. If not provided, the engine's `ttl` value
@@ -1524,7 +1525,7 @@ $ curl \
     "certificate": "-----BEGIN CERTIFICATE-----\nMIIDzDCCAragAwIBAgIUOd0ukLcjH43TfTHFG9qE0FtlMVgwCwYJKoZIhvcNAQEL\n...\numkqeYeO30g1uYvDuWLXVA==\n-----END CERTIFICATE-----\n",
     "issuing_ca": "-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n",
     "ca_chain": ["-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n"],
-    "serial": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
+    "serial_number": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
   },
   "auth": null
 }

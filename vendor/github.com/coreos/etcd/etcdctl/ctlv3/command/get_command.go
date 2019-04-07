@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/coreos/etcd/clientv3"
 	"github.com/spf13/cobra"
-	"go.etcd.io/etcd/clientv3"
 )
 
 var (
@@ -56,7 +56,7 @@ func NewGetCommand() *cobra.Command {
 
 // getCommandFunc executes the "get" command.
 func getCommandFunc(cmd *cobra.Command, args []string) {
-	key, opts := getGetOp(args)
+	key, opts := getGetOp(cmd, args)
 	ctx, cancel := commandCtx(cmd)
 	resp, err := mustClientFromCmd(cmd).Get(ctx, key, opts...)
 	cancel()
@@ -74,9 +74,9 @@ func getCommandFunc(cmd *cobra.Command, args []string) {
 	display.Get(*resp)
 }
 
-func getGetOp(args []string) (string, []clientv3.OpOption) {
+func getGetOp(cmd *cobra.Command, args []string) (string, []clientv3.OpOption) {
 	if len(args) == 0 {
-		ExitWithError(ExitBadArgs, fmt.Errorf("get command needs one argument as key and an optional argument as range_end."))
+		ExitWithError(ExitBadArgs, fmt.Errorf("range command needs arguments."))
 	}
 
 	if getPrefix && getFromKey {

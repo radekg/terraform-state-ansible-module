@@ -263,7 +263,7 @@ func TestAccAWSGameliftFleet_basic(t *testing.T) {
 	launchPath := g.LaunchPath
 	params := g.Parameters(33435)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSGameliftFleetDestroy,
@@ -340,7 +340,7 @@ func TestAccAWSGameliftFleet_allFields(t *testing.T) {
 		g.Parameters(33436),
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSGameliftFleetDestroy,

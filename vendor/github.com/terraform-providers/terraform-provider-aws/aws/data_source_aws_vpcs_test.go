@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccDataSourceAwsVpcs_basic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -26,7 +26,7 @@ func TestAccDataSourceAwsVpcs_basic(t *testing.T) {
 
 func TestAccDataSourceAwsVpcs_tags(t *testing.T) {
 	rName := acctest.RandString(5)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -43,7 +43,7 @@ func TestAccDataSourceAwsVpcs_tags(t *testing.T) {
 
 func TestAccDataSourceAwsVpcs_filters(t *testing.T) {
 	rName := acctest.RandString(5)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

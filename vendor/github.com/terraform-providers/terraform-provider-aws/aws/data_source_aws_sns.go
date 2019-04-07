@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -55,7 +56,7 @@ func dataSourceAwsSnsTopicsRead(d *schema.ResourceData, meta interface{}) error 
 		return true
 	})
 	if err != nil {
-		return fmt.Errorf("Error describing topics: %s", err)
+		return errwrap.Wrapf("Error describing topics: {{err}}", err)
 	}
 
 	if len(arns) == 0 {

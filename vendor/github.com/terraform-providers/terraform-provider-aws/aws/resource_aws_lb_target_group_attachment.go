@@ -5,7 +5,9 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -69,7 +71,7 @@ func resourceAwsLbAttachmentCreate(d *schema.ResourceData, meta interface{}) err
 
 	_, err := elbconn.RegisterTargets(params)
 	if err != nil {
-		return fmt.Errorf("Error registering targets with target group: %s", err)
+		return errwrap.Wrapf("Error registering targets with target group: {{err}}", err)
 	}
 
 	d.SetId(resource.PrefixedUniqueId(fmt.Sprintf("%s-", d.Get("target_group_arn"))))
@@ -98,8 +100,8 @@ func resourceAwsLbAttachmentDelete(d *schema.ResourceData, meta interface{}) err
 	}
 
 	_, err := elbconn.DeregisterTargets(params)
-	if err != nil && !isAWSErr(err, elbv2.ErrCodeTargetGroupNotFoundException, "") {
-		return fmt.Errorf("Error deregistering Targets: %s", err)
+	if err != nil && !isTargetGroupNotFound(err) {
+		return errwrap.Wrapf("Error deregistering Targets: {{err}}", err)
 	}
 
 	return nil
@@ -127,17 +129,17 @@ func resourceAwsLbAttachmentRead(d *schema.ResourceData, meta interface{}) error
 		Targets:        []*elbv2.TargetDescription{target},
 	})
 	if err != nil {
-		if isAWSErr(err, elbv2.ErrCodeTargetGroupNotFoundException, "") {
+		if isTargetGroupNotFound(err) {
 			log.Printf("[WARN] Target group does not exist, removing target attachment %s", d.Id())
 			d.SetId("")
 			return nil
 		}
-		if isAWSErr(err, elbv2.ErrCodeInvalidTargetException, "") {
+		if isInvalidTarget(err) {
 			log.Printf("[WARN] Target does not exist, removing target attachment %s", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading Target Health: %s", err)
+		return errwrap.Wrapf("Error reading Target Health: {{err}}", err)
 	}
 
 	if len(resp.TargetHealthDescriptions) != 1 {
@@ -147,4 +149,9 @@ func resourceAwsLbAttachmentRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	return nil
+}
+
+func isInvalidTarget(err error) bool {
+	elberr, ok := err.(awserr.Error)
+	return ok && elberr.Code() == "InvalidTarget"
 }

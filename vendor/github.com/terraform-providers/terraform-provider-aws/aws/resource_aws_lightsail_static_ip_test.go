@@ -75,7 +75,7 @@ func TestAccAWSLightsailStaticIp_basic(t *testing.T) {
 	var staticIp lightsail.StaticIp
 	staticIpName := fmt.Sprintf("tf-test-lightsail-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLightsailStaticIpDestroy,
@@ -107,7 +107,7 @@ func TestAccAWSLightsailStaticIp_disappears(t *testing.T) {
 		return nil
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLightsailStaticIpDestroy,

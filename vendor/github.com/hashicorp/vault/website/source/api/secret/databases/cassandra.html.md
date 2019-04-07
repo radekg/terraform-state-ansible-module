@@ -24,6 +24,7 @@ has a number of parameters to further configure a connection.
 | `POST`   | `/database/config/:name`     | `204 (empty body)` |
 
 ### Parameters
+
 - `hosts` `(string: <required>)` – Specifies a set of comma-delineated Cassandra
   hosts to connect to.
 
@@ -55,6 +56,18 @@ has a number of parameters to further configure a connection.
 - `protocol_version` `(int: 2)` – Specifies the CQL protocol version to use.
 
 - `connect_timeout` `(string: "5s")` – Specifies the connection timeout to use.
+
+- `local_datacenter` `(string: "")` – If set, enables host selection policy 
+which will prioritize and use hosts which are in the local datacenter before 
+hosts in all other datacenters (for example "dc-01").
+
+- `socket_keep_alive` `(string: "0s")` – the keep-alive period for an active
+	network connection. If zero, keep-alives are not enabled.
+
+- `consistency` `(string: "")` – Specifies the consistency option to use.  See
+  the [gocql
+  definition](https://github.com/gocql/gocql/blob/master/frame.go#L188) for
+  valid options.
 
 TLS works as follows:
 
@@ -115,19 +128,19 @@ list the plugin does not support that statement type.
   statements executed to create and configure a user. Must be a
   semicolon-separated string, a base64-encoded semicolon-separated string, a
   serialized JSON string array, or a base64-encoded serialized JSON string
-  array. The '{{name}}' and '{{password}}' values will be substituted. If not
+  array. The '{{username}}' and '{{password}}' values will be substituted. If not
   provided, defaults to a generic create user statements that creates a
   non-superuser.
 
 - `revocation_statements` `(list: [])` – Specifies the database statements to
   be executed to revoke a user. Must be a semicolon-separated string, a
   base64-encoded semicolon-separated string, a serialized JSON string array, or
-  a base64-encoded serialized JSON string array. The '{{name}}' value will be
+  a base64-encoded serialized JSON string array. The '{{username}}' value will be
   substituted. If not provided defaults to a generic drop user statement.
 
 - `rollback_statements` `(list: [])` – Specifies the database statements to be
   executed to rollback a create operation in the event of an error. Must be a
   semicolon-separated string, a base64-encoded semicolon-separated string, a
   serialized JSON string array, or a base64-encoded serialized JSON string
-  array. The '{{name}}' value will be substituted. If not provided, defaults to
+  array. The '{{username}}' value will be substituted. If not provided, defaults to
   a generic drop user statement

@@ -81,22 +81,9 @@ Insert '--' for workaround:
 ./etcdctl put -- <key> <value>
 ```
 
-Providing \<value\> in a new line after using `carriage return` is not supported and etcdctl may hang in that case. For example, following case is not supported:
-
-```bash
-./etcdctl put <key>\r
-<value>
-```
-
-A \<value\> can have multiple lines or spaces but it must be provided with a double-quote as demonstrated below:
-
-```bash
-./etcdctl put foo "bar1 2 3"
-```
-
 ### GET [options] \<key\> [range_end]
 
-GET gets the key or a range of keys [key, range_end) if range_end is given.
+GET gets the key or a range of keys [key, range_end) if `range-end` is given.
 
 RPC: Range
 
@@ -191,7 +178,7 @@ If any key or value contains non-printable characters or control characters, sim
 
 ### DEL [options] \<key\> [range_end]
 
-Removes the specified key or range of keys [key, range_end) if range_end is given.
+Removes the specified key or range of keys [key, range_end) if `range-end` is given.
 
 RPC: DeleteRange
 
@@ -269,7 +256,7 @@ RPC: Txn
 <Txn> ::= <CMP>* "\n" <THEN> "\n" <ELSE> "\n"
 <CMP> ::= (<CMPCREATE>|<CMPMOD>|<CMPVAL>|<CMPVER>|<CMPLEASE>) "\n"
 <CMPOP> ::= "<" | "=" | ">"
-<CMPCREATE> := ("c"|"create")"("<KEY>")" <CMPOP> <REVISION>
+<CMPCREATE> := ("c"|"create")"("<KEY>")" <REVISION>
 <CMPMOD> ::= ("m"|"mod")"("<KEY>")" <CMPOP> <REVISION>
 <CMPVAL> ::= ("val"|"value")"("<KEY>")" <CMPOP> <VALUE>
 <CMPVER> ::= ("ver"|"version")"("<KEY>")" <CMPOP> <VERSION>
@@ -352,7 +339,7 @@ Prints the compacted revision.
 
 ### WATCH [options] [key or prefix] [range_end] [--] [exec-command arg1 arg2 ...]
 
-Watch watches events stream on keys or prefixes, [key or prefix, range_end) if range_end is given. The watch command runs until it encounters an error or is terminated by the user.  If range_end is given, it must be lexicographically greater than key or "\x00".
+Watch watches events stream on keys or prefixes, [key or prefix, range_end) if `range-end` is given. The watch command runs until it encounters an error or is terminated by the user.  If range_end is given, it must be lexicographically greater than key or "\x00".
 
 RPC: Watch
 
@@ -685,7 +672,7 @@ Prints the member ID of the removed member and the cluster ID.
 
 MEMBER LIST prints the member details for all members associated with an etcd cluster.
 
-RPC: MemberList
+RPC: [MemberList][member_list_rpc].
 
 #### Output
 
@@ -831,7 +818,7 @@ Get the status for all endpoints in the cluster associated with the default endp
 +------------------------+------------+
 |        ENDPOINT        |    HASH    |
 +------------------------+------------+
-| http://127.0.0.1:2379  | 1084519789 |
+| http://127.0.0.1:12379 | 1084519789 |
 | http://127.0.0.1:22379 | 1084519789 |
 | http://127.0.0.1:32379 | 1084519789 |
 +------------------------+------------+
@@ -893,7 +880,7 @@ DEFRAG defragments the backend database file for a set of given endpoints while 
 
 **Note that defragmentation to a live member blocks the system from reading and writing data while rebuilding its states.**
 
-**Note that defragmentation request does not get replicated over cluster. That is, the request is only applied to the local node. Specify all members in `--endpoints` flag or `--cluster` flag to automatically find all cluster members.**
+**Note that defragmentation request does not get replicated over cluster. That is, the request is only applied to the local node. Specify all members in `--endpoints` flag.**
 
 #### Options
 
@@ -909,15 +896,6 @@ For each endpoints, prints a message indicating whether the endpoint was success
 ./etcdctl --endpoints=localhost:2379,badendpoint:2379 defrag
 # Finished defragmenting etcd member[localhost:2379]
 # Failed to defragment etcd member[badendpoint:2379] (grpc: timed out trying to connect)
-```
-
-Run defragment operations for all endpoints in the cluster associated with the default endpoint:
-
-```bash
-./etcdctl defrag --cluster
-Finished defragmenting etcd member[http://127.0.0.1:2379]
-Finished defragmenting etcd member[http://127.0.0.1:22379]
-Finished defragmenting etcd member[http://127.0.0.1:32379]
 ```
 
 To defragment a data directory directly, use the `--data-dir` flag:
@@ -1038,7 +1016,7 @@ MOVE-LEADER transfers leadership from the leader to another member in the cluste
 ```bash
 # to choose transferee
 transferee_id=$(./etcdctl \
-  --endpoints localhost:2379,localhost:22379,localhost:32379 \
+  --endpoints localhost:12379,localhost:22379,localhost:32379 \
   endpoint status | grep -m 1 "false" | awk -F', ' '{print $2}')
 echo ${transferee_id}
 # c89feb932daef420
@@ -1056,7 +1034,7 @@ echo ${transferee_id}
 
 ### LOCK [options] \<lockname\> [command arg1 arg2 ...]
 
-LOCK acquires a distributed mutex with a given name. Once the lock is acquired, it will be held until etcdctl is terminated.
+LOCK acquires a distributed named mutex with a given name. Once the lock is acquired, it will be held until etcdctl is terminated.
 
 #### Options
 
@@ -1064,9 +1042,9 @@ LOCK acquires a distributed mutex with a given name. Once the lock is acquired, 
 
 #### Output
 
-Once the lock is acquired but no command is given, the result for the GET on the unique lock holder key is displayed.
+Once the lock is acquired, the result for the GET on the unique lock holder key is displayed.
 
-If a command is given, it will be executed with environment variables `ETCD_LOCK_KEY` and `ETCD_LOCK_REV` set to the lock's holder key and revision.
+If a command is given, it will be launched with environment variables `ETCD_LOCK_KEY` and `ETCD_LOCK_REV` set to the lock's holder key and revision.
 
 #### Example
 
@@ -1082,12 +1060,6 @@ Acquire lock and execute `echo lock acquired`:
 ```bash
 ./etcdctl lock mylock echo lock acquired
 # lock acquired
-```
-
-Acquire lock and execute `etcdctl put` command
-```bash
-./etcdctl lock mylock ./etcdctl put foo bar
-# OK
 ```
 
 #### Remarks
@@ -1162,7 +1134,7 @@ RPC: AuthEnable/AuthDisable
 
 ### ROLE \<subcommand\>
 
-ROLE is used to specify different roles which can be assigned to etcd user(s).
+ROLE is used to specify differnt roles which can be assigned to etcd user(s).
 
 ### ROLE ADD \<role name\>
 
@@ -1536,81 +1508,6 @@ Prints etcd version and API version.
 # API version: 3.1
 ```
 
-### CHECK \<subcommand\>
-
-CHECK provides commands for checking properties of the etcd cluster.
-
-### CHECK PERF [options]
-
-CHECK PERF checks the performance of the etcd cluster for 60 seconds. Running the `check perf` often can create a large keyspace history which can be auto compacted and defragmented using the `--auto-compact` and `--auto-defrag` options as described below.
-
-RPC: CheckPerf
-
-#### Options
-
-- load -- the performance check's workload model. Accepted workloads: s(small), m(medium), l(large), xl(xLarge)
-
-- prefix -- the prefix for writing the performance check's keys.
-
-- auto-compact -- if true, compact storage with last revision after test is finished.
-
-- auto-defrag -- if true, defragment storage after test is finished.
-
-#### Output
-
-Prints the result of performance check on different criteria like throughput. Also prints an overall status of the check as pass or fail.
-
-#### Examples
-
-Shows examples of both, pass and fail, status. The failure is due to the fact that a large workload was tried on a single node etcd cluster running on a laptop environment created for development and testing purpose.
-
-```bash
-./etcdctl check perf --load="s"
-# 60 / 60 Booooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo! 100.00%1m0s
-# PASS: Throughput is 150 writes/s
-# PASS: Slowest request took 0.087509s
-# PASS: Stddev is 0.011084s
-# PASS
-./etcdctl check perf --load="l"
-# 60 / 60 Booooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo! 100.00%1m0s
-# FAIL: Throughput too low: 6808 writes/s
-# PASS: Slowest request took 0.228191s
-# PASS: Stddev is 0.033547s
-# FAIL
-```
-
-### CHECK DATASCALE [options]
-
-CHECK DATASCALE checks the memory usage of holding data for different workloads on a given server endpoint. Running the `check datascale` often can create a large keyspace history which can be auto compacted and defragmented using the `--auto-compact` and `--auto-defrag` options as described below.
-
-RPC: CheckDatascale
-
-#### Options
-
-- load -- the datascale check's workload model. Accepted workloads: s(small), m(medium), l(large), xl(xLarge)
-
-- prefix -- the prefix for writing the datascale check's keys.
-
-- auto-compact -- if true, compact storage with last revision after test is finished.
-
-- auto-defrag -- if true, defragment storage after test is finished.
-
-#### Output
-
-Prints the system memory usage for a given workload. Also prints status of compact and defragment if related options are passed.
-
-#### Examples
-
-```bash
-./etcdctl check datascale --load="s" --auto-compact=true --auto-defrag=true
-# Start data scale check for work load [10000 key-value pairs, 1024 bytes per key-value, 50 concurrent clients].
-# Compacting with revision 18346204
-# Compacted with revision 18346204
-# Defragmenting "127.0.0.1:2379"
-# Defragmented "127.0.0.1:2379"
-# PASS: Approximate system memory used : 64.30 MB.
-```
-
 ## Exit codes
 
 For all commands, a successful execution return a zero exit code. All failures will return non-zero exit codes.
@@ -1661,3 +1558,4 @@ backward compatibility for `JSON` format and the format in non-interactive mode.
 [v3key]: ../mvcc/mvccpb/kv.proto#L12-L29
 [etcdrpc]: ../etcdserver/etcdserverpb/rpc.proto
 [storagerpc]: ../mvcc/mvccpb/kv.proto
+[member_list_rpc]: ../etcdserver/etcdserverpb/rpc.proto#L493-L497

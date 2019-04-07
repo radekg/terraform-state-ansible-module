@@ -20,39 +20,39 @@ func resourceAwsAppautoscalingScheduledAction() *schema.Resource {
 		Delete: resourceAwsAppautoscalingScheduledActionDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"service_namespace": {
+			"service_namespace": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"resource_id": {
+			"resource_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"scalable_dimension": {
+			"scalable_dimension": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"scalable_target_action": {
+			"scalable_target_action": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"max_capacity": {
+						"max_capacity": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
 						},
-						"min_capacity": {
+						"min_capacity": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
@@ -60,22 +60,22 @@ func resourceAwsAppautoscalingScheduledAction() *schema.Resource {
 					},
 				},
 			},
-			"schedule": {
+			"schedule": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"start_time": {
+			"start_time": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"end_time": {
+			"end_time": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

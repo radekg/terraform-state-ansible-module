@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -37,7 +38,7 @@ func resourceAwsDefaultSecurityGroupCreate(d *schema.ResourceData, meta interfac
 	conn := meta.(*AWSClient).ec2conn
 	securityGroupOpts := &ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{
-			{
+			&ec2.Filter{
 				Name:   aws.String("group-name"),
 				Values: []*string{aws.String("default")},
 			},
@@ -66,7 +67,7 @@ func resourceAwsDefaultSecurityGroupCreate(d *schema.ResourceData, meta interfac
 		// returned, as default is a protected name for each VPC, and for each
 		// Region on EC2 Classic
 		if len(resp.SecurityGroups) != 1 {
-			return fmt.Errorf("Error finding default security group; found (%d) groups: %s", len(resp.SecurityGroups), resp)
+			return fmt.Errorf("[ERR] Error finding default security group; found (%d) groups: %s", len(resp.SecurityGroups), resp)
 		}
 		g = resp.SecurityGroups[0]
 	} else {
@@ -80,7 +81,7 @@ func resourceAwsDefaultSecurityGroupCreate(d *schema.ResourceData, meta interfac
 	}
 
 	if g == nil {
-		return fmt.Errorf("Error finding default security group: no matching group found")
+		return fmt.Errorf("[ERR] Error finding default security group: no matching group found")
 	}
 
 	d.SetId(*g.GroupId)
@@ -92,7 +93,7 @@ func resourceAwsDefaultSecurityGroupCreate(d *schema.ResourceData, meta interfac
 	}
 
 	if err := revokeDefaultSecurityGroupRules(meta, g); err != nil {
-		return fmt.Errorf("%s", err)
+		return errwrap.Wrapf("{{err}}", err)
 	}
 
 	return resourceAwsSecurityGroupUpdate(d, meta)

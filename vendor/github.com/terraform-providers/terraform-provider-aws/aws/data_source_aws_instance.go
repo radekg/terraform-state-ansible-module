@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -24,10 +23,6 @@ func dataSourceAwsInstance() *schema.Resource {
 				ForceNew: true,
 			},
 			"ami": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"arn": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -321,16 +316,6 @@ func dataSourceAwsInstanceRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		d.Set("password_data", passwordData)
 	}
-
-	// ARN
-	arn := arn.ARN{
-		Partition: meta.(*AWSClient).partition,
-		Region:    meta.(*AWSClient).region,
-		Service:   "ec2",
-		AccountID: meta.(*AWSClient).accountid,
-		Resource:  fmt.Sprintf("instance/%s", d.Id()),
-	}
-	d.Set("arn", arn.String())
 
 	return nil
 }
