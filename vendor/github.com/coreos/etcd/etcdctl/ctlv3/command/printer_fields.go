@@ -17,10 +17,9 @@ package command
 import (
 	"fmt"
 
-	v3 "go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/snapshot"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
-	spb "go.etcd.io/etcd/mvcc/mvccpb"
+	v3 "github.com/coreos/etcd/clientv3"
+	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
+	spb "github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 type fieldsPrinter struct{ printer }
@@ -141,16 +140,6 @@ func (p *fieldsPrinter) MemberList(r v3.MemberListResponse) {
 	}
 }
 
-func (p *fieldsPrinter) EndpointHealth(hs []epHealth) {
-	for _, h := range hs {
-		fmt.Printf("\"Endpoint\" : %q\n", h.Ep)
-		fmt.Println(`"Health" :`, h.Health)
-		fmt.Println(`"Took" :`, h.Took)
-		fmt.Println(`"Error" :`, h.Error)
-		fmt.Println()
-	}
-}
-
 func (p *fieldsPrinter) EndpointStatus(eps []epStatus) {
 	for _, ep := range eps {
 		p.hdr(ep.Resp.Header)
@@ -159,8 +148,6 @@ func (p *fieldsPrinter) EndpointStatus(eps []epStatus) {
 		fmt.Println(`"Leader" :`, ep.Resp.Leader)
 		fmt.Println(`"RaftIndex" :`, ep.Resp.RaftIndex)
 		fmt.Println(`"RaftTerm" :`, ep.Resp.RaftTerm)
-		fmt.Println(`"RaftAppliedIndex" :`, ep.Resp.RaftAppliedIndex)
-		fmt.Println(`"Errors" :`, ep.Resp.Errors)
 		fmt.Printf("\"Endpoint\" : %q\n", ep.Ep)
 		fmt.Println()
 	}
@@ -184,7 +171,7 @@ func (p *fieldsPrinter) Alarm(r v3.AlarmResponse) {
 	}
 }
 
-func (p *fieldsPrinter) DBStatus(r snapshot.Status) {
+func (p *fieldsPrinter) DBStatus(r dbstatus) {
 	fmt.Println(`"Hash" :`, r.Hash)
 	fmt.Println(`"Revision" :`, r.Revision)
 	fmt.Println(`"Keys" :`, r.TotalKey)

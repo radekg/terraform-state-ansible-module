@@ -14,12 +14,12 @@ import (
 func TestAccAWSAPIGatewayResource_basic(t *testing.T) {
 	var conf apigateway.Resource
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSAPIGatewayResourceDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSAPIGatewayResourceConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSAPIGatewayResourceExists("aws_api_gateway_resource.test", &conf),
@@ -29,12 +29,6 @@ func TestAccAWSAPIGatewayResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"aws_api_gateway_resource.test", "path", "/test"),
 				),
-			},
-			{
-				ResourceName:      "aws_api_gateway_resource.test",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAWSAPIGatewayResourceImportStateIdFunc("aws_api_gateway_resource.test"),
-				ImportStateVerify: true,
 			},
 		},
 	})
@@ -43,12 +37,12 @@ func TestAccAWSAPIGatewayResource_basic(t *testing.T) {
 func TestAccAWSAPIGatewayResource_update(t *testing.T) {
 	var conf apigateway.Resource
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSAPIGatewayResourceDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSAPIGatewayResourceConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSAPIGatewayResourceExists("aws_api_gateway_resource.test", &conf),
@@ -60,7 +54,7 @@ func TestAccAWSAPIGatewayResource_update(t *testing.T) {
 				),
 			},
 
-			{
+			resource.TestStep{
 				Config: testAccAWSAPIGatewayResourceConfig_updatePathPart,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSAPIGatewayResourceExists("aws_api_gateway_resource.test", &conf),
@@ -71,12 +65,6 @@ func TestAccAWSAPIGatewayResource_update(t *testing.T) {
 						"aws_api_gateway_resource.test", "path", "/test_changed"),
 				),
 			},
-			{
-				ResourceName:      "aws_api_gateway_resource.test",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAWSAPIGatewayResourceImportStateIdFunc("aws_api_gateway_resource.test"),
-				ImportStateVerify: true,
-			},
 		},
 	})
 }
@@ -84,7 +72,7 @@ func TestAccAWSAPIGatewayResource_update(t *testing.T) {
 func testAccCheckAWSAPIGatewayResourceAttributes(conf *apigateway.Resource, path string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if *conf.Path != path {
-			return fmt.Errorf("Wrong Path: %q", *conf.Path)
+			return fmt.Errorf("Wrong Path: %q", conf.Path)
 		}
 
 		return nil
@@ -155,17 +143,6 @@ func testAccCheckAWSAPIGatewayResourceDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccAWSAPIGatewayResourceImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
-	return func(s *terraform.State) (string, error) {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return "", fmt.Errorf("Not found: %s", resourceName)
-		}
-
-		return fmt.Sprintf("%s/%s", rs.Primary.Attributes["rest_api_id"], rs.Primary.ID), nil
-	}
 }
 
 const testAccAWSAPIGatewayResourceConfig = `

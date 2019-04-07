@@ -23,7 +23,7 @@ func TestAccAWSBudgetsBudget_basic(t *testing.T) {
 	accountID := "012345678910"
 	configBasicUpdate := testAccAWSBudgetsBudgetConfigUpdate(name)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccAWSBudgetsBudgetDestroy,
@@ -59,12 +59,6 @@ func TestAccAWSBudgetsBudget_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_budgets_budget.foo", "time_unit", *configBasicUpdate.TimeUnit),
 				),
 			},
-			{
-				ResourceName:            "aws_budgets_budget.foo",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name_prefix"},
-			},
 		},
 	})
 }
@@ -75,7 +69,7 @@ func TestAccAWSBudgetsBudget_prefix(t *testing.T) {
 	configBasicDefaults := testAccAWSBudgetsBudgetConfigDefaults(name)
 	configBasicUpdate := testAccAWSBudgetsBudgetConfigUpdate(name)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccAWSBudgetsBudgetDestroy,
@@ -106,13 +100,6 @@ func TestAccAWSBudgetsBudget_prefix(t *testing.T) {
 					resource.TestCheckResourceAttr("aws_budgets_budget.foo", "time_period_end", configBasicUpdate.TimePeriod.End.Format("2006-01-02_15:04")),
 					resource.TestCheckResourceAttr("aws_budgets_budget.foo", "time_unit", *configBasicUpdate.TimeUnit),
 				),
-			},
-
-			{
-				ResourceName:            "aws_budgets_budget.foo",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name_prefix"},
 			},
 		},
 	})
@@ -253,7 +240,7 @@ func testAccAWSBudgetsBudgetConfigUpdate(name string) budgets.Budget {
 			Unit:   aws.String("USD"),
 		},
 		CostFilters: map[string][]*string{
-			"AZ": {
+			"AZ": []*string{
 				aws.String("us-east-2"),
 			},
 		},
@@ -288,7 +275,7 @@ func testAccAWSBudgetsBudgetConfigDefaults(name string) budgets.Budget {
 			Unit:   aws.String("USD"),
 		},
 		CostFilters: map[string][]*string{
-			"AZ": {
+			"AZ": []*string{
 				aws.String("us-east-1"),
 			},
 		},

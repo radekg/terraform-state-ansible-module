@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceAwsIAMServerCertificate() *schema.Resource {
@@ -63,15 +62,14 @@ func resourceAwsIAMServerCertificate() *schema.Resource {
 				Computed:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"name_prefix"},
-				ValidateFunc:  validation.StringLenBetween(0, 128),
+				ValidateFunc:  validateMaxLength(128),
 			},
 
 			"name_prefix": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"name"},
-				ValidateFunc:  validation.StringLenBetween(0, 128-resource.UniqueIDSuffixLength),
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validateMaxLength(128 - resource.UniqueIDSuffixLength),
 			},
 
 			"arn": {
@@ -113,9 +111,9 @@ func resourceAwsIAMServerCertificateCreate(d *schema.ResourceData, meta interfac
 	resp, err := conn.UploadServerCertificate(createOpts)
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok {
-			return fmt.Errorf("Error uploading server certificate, error: %s: %s", awsErr.Code(), awsErr.Message())
+			return fmt.Errorf("[WARN] Error uploading server certificate, error: %s: %s", awsErr.Code(), awsErr.Message())
 		}
-		return fmt.Errorf("Error uploading server certificate, error: %s", err)
+		return fmt.Errorf("[WARN] Error uploading server certificate, error: %s", err)
 	}
 
 	d.SetId(*resp.ServerCertificateMetadata.ServerCertificateId)
@@ -137,9 +135,9 @@ func resourceAwsIAMServerCertificateRead(d *schema.ResourceData, meta interface{
 				d.SetId("")
 				return nil
 			}
-			return fmt.Errorf("Error reading IAM Server Certificate: %s: %s", awsErr.Code(), awsErr.Message())
+			return fmt.Errorf("[WARN] Error reading IAM Server Certificate: %s: %s", awsErr.Code(), awsErr.Message())
 		}
-		return fmt.Errorf("Error reading IAM Server Certificate: %s", err)
+		return fmt.Errorf("[WARN] Error reading IAM Server Certificate: %s", err)
 	}
 
 	d.SetId(*resp.ServerCertificate.ServerCertificateMetadata.ServerCertificateId)

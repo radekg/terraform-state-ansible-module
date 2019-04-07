@@ -67,12 +67,12 @@ func dataSourceAwsVpcPeeringConnection() *schema.Resource {
 			"accepter": {
 				Type:     schema.TypeMap,
 				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeBool},
+				Elem:     schema.TypeBool,
 			},
 			"requester": {
 				Type:     schema.TypeMap,
 				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeBool},
+				Elem:     schema.TypeBool,
 			},
 			"filter": ec2CustomFiltersSchema(),
 			"tags":   tagsSchemaComputed(),

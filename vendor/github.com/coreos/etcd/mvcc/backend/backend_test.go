@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	bolt "go.etcd.io/bbolt"
+	bolt "github.com/coreos/bbolt"
 )
 
 func TestBackendClose(t *testing.T) {
@@ -74,7 +74,7 @@ func TestBackendSnapshot(t *testing.T) {
 	nb := New(bcfg)
 	defer cleanup(nb, f.Name())
 
-	newTx := nb.BatchTx()
+	newTx := b.BatchTx()
 	newTx.Lock()
 	ks, _ := newTx.UnsafeRange([]byte("test"), []byte("foo"), []byte("goo"), 0)
 	if len(ks) != 1 {

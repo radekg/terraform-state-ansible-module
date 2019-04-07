@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceAwsElb() *schema.Resource {
@@ -31,7 +30,7 @@ func resourceAwsElb() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
@@ -39,33 +38,32 @@ func resourceAwsElb() *schema.Resource {
 				ConflictsWith: []string{"name_prefix"},
 				ValidateFunc:  validateElbName,
 			},
-			"name_prefix": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"name"},
-				ValidateFunc:  validateElbNamePrefix,
+			"name_prefix": &schema.Schema{
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validateElbNamePrefix,
 			},
 
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"internal": {
+			"internal": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 				Computed: true,
 			},
 
-			"cross_zone_load_balancing": {
+			"cross_zone_load_balancing": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
-			"availability_zones": {
+			"availability_zones": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
@@ -73,7 +71,7 @@ func resourceAwsElb() *schema.Resource {
 				Set:      schema.HashString,
 			},
 
-			"instances": {
+			"instances": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
@@ -81,7 +79,7 @@ func resourceAwsElb() *schema.Resource {
 				Set:      schema.HashString,
 			},
 
-			"security_groups": {
+			"security_groups": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
@@ -89,18 +87,18 @@ func resourceAwsElb() *schema.Resource {
 				Set:      schema.HashString,
 			},
 
-			"source_security_group": {
+			"source_security_group": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"source_security_group_id": {
+			"source_security_group_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"subnets": {
+			"subnets": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
@@ -108,46 +106,46 @@ func resourceAwsElb() *schema.Resource {
 				Set:      schema.HashString,
 			},
 
-			"idle_timeout": {
+			"idle_timeout": &schema.Schema{
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Default:      60,
-				ValidateFunc: validation.IntBetween(1, 4000),
+				ValidateFunc: validateIntegerInRange(1, 4000),
 			},
 
-			"connection_draining": {
+			"connection_draining": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"connection_draining_timeout": {
+			"connection_draining_timeout": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  300,
 			},
 
-			"access_logs": {
+			"access_logs": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"interval": {
+						"interval": &schema.Schema{
 							Type:         schema.TypeInt,
 							Optional:     true,
 							Default:      60,
 							ValidateFunc: validateAccessLogsInterval,
 						},
-						"bucket": {
+						"bucket": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"bucket_prefix": {
+						"bucket_prefix": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"enabled": {
+						"enabled": &schema.Schema{
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  true,
@@ -156,36 +154,36 @@ func resourceAwsElb() *schema.Resource {
 				},
 			},
 
-			"listener": {
+			"listener": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"instance_port": {
+						"instance_port": &schema.Schema{
 							Type:         schema.TypeInt,
 							Required:     true,
-							ValidateFunc: validation.IntBetween(1, 65535),
+							ValidateFunc: validateIntegerInRange(1, 65535),
 						},
 
-						"instance_protocol": {
+						"instance_protocol": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validateListenerProtocol(),
+							ValidateFunc: validateListenerProtocol,
 						},
 
-						"lb_port": {
+						"lb_port": &schema.Schema{
 							Type:         schema.TypeInt,
 							Required:     true,
-							ValidateFunc: validation.IntBetween(1, 65535),
+							ValidateFunc: validateIntegerInRange(1, 65535),
 						},
 
-						"lb_protocol": {
+						"lb_protocol": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validateListenerProtocol(),
+							ValidateFunc: validateListenerProtocol,
 						},
 
-						"ssl_certificate_id": {
+						"ssl_certificate_id": &schema.Schema{
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validateArn,
@@ -195,52 +193,52 @@ func resourceAwsElb() *schema.Resource {
 				Set: resourceAwsElbListenerHash,
 			},
 
-			"health_check": {
+			"health_check": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"healthy_threshold": {
+						"healthy_threshold": &schema.Schema{
 							Type:         schema.TypeInt,
 							Required:     true,
-							ValidateFunc: validation.IntBetween(2, 10),
+							ValidateFunc: validateIntegerInRange(2, 10),
 						},
 
-						"unhealthy_threshold": {
+						"unhealthy_threshold": &schema.Schema{
 							Type:         schema.TypeInt,
 							Required:     true,
-							ValidateFunc: validation.IntBetween(2, 10),
+							ValidateFunc: validateIntegerInRange(2, 10),
 						},
 
-						"target": {
+						"target": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validateHeathCheckTarget,
 						},
 
-						"interval": {
+						"interval": &schema.Schema{
 							Type:         schema.TypeInt,
 							Required:     true,
-							ValidateFunc: validation.IntBetween(5, 300),
+							ValidateFunc: validateIntegerInRange(5, 300),
 						},
 
-						"timeout": {
+						"timeout": &schema.Schema{
 							Type:         schema.TypeInt,
 							Required:     true,
-							ValidateFunc: validation.IntBetween(2, 60),
+							ValidateFunc: validateIntegerInRange(2, 60),
 						},
 					},
 				},
 			},
 
-			"dns_name": {
+			"dns_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"zone_id": {
+			"zone_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -304,7 +302,7 @@ func resourceAwsElbCreate(d *schema.ResourceData, meta interface{}) error {
 				// Check for IAM SSL Cert error, eventual consistancy issue
 				if awsErr.Code() == "CertificateNotFound" {
 					return resource.RetryableError(
-						fmt.Errorf("Error creating ELB Listener with SSL Cert, retrying: %s", err))
+						fmt.Errorf("[WARN] Error creating ELB Listener with SSL Cert, retrying: %s", err))
 				}
 			}
 			return resource.NonRetryableError(err)
@@ -407,7 +405,7 @@ func flattenAwsELbResource(d *schema.ResourceData, ec2conn *ec2.EC2, elbconn *el
 			elbVpc = *lb.VPCId
 			sgId, err := sourceSGIdByName(ec2conn, *lb.SourceSecurityGroup.GroupName, elbVpc)
 			if err != nil {
-				return fmt.Errorf("Error looking up ELB Security Group ID: %s", err)
+				return fmt.Errorf("[WARN] Error looking up ELB Security Group ID: %s", err)
 			} else {
 				d.Set("source_security_group_id", sgId)
 			}
@@ -448,9 +446,6 @@ func flattenAwsELbResource(d *schema.ResourceData, ec2conn *ec2.EC2, elbconn *el
 	resp, err := elbconn.DescribeTags(&elb.DescribeTagsInput{
 		LoadBalancerNames: []*string{lb.LoadBalancerName},
 	})
-	if err != nil {
-		return fmt.Errorf("error describing tags for ELB (%s): %s", d.Id(), err)
-	}
 
 	var et []*elb.Tag
 	if len(resp.TagDescriptions) > 0 {
@@ -965,6 +960,18 @@ func validateHeathCheckTarget(v interface{}, k string) (ws []string, errors []er
 	return
 }
 
+func validateListenerProtocol(v interface{}, k string) (ws []string, errors []error) {
+	value := v.(string)
+
+	if !isValidProtocol(value) {
+		errors = append(errors, fmt.Errorf(
+			"%q contains an invalid Listener protocol %q. "+
+				"Valid protocols are either %q, %q, %q, or %q.",
+			k, value, "TCP", "SSL", "HTTP", "HTTPS"))
+	}
+	return
+}
+
 func isValidProtocol(s string) bool {
 	if s == "" {
 		return false
@@ -983,15 +990,6 @@ func isValidProtocol(s string) bool {
 	}
 
 	return true
-}
-
-func validateListenerProtocol() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
-		"HTTP",
-		"HTTPS",
-		"SSL",
-		"TCP",
-	}, true)
 }
 
 // ELB automatically creates ENI(s) on creation

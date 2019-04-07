@@ -72,18 +72,16 @@ func resourceAwsSsmParameter() *schema.Resource {
 
 func resourceAwsSmmParameterExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ssmconn := meta.(*AWSClient).ssmconn
-	_, err := ssmconn.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(d.Id()),
-		WithDecryption: aws.Bool(false),
+
+	resp, err := ssmconn.GetParameters(&ssm.GetParametersInput{
+		Names:          []*string{aws.String(d.Id())},
+		WithDecryption: aws.Bool(true),
 	})
+
 	if err != nil {
-		if isAWSErr(err, ssm.ErrCodeParameterNotFound, "") {
-			return false, nil
-		}
 		return false, err
 	}
-
-	return true, nil
+	return len(resp.InvalidParameters) == 0, nil
 }
 
 func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error {
@@ -91,40 +89,48 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[DEBUG] Reading SSM Parameter: %s", d.Id())
 
-	resp, err := ssmconn.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(d.Id()),
+	resp, err := ssmconn.GetParameters(&ssm.GetParametersInput{
+		Names:          []*string{aws.String(d.Id())},
 		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
 		return fmt.Errorf("error getting SSM parameter: %s", err)
 	}
+	if len(resp.Parameters) == 0 {
+		log.Printf("[WARN] SSM Param %q not found, removing from state", d.Id())
+		d.SetId("")
+		return nil
+	}
 
-	param := resp.Parameter
+	param := resp.Parameters[0]
 	d.Set("name", param.Name)
 	d.Set("type", param.Type)
 	d.Set("value", param.Value)
 
 	describeParamsInput := &ssm.DescribeParametersInput{
-		ParameterFilters: []*ssm.ParameterStringFilter{
-			{
+		Filters: []*ssm.ParametersFilter{
+			&ssm.ParametersFilter{
 				Key:    aws.String("Name"),
-				Option: aws.String("Equals"),
 				Values: []*string{aws.String(d.Get("name").(string))},
 			},
 		},
 	}
-	describeResp, err := ssmconn.DescribeParameters(describeParamsInput)
+	detailedParameters := []*ssm.ParameterMetadata{}
+	err = ssmconn.DescribeParametersPages(describeParamsInput,
+		func(page *ssm.DescribeParametersOutput, lastPage bool) bool {
+			detailedParameters = append(detailedParameters, page.Parameters...)
+			return !lastPage
+		})
 	if err != nil {
 		return fmt.Errorf("error describing SSM parameter: %s", err)
 	}
-
-	if describeResp == nil || len(describeResp.Parameters) == 0 || describeResp.Parameters[0] == nil {
-		log.Printf("[WARN] SSM Parameter %q not found, removing from state", d.Id())
+	if len(detailedParameters) == 0 {
+		log.Printf("[WARN] SSM Param %q not found, removing from state", d.Id())
 		d.SetId("")
 		return nil
 	}
 
-	detail := describeResp.Parameters[0]
+	detail := detailedParameters[0]
 	d.Set("key_id", detail.KeyId)
 	d.Set("description", detail.Description)
 	d.Set("allowed_pattern", detail.AllowedPattern)

@@ -22,13 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
-	"go.etcd.io/etcd/mvcc"
-	"go.etcd.io/etcd/mvcc/backend"
-	"go.etcd.io/etcd/pkg/testutil"
-
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
+	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
+	"github.com/coreos/etcd/mvcc"
+	"github.com/coreos/etcd/mvcc/backend"
+	"github.com/coreos/etcd/pkg/testutil"
 )
 
 // TestV3StorageQuotaApply tests the V3 server respects quotas during apply
@@ -88,16 +86,13 @@ func TestV3StorageQuotaApply(t *testing.T) {
 		}
 	}
 
-	ctx, close := context.WithTimeout(context.TODO(), RequestWaitTimeout)
-	defer close()
-
 	// small quota machine should reject put
-	if _, err := kvc0.Put(ctx, &pb.PutRequest{Key: key, Value: smallbuf}); err == nil {
+	if _, err := kvc0.Put(context.TODO(), &pb.PutRequest{Key: key, Value: smallbuf}); err == nil {
 		t.Fatalf("past-quota instance should reject put")
 	}
 
 	// large quota machine should reject put
-	if _, err := kvc1.Put(ctx, &pb.PutRequest{Key: key, Value: smallbuf}); err == nil {
+	if _, err := kvc1.Put(context.TODO(), &pb.PutRequest{Key: key, Value: smallbuf}); err == nil {
 		t.Fatalf("past-quota instance should reject put")
 	}
 
@@ -169,7 +164,7 @@ func TestV3CorruptAlarm(t *testing.T) {
 	clus.Members[0].Stop(t)
 	fp := filepath.Join(clus.Members[0].DataDir, "member", "snap", "db")
 	be := backend.NewDefaultBackend(fp)
-	s := mvcc.NewStore(zap.NewExample(), be, nil, &fakeConsistentIndex{13})
+	s := mvcc.NewStore(be, nil, &fakeConsistentIndex{13})
 	// NOTE: cluster_proxy mode with namespacing won't set 'k', but namespace/'k'.
 	s.Put([]byte("abc"), []byte("def"), 0)
 	s.Put([]byte("xyz"), []byte("123"), 0)
@@ -178,20 +173,12 @@ func TestV3CorruptAlarm(t *testing.T) {
 	s.Close()
 	be.Close()
 
-	clus.Members[1].WaitOK(t)
-	clus.Members[2].WaitOK(t)
-	time.Sleep(time.Second * 2)
-
 	// Wait for cluster so Puts succeed in case member 0 was the leader.
 	if _, err := clus.Client(1).Get(context.TODO(), "k"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := clus.Client(1).Put(context.TODO(), "xyz", "321"); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := clus.Client(1).Put(context.TODO(), "abc", "fed"); err != nil {
-		t.Fatal(err)
-	}
+	clus.Client(1).Put(context.TODO(), "xyz", "321")
+	clus.Client(1).Put(context.TODO(), "abc", "fed")
 
 	// Restart with corruption checking enabled.
 	clus.Members[1].Stop(t)
@@ -200,15 +187,12 @@ func TestV3CorruptAlarm(t *testing.T) {
 		m.CorruptCheckTime = time.Second
 		m.Restart(t)
 	}
-	clus.WaitLeader(t)
-	time.Sleep(time.Second * 2)
+	// Member 0 restarts into split brain.
 
-	clus.Members[0].WaitStarted(t)
 	resp0, err0 := clus.Client(0).Get(context.TODO(), "abc")
 	if err0 != nil {
 		t.Fatal(err0)
 	}
-	clus.Members[1].WaitStarted(t)
 	resp1, err1 := clus.Client(1).Get(context.TODO(), "abc")
 	if err1 != nil {
 		t.Fatal(err1)

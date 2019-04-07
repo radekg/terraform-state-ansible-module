@@ -72,6 +72,10 @@ func TestFormat(t *testing.T) {
 			`a = "hello ${~name~}"`,
 		},
 		{
+			`a="${b}${c}${ d } ${e}"`,
+			`a = "${b}${c}${d} ${e}"`,
+		},
+		{
 			`b{}`,
 			`b {}`,
 		},
@@ -108,8 +112,20 @@ foo(
 `,
 		},
 		{
+			`a?b:c`,
+			`a ? b : c`,
+		},
+		{
 			`[ [ ] ]`,
 			`[[]]`,
+		},
+		{
+			`[for x in y : x]`,
+			`[for x in y : x]`,
+		},
+		{
+			`[for x in [y] : x]`,
+			`[for x in [y] : x]`,
 		},
 		{
 			`
@@ -182,6 +198,14 @@ a = 1
 b {
   a = 1
 }
+`,
+		},
+		{
+			`
+b {a = 1}
+`,
+			`
+b { a = 1 }
 `,
 		},
 		{
@@ -399,6 +423,126 @@ foo {
   bar = [
     # ...
   ]
+}
+`,
+		},
+		{
+			`
+foo {
+bar = <<EOT
+Foo bar baz
+EOT
+}
+`,
+			`
+foo {
+  bar = <<EOT
+Foo bar baz
+EOT
+}
+`,
+		},
+		{
+			`
+foo {
+bar = <<-EOT
+Foo bar baz
+EOT
+}
+`,
+			`
+foo {
+  bar = <<-EOT
+Foo bar baz
+EOT
+}
+`,
+		},
+		{
+			`
+foo {
+bar = <<-EOT
+  Foo bar baz
+EOT
+}
+`,
+			`
+foo {
+  bar = <<-EOT
+  Foo bar baz
+EOT
+}
+`,
+		},
+		{
+			`
+foo {
+bar = <<-EOT
+  blahblahblah = x
+EOT
+}
+`,
+			`
+foo {
+  bar = <<-EOT
+  blahblahblah = x
+EOT
+}
+`,
+		},
+		{
+			`
+foo {
+bar = <<-EOT
+  ${{ blahblahblah = x }}
+EOT
+}
+`,
+			`
+foo {
+  bar = <<-EOT
+  ${ { blahblahblah = x } }
+EOT
+}
+`,
+		},
+		{
+			`
+foo {
+  bar = <<-EOT
+  ${a}${b}${ c } ${d}
+EOT
+}
+`,
+			`
+foo {
+  bar = <<-EOT
+  ${a}${b}${c} ${d}
+EOT
+}
+`,
+		},
+		{
+			`
+foo {
+bar = <<EOT
+Foo bar baz
+EOT
+}
+
+baz {
+default="string"
+}
+`,
+			`
+foo {
+  bar = <<EOT
+Foo bar baz
+EOT
+}
+
+baz {
+  default = "string"
 }
 `,
 		},

@@ -41,11 +41,10 @@ func resourceAwsIamRolePolicy() *schema.Resource {
 				ValidateFunc:  validateIamRolePolicyName,
 			},
 			"name_prefix": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"name"},
-				ValidateFunc:  validateIamRolePolicyNamePrefix,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validateIamRolePolicyNamePrefix,
 			},
 			"role": {
 				Type:     schema.TypeString,
@@ -79,7 +78,7 @@ func resourceAwsIamRolePolicyPut(d *schema.ResourceData, meta interface{}) error
 	}
 
 	d.SetId(fmt.Sprintf("%s:%s", *request.RoleName, *request.PolicyName))
-	return resourceAwsIamRolePolicyRead(d, meta)
+	return nil
 }
 
 func resourceAwsIamRolePolicyRead(d *schema.ResourceData, meta interface{}) error {

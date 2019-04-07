@@ -1,0 +1,28 @@
+[[override]]
+  name = "github.com/hashicorp/hcl2"
+  branch = "master"
+
+[[override]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "=1.17.12"
+
+[[override]]
+  name = "github.com/kubernetes-sigs/aws-iam-authenticator"
+  revision = "b60fb0760bb88a902b751f990a53a8c693949f99"
+
+[[override]]
+  # last version without The Glue service which does not compile...
+  name = "github.com/terraform-providers/terraform-provider-aws"
+  version = "=1.23.0"
+
+[[override]]
+  name = "github.com/ugorji/go"
+  version = "=1.1.1"
+
+[[override]]
+  name = "github.com/coreos/etcd"
+  version = "3.3.12"
+
+[[constraint]]
+  name = "github.com/hashicorp/terraform"
+  version = "=0.11.13"

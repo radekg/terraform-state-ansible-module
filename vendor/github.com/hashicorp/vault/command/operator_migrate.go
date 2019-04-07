@@ -162,7 +162,7 @@ func (c *OperatorMigrateCommand) migrate(config *migratorConfig) error {
 
 	migrationStatus, err := CheckStorageMigration(from)
 	if err != nil {
-		return errors.New("error checking migration status")
+		return errwrap.Wrapf("error checking migration status: {{err}}", err)
 	}
 
 	if migrationStatus != nil {
@@ -311,7 +311,9 @@ func dfsScan(ctx context.Context, source physical.Backend, cb func(ctx context.C
 			// remove List-triggering key and add children in reverse order
 			dfs = dfs[:len(dfs)-1]
 			for i := len(children) - 1; i >= 0; i-- {
-				dfs = append(dfs, key+children[i])
+				if children[i] != "" {
+					dfs = append(dfs, key+children[i])
+				}
 			}
 		} else {
 			err := cb(ctx, key)

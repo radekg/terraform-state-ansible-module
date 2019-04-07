@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
+	"go/build"
 	"go/parser"
 	"go/token"
 	"math/rand"
@@ -126,7 +127,7 @@ func Generate(outfile, buildTag, codecPkgPath string,
 	if err != nil {
 		return
 	}
-	importPath, err := pkgPath(absdir)
+	pkg, err := build.Default.ImportDir(absdir, build.AllowBinary)
 	if err != nil {
 		return
 	}
@@ -153,7 +154,7 @@ func Generate(outfile, buildTag, codecPkgPath string,
 		StructTags:      st,
 		NoExtensions:    noExtensions,
 	}
-	tv.ImportPath = importPath
+	tv.ImportPath = pkg.ImportPath
 	if tv.ImportPath == tv.CodecImportPath {
 		tv.CodecPkgFiles = true
 		tv.CodecPkgName = "codec"

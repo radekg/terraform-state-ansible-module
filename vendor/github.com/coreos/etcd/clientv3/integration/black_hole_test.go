@@ -21,11 +21,10 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	"go.etcd.io/etcd/integration"
-	"go.etcd.io/etcd/pkg/testutil"
-	"google.golang.org/grpc"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
+	"github.com/coreos/etcd/integration"
+	"github.com/coreos/etcd/pkg/testutil"
 )
 
 // TestBalancerUnderBlackholeKeepAliveWatch tests when watch discovers it cannot talk to
@@ -45,7 +44,6 @@ func TestBalancerUnderBlackholeKeepAliveWatch(t *testing.T) {
 	ccfg := clientv3.Config{
 		Endpoints:            []string{eps[0]},
 		DialTimeout:          1 * time.Second,
-		DialOptions:          []grpc.DialOption{grpc.WithBlock()},
 		DialKeepAliveTime:    1 * time.Second,
 		DialKeepAliveTimeout: 500 * time.Millisecond,
 	}
@@ -108,7 +106,7 @@ func TestBalancerUnderBlackholeKeepAliveWatch(t *testing.T) {
 func TestBalancerUnderBlackholeNoKeepAlivePut(t *testing.T) {
 	testBalancerUnderBlackholeNoKeepAlive(t, func(cli *clientv3.Client, ctx context.Context) error {
 		_, err := cli.Put(ctx, "foo", "bar")
-		if isClientTimeout(err) || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
+		if err == context.DeadlineExceeded || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
 			return errExpected
 		}
 		return err
@@ -118,7 +116,7 @@ func TestBalancerUnderBlackholeNoKeepAlivePut(t *testing.T) {
 func TestBalancerUnderBlackholeNoKeepAliveDelete(t *testing.T) {
 	testBalancerUnderBlackholeNoKeepAlive(t, func(cli *clientv3.Client, ctx context.Context) error {
 		_, err := cli.Delete(ctx, "foo")
-		if isClientTimeout(err) || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
+		if err == context.DeadlineExceeded || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
 			return errExpected
 		}
 		return err
@@ -131,7 +129,7 @@ func TestBalancerUnderBlackholeNoKeepAliveTxn(t *testing.T) {
 			If(clientv3.Compare(clientv3.Version("foo"), "=", 0)).
 			Then(clientv3.OpPut("foo", "bar")).
 			Else(clientv3.OpPut("foo", "baz")).Commit()
-		if isClientTimeout(err) || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
+		if err == context.DeadlineExceeded || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
 			return errExpected
 		}
 		return err
@@ -141,7 +139,7 @@ func TestBalancerUnderBlackholeNoKeepAliveTxn(t *testing.T) {
 func TestBalancerUnderBlackholeNoKeepAliveLinearizableGet(t *testing.T) {
 	testBalancerUnderBlackholeNoKeepAlive(t, func(cli *clientv3.Client, ctx context.Context) error {
 		_, err := cli.Get(ctx, "a")
-		if isClientTimeout(err) || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
+		if err == context.DeadlineExceeded || isServerCtxTimeout(err) || err == rpctypes.ErrTimeout {
 			return errExpected
 		}
 		return err
@@ -151,7 +149,7 @@ func TestBalancerUnderBlackholeNoKeepAliveLinearizableGet(t *testing.T) {
 func TestBalancerUnderBlackholeNoKeepAliveSerializableGet(t *testing.T) {
 	testBalancerUnderBlackholeNoKeepAlive(t, func(cli *clientv3.Client, ctx context.Context) error {
 		_, err := cli.Get(ctx, "a", clientv3.WithSerializable())
-		if isClientTimeout(err) || isServerCtxTimeout(err) {
+		if err == context.DeadlineExceeded || isServerCtxTimeout(err) {
 			return errExpected
 		}
 		return err
@@ -174,7 +172,6 @@ func testBalancerUnderBlackholeNoKeepAlive(t *testing.T, op func(*clientv3.Clien
 	ccfg := clientv3.Config{
 		Endpoints:   []string{eps[0]},
 		DialTimeout: 1 * time.Second,
-		DialOptions: []grpc.DialOption{grpc.WithBlock()},
 	}
 	cli, err := clientv3.New(ccfg)
 	if err != nil {
@@ -192,23 +189,22 @@ func testBalancerUnderBlackholeNoKeepAlive(t *testing.T, op func(*clientv3.Clien
 	// blackhole eps[0]
 	clus.Members[0].Blackhole()
 
-	// With round robin balancer, client will make a request to a healthy endpoint
-	// within a few requests.
+	// fail first due to blackhole, retry should succeed
 	// TODO: first operation can succeed
 	// when gRPC supports better retry on non-delivered request
-	for i := 0; i < 5; i++ {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	for i := 0; i < 2; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		err = op(cli, ctx)
 		cancel()
 		if err == nil {
 			break
-		} else if err == errExpected {
-			t.Logf("#%d: current error %v", i, err)
-		} else {
+		}
+		if i == 0 {
+			if err != errExpected {
+				t.Errorf("#%d: expected %v, got %v", i, errExpected, err)
+			}
+		} else if err != nil {
 			t.Errorf("#%d: failed with error %v", i, err)
 		}
-	}
-	if err != nil {
-		t.Fatal(err)
 	}
 }

@@ -11,37 +11,16 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSENI_importBasic(t *testing.T) {
-	resourceName := "aws_network_interface.bar"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSENIDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSENIConfig,
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSENI_basic(t *testing.T) {
 	var conf ec2.NetworkInterface
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_interface.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSENIDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSENIConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSENIExists("aws_network_interface.bar", &conf),
@@ -60,37 +39,16 @@ func TestAccAWSENI_basic(t *testing.T) {
 	})
 }
 
-func TestAccAWSENI_disappears(t *testing.T) {
-	var networkInterface ec2.NetworkInterface
-	resourceName := "aws_network_interface.bar"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSENIDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSENIConfig,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSENIExists(resourceName, &networkInterface),
-					testAccCheckAWSENIDisappears(&networkInterface),
-				),
-				ExpectNonEmptyPlan: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSENI_updatedDescription(t *testing.T) {
 	var conf ec2.NetworkInterface
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_interface.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSENIDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSENIConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSENIExists("aws_network_interface.bar", &conf),
@@ -99,7 +57,7 @@ func TestAccAWSENI_updatedDescription(t *testing.T) {
 				),
 			},
 
-			{
+			resource.TestStep{
 				Config: testAccAWSENIConfigUpdatedDescription,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSENIExists("aws_network_interface.bar", &conf),
@@ -114,13 +72,13 @@ func TestAccAWSENI_updatedDescription(t *testing.T) {
 func TestAccAWSENI_attached(t *testing.T) {
 	var conf ec2.NetworkInterface
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_interface.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSENIDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSENIConfigWithAttachment,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSENIExists("aws_network_interface.bar", &conf),
@@ -138,13 +96,13 @@ func TestAccAWSENI_attached(t *testing.T) {
 func TestAccAWSENI_ignoreExternalAttachment(t *testing.T) {
 	var conf ec2.NetworkInterface
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_interface.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSENIDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSENIConfigExternalAttachment,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSENIExists("aws_network_interface.bar", &conf),
@@ -159,13 +117,13 @@ func TestAccAWSENI_ignoreExternalAttachment(t *testing.T) {
 func TestAccAWSENI_sourceDestCheck(t *testing.T) {
 	var conf ec2.NetworkInterface
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_interface.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSENIDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSENIConfigWithSourceDestCheck,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSENIExists("aws_network_interface.bar", &conf),
@@ -180,13 +138,13 @@ func TestAccAWSENI_sourceDestCheck(t *testing.T) {
 func TestAccAWSENI_computedIPs(t *testing.T) {
 	var conf ec2.NetworkInterface
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_interface.bar",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSENIDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSENIConfigWithNoPrivateIPs,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSENIExists("aws_network_interface.bar", &conf),
@@ -318,19 +276,6 @@ func testAccCheckAWSENIDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccCheckAWSENIDisappears(networkInterface *ec2.NetworkInterface) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		conn := testAccProvider.Meta().(*AWSClient).ec2conn
-
-		input := &ec2.DeleteNetworkInterfaceInput{
-			NetworkInterfaceId: networkInterface.NetworkInterfaceId,
-		}
-		_, err := conn.DeleteNetworkInterface(input)
-
-		return err
-	}
 }
 
 func testAccCheckAWSENIMakeExternalAttachment(n string, conf *ec2.NetworkInterface) resource.TestCheckFunc {

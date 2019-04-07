@@ -21,8 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	bolt "go.etcd.io/bbolt"
-	"go.uber.org/zap"
+	bolt "github.com/coreos/bbolt"
 )
 
 type BatchTx interface {
@@ -48,15 +47,7 @@ type batchTx struct {
 func (t *batchTx) UnsafeCreateBucket(name []byte) {
 	_, err := t.tx.CreateBucket(name)
 	if err != nil && err != bolt.ErrBucketExists {
-		if t.backend.lg != nil {
-			t.backend.lg.Fatal(
-				"failed to create a bucket",
-				zap.String("bucket-name", string(name)),
-				zap.Error(err),
-			)
-		} else {
-			plog.Fatalf("cannot create bucket %s (%v)", name, err)
-		}
+		plog.Fatalf("cannot create bucket %s (%v)", name, err)
 	}
 	t.pending++
 }
@@ -74,14 +65,7 @@ func (t *batchTx) UnsafeSeqPut(bucketName []byte, key []byte, value []byte) {
 func (t *batchTx) unsafePut(bucketName []byte, key []byte, value []byte, seq bool) {
 	bucket := t.tx.Bucket(bucketName)
 	if bucket == nil {
-		if t.backend.lg != nil {
-			t.backend.lg.Fatal(
-				"failed to find a bucket",
-				zap.String("bucket-name", string(bucketName)),
-			)
-		} else {
-			plog.Fatalf("bucket %s does not exist", bucketName)
-		}
+		plog.Fatalf("bucket %s does not exist", bucketName)
 	}
 	if seq {
 		// it is useful to increase fill percent when the workloads are mostly append-only.
@@ -89,15 +73,7 @@ func (t *batchTx) unsafePut(bucketName []byte, key []byte, value []byte, seq boo
 		bucket.FillPercent = 0.9
 	}
 	if err := bucket.Put(key, value); err != nil {
-		if t.backend.lg != nil {
-			t.backend.lg.Fatal(
-				"failed to write to a bucket",
-				zap.String("bucket-name", string(bucketName)),
-				zap.Error(err),
-			)
-		} else {
-			plog.Fatalf("cannot put key into bucket (%v)", err)
-		}
+		plog.Fatalf("cannot put key into bucket (%v)", err)
 	}
 	t.pending++
 }
@@ -106,14 +82,7 @@ func (t *batchTx) unsafePut(bucketName []byte, key []byte, value []byte, seq boo
 func (t *batchTx) UnsafeRange(bucketName, key, endKey []byte, limit int64) ([][]byte, [][]byte) {
 	bucket := t.tx.Bucket(bucketName)
 	if bucket == nil {
-		if t.backend.lg != nil {
-			t.backend.lg.Fatal(
-				"failed to find a bucket",
-				zap.String("bucket-name", string(bucketName)),
-			)
-		} else {
-			plog.Fatalf("bucket %s does not exist", bucketName)
-		}
+		plog.Fatalf("bucket %s does not exist", bucketName)
 	}
 	return unsafeRange(bucket.Cursor(), key, endKey, limit)
 }
@@ -129,7 +98,6 @@ func unsafeRange(c *bolt.Cursor, key, endKey []byte, limit int64) (keys [][]byte
 		isMatch = func(b []byte) bool { return bytes.Equal(b, key) }
 		limit = 1
 	}
-
 	for ck, cv := c.Seek(key); ck != nil && isMatch(ck); ck, cv = c.Next() {
 		vs = append(vs, cv)
 		keys = append(keys, ck)
@@ -144,26 +112,11 @@ func unsafeRange(c *bolt.Cursor, key, endKey []byte, limit int64) (keys [][]byte
 func (t *batchTx) UnsafeDelete(bucketName []byte, key []byte) {
 	bucket := t.tx.Bucket(bucketName)
 	if bucket == nil {
-		if t.backend.lg != nil {
-			t.backend.lg.Fatal(
-				"failed to find a bucket",
-				zap.String("bucket-name", string(bucketName)),
-			)
-		} else {
-			plog.Fatalf("bucket %s does not exist", bucketName)
-		}
+		plog.Fatalf("bucket %s does not exist", bucketName)
 	}
 	err := bucket.Delete(key)
 	if err != nil {
-		if t.backend.lg != nil {
-			t.backend.lg.Fatal(
-				"failed to delete a key",
-				zap.String("bucket-name", string(bucketName)),
-				zap.Error(err),
-			)
-		} else {
-			plog.Fatalf("cannot delete key from bucket (%v)", err)
-		}
+		plog.Fatalf("cannot delete key from bucket (%v)", err)
 	}
 	t.pending++
 }
@@ -201,12 +154,6 @@ func (t *batchTx) Unlock() {
 	t.Mutex.Unlock()
 }
 
-func (t *batchTx) safePending() int {
-	t.Mutex.Lock()
-	defer t.Mutex.Unlock()
-	return t.pending
-}
-
 func (t *batchTx) commit(stop bool) {
 	// commit the last tx
 	if t.tx != nil {
@@ -220,19 +167,12 @@ func (t *batchTx) commit(stop bool) {
 		err := t.tx.Commit()
 		// gofail: var afterCommit struct{}
 
-		rebalanceSec.Observe(t.tx.Stats().RebalanceTime.Seconds())
-		spillSec.Observe(t.tx.Stats().SpillTime.Seconds())
-		writeSec.Observe(t.tx.Stats().WriteTime.Seconds())
-		commitSec.Observe(time.Since(start).Seconds())
+		commitDurations.Observe(time.Since(start).Seconds())
 		atomic.AddInt64(&t.backend.commits, 1)
 
 		t.pending = 0
 		if err != nil {
-			if t.backend.lg != nil {
-				t.backend.lg.Fatal("failed to commit tx", zap.Error(err))
-			} else {
-				plog.Fatalf("cannot commit tx (%s)", err)
-			}
+			plog.Fatalf("cannot commit tx (%s)", err)
 		}
 	}
 	if !stop {
@@ -291,11 +231,7 @@ func (t *batchTxBuffered) commit(stop bool) {
 func (t *batchTxBuffered) unsafeCommit(stop bool) {
 	if t.backend.readTx.tx != nil {
 		if err := t.backend.readTx.tx.Rollback(); err != nil {
-			if t.backend.lg != nil {
-				t.backend.lg.Fatal("failed to rollback tx", zap.Error(err))
-			} else {
-				plog.Fatalf("cannot rollback tx (%s)", err)
-			}
+			plog.Fatalf("cannot rollback tx (%s)", err)
 		}
 		t.backend.readTx.reset()
 	}

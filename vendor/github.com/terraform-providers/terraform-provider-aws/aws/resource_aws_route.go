@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -28,24 +27,6 @@ func resourceAwsRoute() *schema.Resource {
 		Update: resourceAwsRouteUpdate,
 		Delete: resourceAwsRouteDelete,
 		Exists: resourceAwsRouteExists,
-		Importer: &schema.ResourceImporter{
-			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				idParts := strings.Split(d.Id(), "_")
-				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-					return nil, fmt.Errorf("unexpected format of ID (%q), expected ROUTETABLEID_DESTINATION", d.Id())
-				}
-				routeTableID := idParts[0]
-				destination := idParts[1]
-				d.Set("route_table_id", routeTableID)
-				if strings.Contains(destination, ":") {
-					d.Set("destination_ipv6_cidr_block", destination)
-				} else {
-					d.Set("destination_cidr_block", destination)
-				}
-				d.SetId(fmt.Sprintf("r-%s%d", routeTableID, hashcode.String(destination)))
-				return []*schema.ResourceData{d}, nil
-			},
-		},
 
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Minute),
@@ -117,7 +98,6 @@ func resourceAwsRoute() *schema.Resource {
 			"route_table_id": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 
 			"vpc_peering_connection_id": {
@@ -225,7 +205,7 @@ func resourceAwsRouteCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 	default:
-		return fmt.Errorf("A valid target type is missing. Specify one of the following attributes: %s", strings.Join(allowedTargets, ", "))
+		return fmt.Errorf("An invalid target type specified: %s", setTarget)
 	}
 	log.Printf("[DEBUG] Route create config: %s", createOpts)
 
@@ -258,7 +238,7 @@ func resourceAwsRouteCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if v, ok := d.GetOk("destination_cidr_block"); ok {
 		err = resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
-			route, err = resourceAwsRouteFindRoute(conn, d.Get("route_table_id").(string), v.(string), "")
+			route, err = findResourceRoute(conn, d.Get("route_table_id").(string), v.(string), "")
 			return resource.RetryableError(err)
 		})
 		if err != nil {
@@ -268,7 +248,7 @@ func resourceAwsRouteCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if v, ok := d.GetOk("destination_ipv6_cidr_block"); ok {
 		err = resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
-			route, err = resourceAwsRouteFindRoute(conn, d.Get("route_table_id").(string), "", v.(string))
+			route, err = findResourceRoute(conn, d.Get("route_table_id").(string), "", v.(string))
 			return resource.RetryableError(err)
 		})
 		if err != nil {
@@ -276,7 +256,7 @@ func resourceAwsRouteCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	d.SetId(resourceAwsRouteID(d, route))
+	d.SetId(routeIDHash(d, route))
 	resourceAwsRouteSetResourceData(d, route)
 	return nil
 }
@@ -288,7 +268,7 @@ func resourceAwsRouteRead(d *schema.ResourceData, meta interface{}) error {
 	destinationCidrBlock := d.Get("destination_cidr_block").(string)
 	destinationIpv6CidrBlock := d.Get("destination_ipv6_cidr_block").(string)
 
-	route, err := resourceAwsRouteFindRoute(conn, routeTableId, destinationCidrBlock, destinationIpv6CidrBlock)
+	route, err := findResourceRoute(conn, routeTableId, destinationCidrBlock, destinationIpv6CidrBlock)
 	if err != nil {
 		if ec2err, ok := err.(awserr.Error); ok && ec2err.Code() == "InvalidRouteTableID.NotFound" {
 			log.Printf("[WARN] Route Table %q could not be found. Removing Route from state.",
@@ -339,7 +319,7 @@ func resourceAwsRouteUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	switch setTarget {
-	//instance_id is a special case due to the fact that AWS will "discover" the network_interface_id
+	//instance_id is a special case due to the fact that AWS will "discover" the network_interace_id
 	//when it creates the route and return that data.  In the case of an update, we should ignore the
 	//existing network_interface_id
 	case "instance_id":
@@ -490,8 +470,8 @@ func resourceAwsRouteExists(d *schema.ResourceData, meta interface{}) (bool, err
 	return false, nil
 }
 
-// Helper: Create an ID for a route
-func resourceAwsRouteID(d *schema.ResourceData, r *ec2.Route) string {
+// Create an ID for a route
+func routeIDHash(d *schema.ResourceData, r *ec2.Route) string {
 
 	if r.DestinationIpv6CidrBlock != nil && *r.DestinationIpv6CidrBlock != "" {
 		return fmt.Sprintf("r-%s%d", d.Get("route_table_id").(string), hashcode.String(*r.DestinationIpv6CidrBlock))
@@ -501,7 +481,7 @@ func resourceAwsRouteID(d *schema.ResourceData, r *ec2.Route) string {
 }
 
 // Helper: retrieve a route
-func resourceAwsRouteFindRoute(conn *ec2.EC2, rtbid string, cidr string, ipv6cidr string) (*ec2.Route, error) {
+func findResourceRoute(conn *ec2.EC2, rtbid string, cidr string, ipv6cidr string) (*ec2.Route, error) {
 	routeTableID := rtbid
 
 	findOpts := &ec2.DescribeRouteTablesInput{

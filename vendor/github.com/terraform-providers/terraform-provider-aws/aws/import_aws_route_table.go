@@ -2,7 +2,6 @@ package aws
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -31,9 +30,6 @@ func resourceAwsRouteTableImportState(
 	results := make([]*schema.ResourceData, 1,
 		2+len(table.Associations)+len(table.Routes))
 	results[0] = d
-	log.Print("[WARN] RouteTable imports will be handled differently in a future version.")
-	log.Printf("[WARN] This import will create %d resources (aws_route_table, aws_route, aws_route_table_association).", len(results))
-	log.Print("[WARN] In the future, only 1 aws_route_table resource will be created with inline routes.")
 
 	{
 		// Construct the routes
@@ -41,10 +37,6 @@ func resourceAwsRouteTableImportState(
 		for _, route := range table.Routes {
 			// Ignore the local/default route
 			if route.GatewayId != nil && *route.GatewayId == "local" {
-				continue
-			}
-
-			if route.Origin != nil && *route.Origin == "EnableVgwRoutePropagation" {
 				continue
 			}
 
@@ -60,7 +52,7 @@ func resourceAwsRouteTableImportState(
 			d.Set("route_table_id", id)
 			d.Set("destination_cidr_block", route.DestinationCidrBlock)
 			d.Set("destination_ipv6_cidr_block", route.DestinationIpv6CidrBlock)
-			d.SetId(resourceAwsRouteID(d, route))
+			d.SetId(routeIDHash(d, route))
 			results = append(results, d)
 		}
 	}

@@ -18,12 +18,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"go.etcd.io/etcd/etcdserver"
-	"go.etcd.io/etcd/etcdserver/api"
-	"go.etcd.io/etcd/etcdserver/api/rafthttp"
-	"go.etcd.io/etcd/lease/leasehttp"
-
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/etcdserver"
+	"github.com/coreos/etcd/etcdserver/api"
+	"github.com/coreos/etcd/lease/leasehttp"
+	"github.com/coreos/etcd/rafthttp"
 )
 
 const (
@@ -31,13 +29,12 @@ const (
 )
 
 // NewPeerHandler generates an http.Handler to handle etcd peer requests.
-func NewPeerHandler(lg *zap.Logger, s etcdserver.ServerPeer) http.Handler {
-	return newPeerHandler(lg, s.Cluster(), s.RaftHandler(), s.LeaseHandler())
+func NewPeerHandler(s etcdserver.ServerPeer) http.Handler {
+	return newPeerHandler(s.Cluster(), s.RaftHandler(), s.LeaseHandler())
 }
 
-func newPeerHandler(lg *zap.Logger, cluster api.Cluster, raftHandler http.Handler, leaseHandler http.Handler) http.Handler {
+func newPeerHandler(cluster api.Cluster, raftHandler http.Handler, leaseHandler http.Handler) http.Handler {
 	mh := &peerMembersHandler{
-		lg:      lg,
 		cluster: cluster,
 	}
 
@@ -55,7 +52,6 @@ func newPeerHandler(lg *zap.Logger, cluster api.Cluster, raftHandler http.Handle
 }
 
 type peerMembersHandler struct {
-	lg      *zap.Logger
 	cluster api.Cluster
 }
 
@@ -72,10 +68,6 @@ func (h *peerMembersHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ms := h.cluster.Members()
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(ms); err != nil {
-		if h.lg != nil {
-			h.lg.Warn("failed to encode membership members", zap.Error(err))
-		} else {
-			plog.Warningf("failed to encode members response (%v)", err)
-		}
+		plog.Warningf("failed to encode members response (%v)", err)
 	}
 }

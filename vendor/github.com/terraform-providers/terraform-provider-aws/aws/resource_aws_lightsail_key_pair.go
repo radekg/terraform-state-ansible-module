@@ -28,10 +28,9 @@ func resourceAwsLightsailKeyPair() *schema.Resource {
 				ConflictsWith: []string{"name_prefix"},
 			},
 			"name_prefix": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"name"},
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
 			},
 
 			// optional fields
@@ -103,10 +102,10 @@ func resourceAwsLightsailKeyPairCreate(d *schema.ResourceData, meta interface{})
 			return err
 		}
 		if resp.Operation == nil {
-			return fmt.Errorf("No operation found for CreateKeyPair response")
+			return fmt.Errorf("[ERR] No operation found for CreateKeyPair response")
 		}
 		if resp.KeyPair == nil {
-			return fmt.Errorf("No KeyPair information found for CreateKeyPair response")
+			return fmt.Errorf("[ERR] No KeyPair information found for CreateKeyPair response")
 		}
 		d.SetId(kName)
 
@@ -160,7 +159,7 @@ func resourceAwsLightsailKeyPairCreate(d *schema.ResourceData, meta interface{})
 
 	_, err := stateConf.WaitForState()
 	if err != nil {
-		// We don't return an error here because the Create call succeeded
+		// We don't return an error here because the Create call succeded
 		log.Printf("[ERR] Error waiting for KeyPair (%s) to become ready: %s", d.Id(), err)
 	}
 

@@ -5,41 +5,29 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 )
 
 func TestAccAWSIAMSamlProvider_basic(t *testing.T) {
-	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "aws_iam_saml_provider.test"
-
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckIAMSamlProviderDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIAMSamlProviderConfig(rName),
+				Config: testAccIAMSamlProviderConfig,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckIAMSamlProviderExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", rName),
-					resource.TestCheckResourceAttrSet(resourceName, "saml_metadata_document"),
+					testAccCheckIAMSamlProvider("aws_iam_saml_provider.salesforce"),
 				),
 			},
 			{
-				Config: testAccIAMSamlProviderConfigUpdate(rName),
+				Config: testAccIAMSamlProviderConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckIAMSamlProviderExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", rName),
-					resource.TestCheckResourceAttrSet(resourceName, "saml_metadata_document"),
+					testAccCheckIAMSamlProvider("aws_iam_saml_provider.salesforce"),
 				),
-			},
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 	})
@@ -57,24 +45,23 @@ func testAccCheckIAMSamlProviderDestroy(s *terraform.State) error {
 			SAMLProviderArn: aws.String(rs.Primary.ID),
 		}
 		out, err := iamconn.GetSAMLProvider(input)
-
-		if isAWSErr(err, iam.ErrCodeNoSuchEntityException, "") {
-			continue
-		}
-
 		if err != nil {
-			return err
+			if iamerr, ok := err.(awserr.Error); ok && iamerr.Code() == "NoSuchEntity" {
+				// none found, that's good
+				return nil
+			}
+			return fmt.Errorf("Error reading IAM SAML Provider, out: %s, err: %s", out, err)
 		}
 
 		if out != nil {
-			return fmt.Errorf("IAM SAML Provider (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("Found IAM SAML Provider, expected none: %s", out)
 		}
 	}
 
 	return nil
 }
 
-func testAccCheckIAMSamlProviderExists(id string) resource.TestCheckFunc {
+func testAccCheckIAMSamlProvider(id string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[id]
 		if !ok {
@@ -98,20 +85,16 @@ func testAccCheckIAMSamlProviderExists(id string) resource.TestCheckFunc {
 	}
 }
 
-func testAccIAMSamlProviderConfig(rName string) string {
-	return fmt.Sprintf(`
-resource "aws_iam_saml_provider" "test" {
-  name                   = %q
-  saml_metadata_document = "${file("./test-fixtures/saml-metadata.xml")}"
+const testAccIAMSamlProviderConfig = `
+resource "aws_iam_saml_provider" "salesforce" {
+    name = "tf-salesforce-test"
+    saml_metadata_document = "${file("./test-fixtures/saml-metadata.xml")}"
 }
-`, rName)
-}
+`
 
-func testAccIAMSamlProviderConfigUpdate(rName string) string {
-	return fmt.Sprintf(`
-resource "aws_iam_saml_provider" "test" {
-  name                   = %q
-  saml_metadata_document = "${file("./test-fixtures/saml-metadata-modified.xml")}"
+const testAccIAMSamlProviderConfigUpdate = `
+resource "aws_iam_saml_provider" "salesforce" {
+    name = "tf-salesforce-test"
+    saml_metadata_document = "${file("./test-fixtures/saml-metadata-modified.xml")}"
 }
-`, rName)
-}
+`

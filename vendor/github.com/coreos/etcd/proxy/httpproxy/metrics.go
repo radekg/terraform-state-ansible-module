@@ -47,15 +47,13 @@ var (
 			Help:      "Counter of requests dropped on the proxy.",
 		}, []string{"method", "proxying_error"})
 
-	requestsHandlingSec = prometheus.NewHistogramVec(
+	requestsHandlingTime = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: "etcd",
 			Subsystem: "proxy",
 			Name:      "handling_duration_seconds",
-			Help:      "Bucketed histogram of handling time of successful events (non-watches), by method (GET/PUT etc.).",
-
-			// lowest bucket start of upper bound 0.0005 sec (0.5 ms) with factor 2
-			// highest bucket start of 0.0005 sec * 2^12 == 2.048 sec
+			Help: "Bucketed histogram of handling time of successful events (non-watches), by method " +
+				"(GET/PUT etc.).",
 			Buckets: prometheus.ExponentialBuckets(0.0005, 2, 13),
 		}, []string{"method"})
 )
@@ -72,7 +70,7 @@ func init() {
 	prometheus.MustRegister(requestsIncoming)
 	prometheus.MustRegister(requestsHandled)
 	prometheus.MustRegister(requestsDropped)
-	prometheus.MustRegister(requestsHandlingSec)
+	prometheus.MustRegister(requestsHandlingTime)
 }
 
 func reportIncomingRequest(request *http.Request) {
@@ -82,7 +80,7 @@ func reportIncomingRequest(request *http.Request) {
 func reportRequestHandled(request *http.Request, response *http.Response, startTime time.Time) {
 	method := request.Method
 	requestsHandled.WithLabelValues(method, strconv.Itoa(response.StatusCode)).Inc()
-	requestsHandlingSec.WithLabelValues(method).Observe(time.Since(startTime).Seconds())
+	requestsHandlingTime.WithLabelValues(method).Observe(time.Since(startTime).Seconds())
 }
 
 func reportRequestDropped(request *http.Request, err forwardingError) {

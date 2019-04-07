@@ -16,69 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-func TestAccAWSS3BucketNotification_importBasic(t *testing.T) {
-	rString := acctest.RandString(8)
-
-	topicName := fmt.Sprintf("tf-acc-topic-s3-b-n-import-%s", rString)
-	bucketName := fmt.Sprintf("tf-acc-bucket-n-import-%s", rString)
-	queueName := fmt.Sprintf("tf-acc-queue-s3-b-n-import-%s", rString)
-	roleName := fmt.Sprintf("tf-acc-role-s3-b-n-import-%s", rString)
-	lambdaFuncName := fmt.Sprintf("tf-acc-lambda-func-s3-b-n-import-%s", rString)
-
-	resourceName := "aws_s3_bucket_notification.notification"
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSS3BucketNotificationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSS3BucketConfigWithTopicNotification(topicName, bucketName),
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSS3BucketNotificationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSS3BucketConfigWithQueueNotification(queueName, bucketName),
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSS3BucketNotificationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSS3BucketConfigWithLambdaNotification(roleName, lambdaFuncName, bucketName),
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 	rString := acctest.RandString(8)
 
@@ -88,12 +25,12 @@ func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 	roleName := fmt.Sprintf("tf-acc-role-s3-b-notification-%s", rString)
 	lambdaFuncName := fmt.Sprintf("tf-acc-lambda-func-s3-b-notification-%s", rString)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSS3BucketNotificationDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSS3BucketConfigWithTopicNotification(topicName, bucketName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSS3BucketTopicNotification(
@@ -103,11 +40,11 @@ func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 						[]string{"s3:ObjectCreated:*", "s3:ObjectRemoved:Delete"},
 						&s3.KeyFilter{
 							FilterRules: []*s3.FilterRule{
-								{
+								&s3.FilterRule{
 									Name:  aws.String("Prefix"),
 									Value: aws.String("tf-acc-test/"),
 								},
-								{
+								&s3.FilterRule{
 									Name:  aws.String("Suffix"),
 									Value: aws.String(".txt"),
 								},
@@ -121,7 +58,7 @@ func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 						[]string{"s3:ObjectCreated:*", "s3:ObjectRemoved:Delete"},
 						&s3.KeyFilter{
 							FilterRules: []*s3.FilterRule{
-								{
+								&s3.FilterRule{
 									Name:  aws.String("Suffix"),
 									Value: aws.String(".log"),
 								},
@@ -130,7 +67,7 @@ func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 					),
 				),
 			},
-			{
+			resource.TestStep{
 				Config: testAccAWSS3BucketConfigWithQueueNotification(queueName, bucketName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSS3BucketQueueNotification(
@@ -140,11 +77,11 @@ func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 						[]string{"s3:ObjectCreated:*", "s3:ObjectRemoved:Delete"},
 						&s3.KeyFilter{
 							FilterRules: []*s3.FilterRule{
-								{
+								&s3.FilterRule{
 									Name:  aws.String("Prefix"),
 									Value: aws.String("tf-acc-test/"),
 								},
-								{
+								&s3.FilterRule{
 									Name:  aws.String("Suffix"),
 									Value: aws.String(".mp4"),
 								},
@@ -153,7 +90,7 @@ func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 					),
 				),
 			},
-			{
+			resource.TestStep{
 				Config: testAccAWSS3BucketConfigWithLambdaNotification(roleName, lambdaFuncName, bucketName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSS3BucketLambdaFunctionConfiguration(
@@ -163,11 +100,11 @@ func TestAccAWSS3BucketNotification_basic(t *testing.T) {
 						[]string{"s3:ObjectCreated:*", "s3:ObjectRemoved:Delete"},
 						&s3.KeyFilter{
 							FilterRules: []*s3.FilterRule{
-								{
+								&s3.FilterRule{
 									Name:  aws.String("Prefix"),
 									Value: aws.String("tf-acc-test/"),
 								},
-								{
+								&s3.FilterRule{
 									Name:  aws.String("Suffix"),
 									Value: aws.String(".png"),
 								},
@@ -186,12 +123,12 @@ func TestAccAWSS3BucketNotification_withoutFilter(t *testing.T) {
 	topicName := fmt.Sprintf("tf-acc-topic-s3-b-notification-wo-f-%s", rString)
 	bucketName := fmt.Sprintf("tf-acc-bucket-notification-wo-f-%s", rString)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSS3BucketNotificationDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSS3BucketConfigWithTopicNotificationWithoutFilter(topicName, bucketName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSS3BucketTopicNotification(

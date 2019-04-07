@@ -18,15 +18,13 @@ import (
 	"fmt"
 	"testing"
 
-	"go.etcd.io/etcd/lease"
-	"go.etcd.io/etcd/mvcc/backend"
-
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/lease"
+	"github.com/coreos/etcd/mvcc/backend"
 )
 
 func BenchmarkKVWatcherMemoryUsage(b *testing.B) {
 	be, tmpPath := backend.NewDefaultTmpBackend()
-	watchable := newWatchableStore(zap.NewExample(), be, &lease.FakeLessor{}, nil)
+	watchable := newWatchableStore(be, &lease.FakeLessor{}, nil)
 
 	defer cleanup(watchable, be, tmpPath)
 
@@ -35,6 +33,6 @@ func BenchmarkKVWatcherMemoryUsage(b *testing.B) {
 	b.ReportAllocs()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		w.Watch(0, []byte(fmt.Sprint("foo", i)), nil, 0)
+		w.Watch([]byte(fmt.Sprint("foo", i)), nil, 0)
 	}
 }

@@ -12,7 +12,7 @@
   "baseUrl": "https://redis.googleapis.com/",
   "batchPath": "batch",
   "canonicalName": "Cloud Redis",
-  "description": "The Google Cloud Memorystore for Redis API is used for creating and managing Redis instances on the Google Cloud Platform.",
+  "description": "Creates and manages Redis instances on the Google Cloud Platform.",
   "discoveryVersion": "v1",
   "documentationLink": "https://cloud.google.com/memorystore/docs/redis/",
   "fullyEncodeReservedExpansion": true,
@@ -458,7 +458,7 @@
       }
     }
   },
-  "revision": "20181031",
+  "revision": "20190308",
   "rootUrl": "https://redis.googleapis.com/",
   "schemas": {
     "Empty": {
@@ -602,7 +602,8 @@
             "UPDATING",
             "DELETING",
             "REPAIRING",
-            "MAINTENANCE"
+            "MAINTENANCE",
+            "FAILING_OVER"
           ],
           "enumDescriptions": [
             "Not set.",
@@ -610,8 +611,9 @@
             "Redis instance has been created and is fully usable.",
             "Redis instance configuration is being updated. Certain kinds of updates\nmay cause the instance to become unusable while the update is in\nprogress.",
             "Redis instance is being deleted.",
-            "Redis instance is being repaired and may be unusable. Details can be\nfound in the `status_message` field.",
-            "Maintenance is being performed on this Redis instance."
+            "Redis instance is being repaired and may be unusable.",
+            "Maintenance is being performed on this Redis instance.",
+            "Redis instance is failing over (availability may be affected)."
           ],
           "type": "string"
         },

@@ -11,11 +11,9 @@ Provides a Route53 health check.
 
 ## Example Usage
 
-### Connectivity and HTTP Status Code Check
-
 ```hcl
-resource "aws_route53_health_check" "example" {
-  fqdn              = "example.com"
+resource "aws_route53_health_check" "child1" {
+  fqdn              = "foobar.terraform.com"
   port              = 80
   type              = "HTTP"
   resource_path     = "/"
@@ -26,29 +24,11 @@ resource "aws_route53_health_check" "example" {
     Name = "tf-test-health-check"
   }
 }
-```
 
-### Connectivity and String Matching Check
-
-```hcl
-resource "aws_route53_health_check" "example" {
-  failure_threshold = "5"
-  fqdn              = "example.com"
-  port              = 443
-  request_interval  = "30"
-  resource_path     = "/"
-  search_string     = "example"
-  type              = "HTTPS_STR_MATCH"
-}
-```
-
-### Aggregate Check
-
-```hcl
-resource "aws_route53_health_check" "parent" {
+resource "aws_route53_health_check" "foo" {
   type                   = "CALCULATED"
   child_health_threshold = 1
-  child_healthchecks     = ["${aws_route53_health_check.child.id}"]
+  child_healthchecks     = ["${aws_route53_health_check.child1.id}"]
 
   tags = {
     Name = "tf-test-calculated-health-check"
@@ -56,7 +36,7 @@ resource "aws_route53_health_check" "parent" {
 }
 ```
 
-### CloudWatch Alarm Check
+## CloudWatch Alarm Example
 
 ```hcl
 resource "aws_cloudwatch_metric_alarm" "foobar" {
@@ -92,7 +72,7 @@ The following arguments are supported:
 * `failure_threshold` - (Required) The number of consecutive health checks that an endpoint must pass or fail.
 * `request_interval` - (Required) The number of seconds between the time that Amazon Route 53 gets a response from your endpoint and the time that it sends the next health-check request.
 * `resource_path` - (Optional) The path that you want Amazon Route 53 to request when performing health checks.
-* `search_string` - (Optional) String searched in the first 5120 bytes of the response body for check to be considered healthy. Only valid with `HTTP_STR_MATCH` and `HTTPS_STR_MATCH`.
+* `search_string` - (Optional) String searched in the first 5120 bytes of the response body for check to be considered healthy.
 * `measure_latency` - (Optional) A Boolean value that indicates whether you want Route 53 to measure the latency between health checkers in multiple AWS regions and your endpoint and to display CloudWatch latency graphs in the Route 53 console.
 * `invert_healthcheck` - (Optional) A boolean value that indicates whether the status of health check should be inverted. For example, if a health check is healthy but Inverted is True , then Route 53 considers the health check to be unhealthy.
 * `enable_sni` - (Optional) A boolean value that indicates whether Route53 should send the `fqdn` to the endpoint when performing the health check. This defaults to AWS' defaults: when the `type` is "HTTPS" `enable_sni` defaults to `true`, when `type` is anything else `enable_sni` defaults to `false`.

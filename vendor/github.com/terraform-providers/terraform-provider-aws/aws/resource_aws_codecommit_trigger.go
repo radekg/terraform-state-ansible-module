@@ -16,48 +16,48 @@ func resourceAwsCodeCommitTrigger() *schema.Resource {
 		Delete: resourceAwsCodeCommitTriggerDelete,
 
 		Schema: map[string]*schema.Schema{
-			"repository_name": {
+			"repository_name": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Required: true,
 			},
-			"configuration_id": {
+			"configuration_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"trigger": {
+			"trigger": &schema.Schema{
 				Type:     schema.TypeSet,
 				ForceNew: true,
 				Required: true,
 				MaxItems: 10,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
+						"name": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 							ForceNew: true,
 						},
 
-						"destination_arn": {
+						"destination_arn": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 							ForceNew: true,
 						},
 
-						"custom_data": {
+						"custom_data": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 						},
 
-						"branches": {
+						"branches": &schema.Schema{
 							Type:     schema.TypeList,
 							Optional: true,
 							ForceNew: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
 
-						"events": {
+						"events": &schema.Schema{
 							Type:     schema.TypeList,
 							Required: true,
 							ForceNew: true,
@@ -134,7 +134,7 @@ func resourceAwsCodeCommitTriggerDelete(d *schema.ResourceData, meta interface{}
 func expandAwsCodeCommitTriggers(configured []interface{}) []*codecommit.RepositoryTrigger {
 	triggers := make([]*codecommit.RepositoryTrigger, 0, len(configured))
 	// Loop over our configured triggers and create
-	// an array of aws-sdk-go compatible objects
+	// an array of aws-sdk-go compatabile objects
 	for _, lRaw := range configured {
 		data := lRaw.(map[string]interface{})
 		t := &codecommit.RepositoryTrigger{

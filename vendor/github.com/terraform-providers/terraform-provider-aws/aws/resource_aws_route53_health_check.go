@@ -32,15 +32,6 @@ func resourceAwsRoute53HealthCheck() *schema.Resource {
 				StateFunc: func(val interface{}) string {
 					return strings.ToUpper(val.(string))
 				},
-				ValidateFunc: validation.StringInSlice([]string{
-					route53.HealthCheckTypeCalculated,
-					route53.HealthCheckTypeCloudwatchMetric,
-					route53.HealthCheckTypeHttp,
-					route53.HealthCheckTypeHttpStrMatch,
-					route53.HealthCheckTypeHttps,
-					route53.HealthCheckTypeHttpsStrMatch,
-					route53.HealthCheckTypeTcp,
-				}, true),
 			},
 			"failure_threshold": {
 				Type:     schema.TypeInt,
@@ -342,11 +333,7 @@ func resourceAwsRoute53HealthCheckRead(d *schema.ResourceData, meta interface{})
 	d.Set("resource_path", updated.ResourcePath)
 	d.Set("measure_latency", updated.MeasureLatency)
 	d.Set("invert_healthcheck", updated.Inverted)
-
-	if err := d.Set("child_healthchecks", flattenStringList(updated.ChildHealthChecks)); err != nil {
-		return fmt.Errorf("error setting child_healthchecks: %s", err)
-	}
-
+	d.Set("child_healthchecks", updated.ChildHealthChecks)
 	d.Set("child_health_threshold", updated.HealthThreshold)
 	d.Set("insufficient_data_health_status", updated.InsufficientDataHealthStatus)
 	d.Set("enable_sni", updated.EnableSNI)
@@ -391,4 +378,13 @@ func resourceAwsRoute53HealthCheckDelete(d *schema.ResourceData, meta interface{
 	}
 
 	return nil
+}
+
+func createChildHealthCheckList(s *schema.Set) (nl []*string) {
+	l := s.List()
+	for _, n := range l {
+		nl = append(nl, aws.String(n.(string)))
+	}
+
+	return nl
 }

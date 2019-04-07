@@ -81,31 +81,10 @@ func testSweepELBs(region string) error {
 	return nil
 }
 
-func TestAccAWSELB_importBasic(t *testing.T) {
-	resourceName := "aws_elb.bar"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSELBDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSELBConfig,
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSELB_basic(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -144,33 +123,12 @@ func TestAccAWSELB_basic(t *testing.T) {
 	})
 }
 
-func TestAccAWSELB_disappears(t *testing.T) {
-	var loadBalancer elb.LoadBalancerDescription
-	resourceName := "aws_elb.bar"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSELBDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSELBConfig,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSELBExists(resourceName, &loadBalancer),
-					testAccCheckAWSELBDisappears(&loadBalancer),
-				),
-				ExpectNonEmptyPlan: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSELB_fullCharacterRange(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 
 	lbName := fmt.Sprintf("Tf-%d", acctest.RandInt())
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.foo",
 		Providers:     testAccProviders,
@@ -193,7 +151,7 @@ func TestAccAWSELB_AccessLogs_enabled(t *testing.T) {
 
 	rName := fmt.Sprintf("terraform-access-logs-bucket-%d", acctest.RandInt())
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.foo",
 		Providers:     testAccProviders,
@@ -238,7 +196,7 @@ func TestAccAWSELB_AccessLogs_disabled(t *testing.T) {
 
 	rName := fmt.Sprintf("terraform-access-logs-bucket-%d", acctest.RandInt())
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.foo",
 		Providers:     testAccProviders,
@@ -282,13 +240,13 @@ func TestAccAWSELB_namePrefix(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 	nameRegex := regexp.MustCompile("^test-")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.test",
 		Providers:     testAccProviders,
 		CheckDestroy:  testAccCheckAWSELBDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccAWSELB_namePrefix,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSELBExists("aws_elb.test", &conf),
@@ -304,7 +262,7 @@ func TestAccAWSELB_generatedName(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 	generatedNameRegexp := regexp.MustCompile("^tf-lb-")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.foo",
 		Providers:     testAccProviders,
@@ -326,7 +284,7 @@ func TestAccAWSELB_generatesNameForZeroValue(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 	generatedNameRegexp := regexp.MustCompile("^tf-lb-")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.foo",
 		Providers:     testAccProviders,
@@ -347,7 +305,7 @@ func TestAccAWSELB_generatesNameForZeroValue(t *testing.T) {
 func TestAccAWSELB_availabilityZones(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -388,7 +346,7 @@ func TestAccAWSELB_tags(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 	var td elb.TagDescription
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -432,7 +390,7 @@ func TestAccAWSELB_Listener_SSLCertificateID_IAMServerCertificate(t *testing.T) 
 		return nil
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckAWSELBDestroy,
@@ -459,7 +417,7 @@ func TestAccAWSELB_Listener_SSLCertificateID_IAMServerCertificate(t *testing.T) 
 func TestAccAWSELB_swap_subnets(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.ourapp",
 		Providers:     testAccProviders,
@@ -516,7 +474,7 @@ func TestAccAWSELB_InstanceAttaching(t *testing.T) {
 		}
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -545,7 +503,7 @@ func TestAccAWSELB_listener(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 	resourceName := "aws_elb.bar"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: resourceName,
 		Providers:     testAccProviders,
@@ -628,7 +586,7 @@ func TestAccAWSELB_listener(t *testing.T) {
 					input := &elb.CreateLoadBalancerListenersInput{
 						LoadBalancerName: conf.LoadBalancerName,
 						Listeners: []*elb.Listener{
-							{
+							&elb.Listener{
 								InstancePort:     aws.Int64(int64(22)),
 								InstanceProtocol: aws.String("tcp"),
 								LoadBalancerPort: aws.Int64(int64(22)),
@@ -657,7 +615,7 @@ func TestAccAWSELB_listener(t *testing.T) {
 func TestAccAWSELB_HealthCheck(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -685,7 +643,7 @@ func TestAccAWSELB_HealthCheck(t *testing.T) {
 }
 
 func TestAccAWSELBUpdate_HealthCheck(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -712,7 +670,7 @@ func TestAccAWSELBUpdate_HealthCheck(t *testing.T) {
 func TestAccAWSELB_Timeout(t *testing.T) {
 	var conf elb.LoadBalancerDescription
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -732,7 +690,7 @@ func TestAccAWSELB_Timeout(t *testing.T) {
 }
 
 func TestAccAWSELBUpdate_Timeout(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -759,7 +717,7 @@ func TestAccAWSELBUpdate_Timeout(t *testing.T) {
 }
 
 func TestAccAWSELB_ConnectionDraining(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -781,7 +739,7 @@ func TestAccAWSELB_ConnectionDraining(t *testing.T) {
 }
 
 func TestAccAWSELBUpdate_ConnectionDraining(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -822,7 +780,7 @@ func TestAccAWSELBUpdate_ConnectionDraining(t *testing.T) {
 }
 
 func TestAccAWSELB_SecurityGroups(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_elb.bar",
 		Providers:     testAccProviders,
@@ -958,6 +916,57 @@ func TestResourceAWSELB_validateAccessLogsInterval(t *testing.T) {
 
 }
 
+func TestResourceAWSELB_validateListenerProtocol(t *testing.T) {
+	type testCases struct {
+		Value    string
+		ErrCount int
+	}
+
+	invalidCases := []testCases{
+		{
+			Value:    "",
+			ErrCount: 1,
+		},
+		{
+			Value:    "incorrect",
+			ErrCount: 1,
+		},
+		{
+			Value:    "HTTP:",
+			ErrCount: 1,
+		},
+	}
+
+	for _, tc := range invalidCases {
+		_, errors := validateListenerProtocol(tc.Value, "protocol")
+		if len(errors) != tc.ErrCount {
+			t.Fatalf("Expected %q to trigger a validation error.", tc.Value)
+		}
+	}
+
+	validCases := []testCases{
+		{
+			Value:    "TCP",
+			ErrCount: 0,
+		},
+		{
+			Value:    "ssl",
+			ErrCount: 0,
+		},
+		{
+			Value:    "HTTP",
+			ErrCount: 0,
+		},
+	}
+
+	for _, tc := range validCases {
+		_, errors := validateListenerProtocol(tc.Value, "protocol")
+		if len(errors) != tc.ErrCount {
+			t.Fatalf("Expected %q not to trigger a validation error.", tc.Value)
+		}
+	}
+}
+
 func TestResourceAWSELB_validateHealthCheckTarget(t *testing.T) {
 	type testCase struct {
 		Value    string
@@ -1085,19 +1094,6 @@ func testAccCheckAWSELBDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccCheckAWSELBDisappears(loadBalancer *elb.LoadBalancerDescription) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		conn := testAccProvider.Meta().(*AWSClient).elbconn
-
-		input := elb.DeleteLoadBalancerInput{
-			LoadBalancerName: loadBalancer.LoadBalancerName,
-		}
-		_, err := conn.DeleteLoadBalancer(&input)
-
-		return err
-	}
 }
 
 func testAccCheckAWSELBAttributes(conf *elb.LoadBalancerDescription) resource.TestCheckFunc {
@@ -1447,6 +1443,20 @@ resource "aws_instance" "foo" {
 	# us-west-2
 	ami = "ami-043a5034"
 	instance_type = "t1.micro"
+}
+`
+
+const testAccAWSELBConfigListenerSSLCertificateId = `
+resource "aws_elb" "bar" {
+  availability_zones = ["us-west-2a"]
+
+  listener {
+    instance_port = 8000
+    instance_protocol = "http"
+    ssl_certificate_id = "%s"
+    lb_port = 443
+    lb_protocol = "https"
+  }
 }
 `
 

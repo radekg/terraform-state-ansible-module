@@ -156,9 +156,6 @@ func resourceAwsAcmCertificateRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		tagResp, err := acmconn.ListTagsForCertificate(params)
-		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("error listing tags for certificate (%s): %s", d.Id(), err))
-		}
 		if err := d.Set("tags", tagsToMapACM(tagResp.Tags)); err != nil {
 			return resource.NonRetryableError(err)
 		}

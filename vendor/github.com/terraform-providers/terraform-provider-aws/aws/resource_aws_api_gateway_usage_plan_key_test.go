@@ -18,7 +18,7 @@ func TestAccAWSAPIGatewayUsagePlanKey_basic(t *testing.T) {
 	name := acctest.RandString(10)
 	updatedName := acctest.RandString(10)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSAPIGatewayUsagePlanKeyDestroy,

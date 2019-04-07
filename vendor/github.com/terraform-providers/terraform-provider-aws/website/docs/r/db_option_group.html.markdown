@@ -8,16 +8,12 @@ description: |-
 
 # aws_db_option_group
 
-Provides an RDS DB option group resource. Documentation of the available options for various RDS engines can be found at:
-* [MariaDB Options](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.MariaDB.Options.html)
-* [Microsoft SQL Server Options](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.SQLServer.Options.html)
-* [MySQL Options](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.MySQL.Options.html)
-* [Oracle Options](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.Oracle.Options.html)
+Provides an RDS DB option group resource.
 
 ## Example Usage
 
 ```hcl
-resource "aws_db_option_group" "example" {
+resource "aws_db_option_group" "bar" {
   name                     = "option-group-test-terraform"
   option_group_description = "Terraform Option Group"
   engine_name              = "sqlserver-ee"
@@ -29,15 +25,6 @@ resource "aws_db_option_group" "example" {
     option_settings {
       name  = "TIME_ZONE"
       value = "UTC"
-    }
-  }
-
-  option {
-    option_name = "SQLSERVER_BACKUP_RESTORE"
-
-    option_settings {
-      name  = "IAM_ROLE_ARN"
-      value = "${aws_iam_role.example.arn}"
     }
   }
 
@@ -82,6 +69,7 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The db option group name.
 * `arn` - The ARN of the db option group.
 
+<a id="timeouts"></a>
 ## Timeouts
 
 `aws_db_option_group` provides the following

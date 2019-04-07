@@ -29,8 +29,8 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/pkg/testutil"
-	"go.etcd.io/etcd/version"
+	"github.com/coreos/etcd/pkg/testutil"
+	"github.com/coreos/etcd/version"
 )
 
 type actionAssertingHTTPClient struct {
@@ -472,7 +472,7 @@ func TestHTTPClusterClientDoDeadlineExceedContext(t *testing.T) {
 
 type fakeCancelContext struct{}
 
-var errFakeCancelContext = errors.New("fake context canceled")
+var fakeCancelContextError = errors.New("fake context canceled")
 
 func (f fakeCancelContext) Deadline() (time.Time, bool) { return time.Time{}, false }
 func (f fakeCancelContext) Done() <-chan struct{} {
@@ -480,17 +480,11 @@ func (f fakeCancelContext) Done() <-chan struct{} {
 	d <- struct{}{}
 	return d
 }
-func (f fakeCancelContext) Err() error                        { return errFakeCancelContext }
+func (f fakeCancelContext) Err() error                        { return fakeCancelContextError }
 func (f fakeCancelContext) Value(key interface{}) interface{} { return 1 }
 
-func withTimeout(parent context.Context, timeout time.Duration) (
-	ctx context.Context,
-	cancel context.CancelFunc) {
-	ctx = parent
-	cancel = func() {
-		ctx = nil
-	}
-	return ctx, cancel
+func withTimeout(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+	return parent, func() { parent = nil }
 }
 
 func TestHTTPClusterClientDoCanceledContext(t *testing.T) {
@@ -512,8 +506,8 @@ func TestHTTPClusterClientDoCanceledContext(t *testing.T) {
 
 	select {
 	case err := <-errc:
-		if err != errFakeCancelContext {
-			t.Errorf("err = %+v, want %+v", err, errFakeCancelContext)
+		if err != fakeCancelContextError {
+			t.Errorf("err = %+v, want %+v", err, fakeCancelContextError)
 		}
 	case <-time.After(time.Second):
 		t.Fatalf("unexpected timeout when waiting for request to fake context canceled")

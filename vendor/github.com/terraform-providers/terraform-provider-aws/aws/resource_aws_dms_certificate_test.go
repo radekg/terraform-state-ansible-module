@@ -16,7 +16,7 @@ func TestAccAWSDmsCertificateBasic(t *testing.T) {
 	resourceName := "aws_dms_certificate.dms_certificate"
 	randId := acctest.RandString(8)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: dmsCertificateDestroy,

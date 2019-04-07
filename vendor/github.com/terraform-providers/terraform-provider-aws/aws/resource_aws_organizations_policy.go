@@ -31,7 +31,7 @@ func resourceAwsOrganizationsPolicy() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				DiffSuppressFunc: suppressEquivalentAwsPolicyDiffs,
-				ValidateFunc:     validation.ValidateJsonString,
+				ValidateFunc:     validateJsonString,
 			},
 			"description": {
 				Type:     schema.TypeString,

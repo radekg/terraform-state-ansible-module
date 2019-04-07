@@ -16,11 +16,7 @@
 
 package osutil
 
-import (
-	"os"
-
-	"go.uber.org/zap"
-)
+import "os"
 
 type InterruptHandler func()
 
@@ -28,7 +24,7 @@ type InterruptHandler func()
 func RegisterInterruptHandler(h InterruptHandler) {}
 
 // HandleInterrupts is a no-op on windows
-func HandleInterrupts(*zap.Logger) {}
+func HandleInterrupts() {}
 
 // Exit calls os.Exit
 func Exit(code int) {

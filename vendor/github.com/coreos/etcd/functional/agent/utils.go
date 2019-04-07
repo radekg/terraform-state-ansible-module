@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"time"
 
-	"go.etcd.io/etcd/pkg/fileutil"
+	"github.com/coreos/etcd/pkg/fileutil"
 )
 
 // TODO: support separate WAL directory
@@ -77,6 +77,29 @@ func getURLAndPort(addr string) (urlAddr *url.URL, port int, err error) {
 		return nil, -1, err
 	}
 	return urlAddr, port, err
+}
+
+func stopWithSig(cmd *exec.Cmd, sig os.Signal) error {
+	err := cmd.Process.Signal(sig)
+	if err != nil {
+		return err
+	}
+
+	errc := make(chan error)
+	go func() {
+		_, ew := cmd.Process.Wait()
+		errc <- ew
+		close(errc)
+	}()
+
+	select {
+	case <-time.After(5 * time.Second):
+		cmd.Process.Kill()
+	case e := <-errc:
+		return e
+	}
+	err = <-errc
+	return err
 }
 
 func cleanPageCache() error {

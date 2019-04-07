@@ -15,7 +15,7 @@
     "version": "version not set"
   },
   "paths": {
-    "/v3/auth/authenticate": {
+    "/v3beta/auth/authenticate": {
       "post": {
         "tags": [
           "Auth"
@@ -42,7 +42,7 @@
         }
       }
     },
-    "/v3/auth/disable": {
+    "/v3beta/auth/disable": {
       "post": {
         "tags": [
           "Auth"
@@ -69,7 +69,7 @@
         }
       }
     },
-    "/v3/auth/enable": {
+    "/v3beta/auth/enable": {
       "post": {
         "tags": [
           "Auth"
@@ -96,7 +96,7 @@
         }
       }
     },
-    "/v3/auth/role/add": {
+    "/v3beta/auth/role/add": {
       "post": {
         "tags": [
           "Auth"
@@ -123,7 +123,7 @@
         }
       }
     },
-    "/v3/auth/role/delete": {
+    "/v3beta/auth/role/delete": {
       "post": {
         "tags": [
           "Auth"
@@ -150,7 +150,7 @@
         }
       }
     },
-    "/v3/auth/role/get": {
+    "/v3beta/auth/role/get": {
       "post": {
         "tags": [
           "Auth"
@@ -177,7 +177,7 @@
         }
       }
     },
-    "/v3/auth/role/grant": {
+    "/v3beta/auth/role/grant": {
       "post": {
         "tags": [
           "Auth"
@@ -204,7 +204,7 @@
         }
       }
     },
-    "/v3/auth/role/list": {
+    "/v3beta/auth/role/list": {
       "post": {
         "tags": [
           "Auth"
@@ -231,7 +231,7 @@
         }
       }
     },
-    "/v3/auth/role/revoke": {
+    "/v3beta/auth/role/revoke": {
       "post": {
         "tags": [
           "Auth"
@@ -258,7 +258,7 @@
         }
       }
     },
-    "/v3/auth/user/add": {
+    "/v3beta/auth/user/add": {
       "post": {
         "tags": [
           "Auth"
@@ -285,7 +285,7 @@
         }
       }
     },
-    "/v3/auth/user/changepw": {
+    "/v3beta/auth/user/changepw": {
       "post": {
         "tags": [
           "Auth"
@@ -312,7 +312,7 @@
         }
       }
     },
-    "/v3/auth/user/delete": {
+    "/v3beta/auth/user/delete": {
       "post": {
         "tags": [
           "Auth"
@@ -339,7 +339,7 @@
         }
       }
     },
-    "/v3/auth/user/get": {
+    "/v3beta/auth/user/get": {
       "post": {
         "tags": [
           "Auth"
@@ -366,7 +366,7 @@
         }
       }
     },
-    "/v3/auth/user/grant": {
+    "/v3beta/auth/user/grant": {
       "post": {
         "tags": [
           "Auth"
@@ -393,7 +393,7 @@
         }
       }
     },
-    "/v3/auth/user/list": {
+    "/v3beta/auth/user/list": {
       "post": {
         "tags": [
           "Auth"
@@ -420,7 +420,7 @@
         }
       }
     },
-    "/v3/auth/user/revoke": {
+    "/v3beta/auth/user/revoke": {
       "post": {
         "tags": [
           "Auth"
@@ -447,7 +447,7 @@
         }
       }
     },
-    "/v3/cluster/member/add": {
+    "/v3beta/cluster/member/add": {
       "post": {
         "tags": [
           "Cluster"
@@ -474,7 +474,7 @@
         }
       }
     },
-    "/v3/cluster/member/list": {
+    "/v3beta/cluster/member/list": {
       "post": {
         "tags": [
           "Cluster"
@@ -501,7 +501,7 @@
         }
       }
     },
-    "/v3/cluster/member/remove": {
+    "/v3beta/cluster/member/remove": {
       "post": {
         "tags": [
           "Cluster"
@@ -528,7 +528,7 @@
         }
       }
     },
-    "/v3/cluster/member/update": {
+    "/v3beta/cluster/member/update": {
       "post": {
         "tags": [
           "Cluster"
@@ -555,7 +555,7 @@
         }
       }
     },
-    "/v3/kv/compaction": {
+    "/v3beta/kv/compaction": {
       "post": {
         "tags": [
           "KV"
@@ -582,7 +582,7 @@
         }
       }
     },
-    "/v3/kv/deleterange": {
+    "/v3beta/kv/deleterange": {
       "post": {
         "tags": [
           "KV"
@@ -609,13 +609,13 @@
         }
       }
     },
-    "/v3/kv/lease/leases": {
+    "/v3beta/kv/lease/leases": {
       "post": {
         "tags": [
           "Lease"
         ],
         "summary": "LeaseLeases lists all existing leases.",
-        "operationId": "LeaseLeases2",
+        "operationId": "LeaseLeases",
         "parameters": [
           {
             "name": "body",
@@ -636,13 +636,13 @@
         }
       }
     },
-    "/v3/kv/lease/revoke": {
+    "/v3beta/kv/lease/revoke": {
       "post": {
         "tags": [
           "Lease"
         ],
         "summary": "LeaseRevoke revokes a lease. All keys attached to the lease will expire and be deleted.",
-        "operationId": "LeaseRevoke2",
+        "operationId": "LeaseRevoke",
         "parameters": [
           {
             "name": "body",
@@ -663,13 +663,13 @@
         }
       }
     },
-    "/v3/kv/lease/timetolive": {
+    "/v3beta/kv/lease/timetolive": {
       "post": {
         "tags": [
           "Lease"
         ],
         "summary": "LeaseTimeToLive retrieves lease information.",
-        "operationId": "LeaseTimeToLive2",
+        "operationId": "LeaseTimeToLive",
         "parameters": [
           {
             "name": "body",
@@ -690,7 +690,7 @@
         }
       }
     },
-    "/v3/kv/put": {
+    "/v3beta/kv/put": {
       "post": {
         "tags": [
           "KV"
@@ -717,7 +717,7 @@
         }
       }
     },
-    "/v3/kv/range": {
+    "/v3beta/kv/range": {
       "post": {
         "tags": [
           "KV"
@@ -744,7 +744,7 @@
         }
       }
     },
-    "/v3/kv/txn": {
+    "/v3beta/kv/txn": {
       "post": {
         "tags": [
           "KV"
@@ -771,7 +771,7 @@
         }
       }
     },
-    "/v3/lease/grant": {
+    "/v3beta/lease/grant": {
       "post": {
         "tags": [
           "Lease"
@@ -798,7 +798,7 @@
         }
       }
     },
-    "/v3/lease/keepalive": {
+    "/v3beta/lease/keepalive": {
       "post": {
         "tags": [
           "Lease"
@@ -826,88 +826,7 @@
         }
       }
     },
-    "/v3/lease/leases": {
-      "post": {
-        "tags": [
-          "Lease"
-        ],
-        "summary": "LeaseLeases lists all existing leases.",
-        "operationId": "LeaseLeases",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/etcdserverpbLeaseLeasesRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "(empty)",
-            "schema": {
-              "$ref": "#/definitions/etcdserverpbLeaseLeasesResponse"
-            }
-          }
-        }
-      }
-    },
-    "/v3/lease/revoke": {
-      "post": {
-        "tags": [
-          "Lease"
-        ],
-        "summary": "LeaseRevoke revokes a lease. All keys attached to the lease will expire and be deleted.",
-        "operationId": "LeaseRevoke",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/etcdserverpbLeaseRevokeRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "(empty)",
-            "schema": {
-              "$ref": "#/definitions/etcdserverpbLeaseRevokeResponse"
-            }
-          }
-        }
-      }
-    },
-    "/v3/lease/timetolive": {
-      "post": {
-        "tags": [
-          "Lease"
-        ],
-        "summary": "LeaseTimeToLive retrieves lease information.",
-        "operationId": "LeaseTimeToLive",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/etcdserverpbLeaseTimeToLiveRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "(empty)",
-            "schema": {
-              "$ref": "#/definitions/etcdserverpbLeaseTimeToLiveResponse"
-            }
-          }
-        }
-      }
-    },
-    "/v3/maintenance/alarm": {
+    "/v3beta/maintenance/alarm": {
       "post": {
         "tags": [
           "Maintenance"
@@ -934,7 +853,7 @@
         }
       }
     },
-    "/v3/maintenance/defragment": {
+    "/v3beta/maintenance/defragment": {
       "post": {
         "tags": [
           "Maintenance"
@@ -961,12 +880,12 @@
         }
       }
     },
-    "/v3/maintenance/hash": {
+    "/v3beta/maintenance/hash": {
       "post": {
         "tags": [
           "Maintenance"
         ],
-        "summary": "HashKV computes the hash of all MVCC keys up to a given revision.\nIt only iterates \"key\" bucket in backend storage.",
+        "summary": "HashKV computes the hash of all MVCC keys up to a given revision.",
         "operationId": "HashKV",
         "parameters": [
           {
@@ -988,7 +907,7 @@
         }
       }
     },
-    "/v3/maintenance/snapshot": {
+    "/v3beta/maintenance/snapshot": {
       "post": {
         "tags": [
           "Maintenance"
@@ -1015,7 +934,7 @@
         }
       }
     },
-    "/v3/maintenance/status": {
+    "/v3beta/maintenance/status": {
       "post": {
         "tags": [
           "Maintenance"
@@ -1042,7 +961,7 @@
         }
       }
     },
-    "/v3/maintenance/transfer-leadership": {
+    "/v3beta/maintenance/transfer-leadership": {
       "post": {
         "tags": [
           "Maintenance"
@@ -1069,7 +988,7 @@
         }
       }
     },
-    "/v3/watch": {
+    "/v3beta/watch": {
       "post": {
         "tags": [
           "Watch"
@@ -1367,12 +1286,10 @@
       "type": "object",
       "properties": {
         "key": {
-          "type": "string",
-          "format": "byte"
+          "type": "string"
         },
         "range_end": {
-          "type": "string",
-          "format": "byte"
+          "type": "string"
         },
         "role": {
           "type": "string"
@@ -2100,7 +2017,7 @@
           "format": "int64"
         },
         "min_create_revision": {
-          "description": "min_create_revision is the lower bound for returned key create revisions; all keys with\nlesser create revisions will be filtered away.",
+          "description": "min_create_revision is the lower bound for returned key create revisions; all keys with\nlesser create trevisions will be filtered away.",
           "type": "string",
           "format": "int64"
         },
@@ -2195,7 +2112,7 @@
           "format": "uint64"
         },
         "revision": {
-          "description": "revision is the key-value store revision when the request was applied.\nFor watch progress responses, the header.revision indicates progress. All future events\nrecieved in this stream are guaranteed to have a higher revision number than the\nheader.revision number.",
+          "description": "revision is the key-value store revision when the request was applied.",
           "type": "string",
           "format": "int64"
         }
@@ -2247,21 +2164,9 @@
       "type": "object",
       "properties": {
         "dbSize": {
-          "description": "dbSize is the size of the backend database physically allocated, in bytes, of the responding member.",
+          "description": "dbSize is the size of the backend database, in bytes, of the responding member.",
           "type": "string",
           "format": "int64"
-        },
-        "dbSizeInUse": {
-          "description": "dbSizeInUse is the size of the backend database logically in use, in bytes, of the responding member.",
-          "type": "string",
-          "format": "int64"
-        },
-        "errors": {
-          "description": "errors contains alarm/health information and status.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "header": {
           "$ref": "#/definitions/etcdserverpbResponseHeader"
@@ -2271,13 +2176,8 @@
           "type": "string",
           "format": "uint64"
         },
-        "raftAppliedIndex": {
-          "description": "raftAppliedIndex is the current raft applied index of the responding member.",
-          "type": "string",
-          "format": "uint64"
-        },
         "raftIndex": {
-          "description": "raftIndex is the current raft committed index of the responding member.",
+          "description": "raftIndex is the current raft index of the responding member.",
           "type": "string",
           "format": "uint64"
         },
@@ -2359,11 +2259,6 @@
             "$ref": "#/definitions/WatchCreateRequestFilterType"
           }
         },
-        "fragment": {
-          "description": "fragment enables splitting large revisions into multiple watch responses.",
-          "type": "boolean",
-          "format": "boolean"
-        },
         "key": {
           "description": "key is the key to register for watching.",
           "type": "string",
@@ -2388,17 +2283,8 @@
           "description": "start_revision is an optional revision to watch from (inclusive). No start_revision is \"now\".",
           "type": "string",
           "format": "int64"
-        },
-        "watch_id": {
-          "description": "If watch_id is provided and non-zero, it will be assigned to this watcher.\nSince creating a watcher in etcd is not a synchronous operation,\nthis can be used ensure that ordering is correct when creating multiple\nwatchers on the same stream. Creating a watcher with an ID already in\nuse on the stream will cause an error to be returned.",
-          "type": "string",
-          "format": "int64"
         }
       }
-    },
-    "etcdserverpbWatchProgressRequest": {
-      "description": "Requests the a watch stream progress status be sent in the watch response stream as soon as\npossible.",
-      "type": "object"
     },
     "etcdserverpbWatchRequest": {
       "type": "object",
@@ -2408,9 +2294,6 @@
         },
         "create_request": {
           "$ref": "#/definitions/etcdserverpbWatchCreateRequest"
-        },
-        "progress_request": {
-          "$ref": "#/definitions/etcdserverpbWatchProgressRequest"
         }
       }
     },
@@ -2441,11 +2324,6 @@
           "items": {
             "$ref": "#/definitions/mvccpbEvent"
           }
-        },
-        "fragment": {
-          "description": "framgment is true if large watch response was split over multiple responses.",
-          "type": "boolean",
-          "format": "boolean"
         },
         "header": {
           "$ref": "#/definitions/etcdserverpbResponseHeader"

@@ -2,6 +2,8 @@ RELEASE_BINARY_NAME=terraform-state-ansible-module
 MODULE_BINARY_NAME=terraform_state
 PLUGINS_DIR=~/.ansible/plugins/modules
 
+CURRENT_DIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+
 .PHONY: plugins-dir
 plugins-dir:
 	mkdir -p ${PLUGINS_DIR}
@@ -13,8 +15,8 @@ lint:
 
 .PHONY: update-dependencies
 update-dependencies:
-	@which glide > /dev/null || go get -u github.com/Masterminds/glide
-	glide up
+	@which dep > /dev/null || go get -u github.com/golang/dep/cmd/dep
+	dep ensure
 
 .PHONY: build-linux
 build-linux: plugins-dir
@@ -42,10 +44,19 @@ build-release:
 	CGO_ENABLED=0 GOOS=solaris GOARCH=amd64 installsuffix=cgo go build -o ${GOPATH}/bin/${RELEASE_BINARY_NAME}-solaris-amd64_${RELEASE_VERSION}
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 installsuffix=cgo go build -o ${GOPATH}/bin/${RELEASE_BINARY_NAME}-darwin-amd64_${RELEASE_VERSION}
 
+.PHONY: coverage
+coverage:
+	mkdir -p ${CURRENT_DIR}/.coverage
+	go test -coverprofile=${CURRENT_DIR}/.coverage/cov.out -v ./...
+	go tool cover -html=${CURRENT_DIR}/.coverage/cov.out \
+		-o ${CURRENT_DIR}/.coverage/cov.html
+
 .PHONY: test
 test:
-	go test
+	go clean -testcache
+	go test -cover -v ./...
 
 .PHONY: test-verbose
 test-verbose:
-	go test -v ./...
+	go clean -testcache
+	go test -cover -v ./...

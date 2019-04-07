@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/errwrap"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/helper/dhutil"
 	"github.com/hashicorp/vault/helper/jsonutil"
@@ -18,6 +18,10 @@ import (
 
 type Sink interface {
 	WriteToken(string) error
+}
+
+type SinkReader interface {
+	Token() string
 }
 
 type SinkConfig struct {

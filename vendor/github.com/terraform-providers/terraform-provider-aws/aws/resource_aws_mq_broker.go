@@ -80,32 +80,6 @@ func resourceAwsMqBroker() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"logs": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				// Ignore missing configuration block
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					if old == "1" && new == "0" {
-						return true
-					}
-					return false
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"general": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
-						},
-						"audit": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
-						},
-					},
-				},
-			},
 			"maintenance_window_start_time": {
 				Type:     schema.TypeList,
 				MaxItems: 1,
@@ -191,10 +165,6 @@ func resourceAwsMqBroker() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"ip_address": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"endpoints": {
 							Type:     schema.TypeList,
 							Computed: true,
@@ -222,7 +192,6 @@ func resourceAwsMqBrokerCreate(d *schema.ResourceData, meta interface{}) error {
 		PubliclyAccessible:      aws.Bool(d.Get("publicly_accessible").(bool)),
 		SecurityGroups:          expandStringSet(d.Get("security_groups").(*schema.Set)),
 		Users:                   expandMqUsers(d.Get("user").(*schema.Set).List()),
-		Logs:                    expandMqLogs(d.Get("logs").([]interface{})),
 	}
 
 	if v, ok := d.GetOk("configuration"); ok {
@@ -311,10 +280,6 @@ func resourceAwsMqBrokerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("security_groups", aws.StringValueSlice(out.SecurityGroups))
 	d.Set("subnet_ids", aws.StringValueSlice(out.SubnetIds))
 
-	if err := d.Set("logs", flattenMqLogs(out.Logs)); err != nil {
-		return fmt.Errorf("error setting logs: %s", err)
-	}
-
 	err = d.Set("configuration", flattenMqConfigurationId(out.Configurations.Current))
 	if err != nil {
 		return err
@@ -349,11 +314,10 @@ func resourceAwsMqBrokerRead(d *schema.ResourceData, meta interface{}) error {
 func resourceAwsMqBrokerUpdate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).mqconn
 
-	if d.HasChange("configuration") || d.HasChange("logs") {
+	if d.HasChange("configuration") {
 		_, err := conn.UpdateBroker(&mq.UpdateBrokerRequest{
 			BrokerId:      aws.String(d.Id()),
 			Configuration: expandMqConfigurationId(d.Get("configuration").([]interface{})),
-			Logs:          expandMqLogs(d.Get("logs").([]interface{})),
 		})
 		if err != nil {
 			return err
@@ -562,7 +526,7 @@ func diffAwsMqBrokerUsers(bId string, oldUsers, newUsers []interface{}) (
 		}
 	}
 
-	for username := range existingUsers {
+	for username, _ := range existingUsers {
 		di = append(di, &mq.DeleteUserInput{
 			BrokerId: aws.String(bId),
 			Username: aws.String(username),

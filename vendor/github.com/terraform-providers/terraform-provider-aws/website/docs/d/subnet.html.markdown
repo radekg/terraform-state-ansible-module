@@ -73,14 +73,12 @@ which take the following arguments:
   [the underlying AWS API](http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeSubnets.html).
   For example, if matching against tag `Name`, use:
   
-```hcl
-data "aws_subnet" "selected" {
+  ```hcl
   filter {
-    name   = "tag:Name"
-    values = "" # insert value here
+    name = "tag:Name"
+    values = ...
   }
-}
-```
+  ```
 
 * `values` - (Required) Set of values that are accepted for the given field.
   A subnet will be selected if any one of the given values matches.
@@ -91,7 +89,3 @@ All of the argument attributes except `filter` blocks are also exported as
 result attributes. This data source will complete the data by populating
 any fields that are not included in the configuration with the data for
 the selected subnet.
-
-In addition the following attributes are exported:
-
-* `arn` - The ARN of the subnet.

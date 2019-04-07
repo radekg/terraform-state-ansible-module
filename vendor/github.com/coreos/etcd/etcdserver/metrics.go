@@ -18,11 +18,9 @@ import (
 	goruntime "runtime"
 	"time"
 
-	"go.etcd.io/etcd/pkg/runtime"
-	"go.etcd.io/etcd/version"
-
+	"github.com/coreos/etcd/pkg/runtime"
+	"github.com/coreos/etcd/version"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
 )
 
 var (
@@ -80,6 +78,12 @@ var (
 		Name:      "proposals_failed_total",
 		Help:      "The total number of failed proposals seen.",
 	})
+	leaseExpired = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "etcd_debugging",
+		Subsystem: "server",
+		Name:      "lease_expired_total",
+		Help:      "The total number of expired leases.",
+	})
 	slowReadIndex = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "etcd",
 		Subsystem: "server",
@@ -91,12 +95,6 @@ var (
 		Subsystem: "server",
 		Name:      "read_indexes_failed_total",
 		Help:      "The total number of failed read indexes seen.",
-	})
-	leaseExpired = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "etcd_debugging",
-		Subsystem: "server",
-		Name:      "lease_expired_total",
-		Help:      "The total number of expired leases.",
 	})
 	quotaBackendBytes = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "etcd",
@@ -137,9 +135,9 @@ func init() {
 	prometheus.MustRegister(proposalsApplied)
 	prometheus.MustRegister(proposalsPending)
 	prometheus.MustRegister(proposalsFailed)
+	prometheus.MustRegister(leaseExpired)
 	prometheus.MustRegister(slowReadIndex)
 	prometheus.MustRegister(readIndexFailed)
-	prometheus.MustRegister(leaseExpired)
 	prometheus.MustRegister(quotaBackendBytes)
 	prometheus.MustRegister(currentVersion)
 	prometheus.MustRegister(currentGoVersion)
@@ -153,34 +151,22 @@ func init() {
 	}).Set(1)
 }
 
-func monitorFileDescriptor(lg *zap.Logger, done <-chan struct{}) {
+func monitorFileDescriptor(done <-chan struct{}) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 	for {
 		used, err := runtime.FDUsage()
 		if err != nil {
-			if lg != nil {
-				lg.Warn("failed to get file descriptor usage", zap.Error(err))
-			} else {
-				plog.Errorf("cannot monitor file descriptor usage (%v)", err)
-			}
+			plog.Errorf("cannot monitor file descriptor usage (%v)", err)
 			return
 		}
 		limit, err := runtime.FDLimit()
 		if err != nil {
-			if lg != nil {
-				lg.Warn("failed to get file descriptor limit", zap.Error(err))
-			} else {
-				plog.Errorf("cannot monitor file descriptor usage (%v)", err)
-			}
+			plog.Errorf("cannot monitor file descriptor usage (%v)", err)
 			return
 		}
 		if used >= limit/5*4 {
-			if lg != nil {
-				lg.Warn("80%% of file descriptors are used", zap.Uint64("used", used), zap.Uint64("limit", limit))
-			} else {
-				plog.Warningf("80%% of the file descriptor limit is used [used = %d, limit = %d]", used, limit)
-			}
+			plog.Warningf("80%% of the file descriptor limit is used [used = %d, limit = %d]", used, limit)
 		}
 		select {
 		case <-ticker.C:

@@ -47,7 +47,7 @@ func TestAWSElasticBeanstalkEnvironmentMigrateState(t *testing.T) {
 			ID:         "e-abcde12345",
 			Attributes: tc.Attributes,
 		}
-		_, err := resourceAwsElasticBeanstalkEnvironmentMigrateState(
+		is, err := resourceAwsElasticBeanstalkEnvironmentMigrateState(
 			tc.StateVersion, is, tc.Meta)
 
 		if err != nil {

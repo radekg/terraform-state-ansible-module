@@ -19,12 +19,12 @@ func resourceAwsWafRegionalWebAclAssociation() *schema.Resource {
 		Delete: resourceAwsWafRegionalWebAclAssociationDelete,
 
 		Schema: map[string]*schema.Schema{
-			"web_acl_id": {
+			"web_acl_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"resource_arn": {
+			"resource_arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -113,7 +113,11 @@ func resourceAwsWafRegionalWebAclAssociationDelete(d *schema.ResourceData, meta 
 
 	// If action successful HTTP 200 response with an empty body
 	_, err := conn.DisassociateWebACL(params)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func resourceAwsWafRegionalWebAclAssociationParseId(id string) (webAclId, resourceArn string) {

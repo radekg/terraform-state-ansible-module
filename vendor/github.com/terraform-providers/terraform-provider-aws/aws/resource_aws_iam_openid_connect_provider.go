@@ -22,11 +22,11 @@ func resourceAwsIamOpenIDConnectProvider() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"url": {
+			"url": &schema.Schema{
 				Type:             schema.TypeString,
 				Computed:         false,
 				Required:         true,
@@ -34,13 +34,13 @@ func resourceAwsIamOpenIDConnectProvider() *schema.Resource {
 				ValidateFunc:     validateOpenIdURL,
 				DiffSuppressFunc: suppressOpenIdURL,
 			},
-			"client_id_list": {
+			"client_id_list": &schema.Schema{
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Type:     schema.TypeList,
 				Required: true,
 				ForceNew: true,
 			},
-			"thumbprint_list": {
+			"thumbprint_list": &schema.Schema{
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Type:     schema.TypeList,
 				Required: true,

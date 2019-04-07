@@ -12,49 +12,36 @@ import (
 )
 
 func TestAccAWSServiceDiscoveryPublicDnsNamespace_basic(t *testing.T) {
-	resourceName := "aws_service_discovery_public_dns_namespace.test"
-	rName := acctest.RandStringFromCharSet(5, acctest.CharSetAlpha) + ".terraformtesting.com"
-
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAwsServiceDiscoveryPublicDnsNamespaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccServiceDiscoveryPublicDnsNamespaceConfig(rName),
+				Config: testAccServiceDiscoveryPublicDnsNamespaceConfig(acctest.RandString(5)),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsServiceDiscoveryPublicDnsNamespaceExists("aws_service_discovery_public_dns_namespace.test"),
 					resource.TestCheckResourceAttrSet("aws_service_discovery_public_dns_namespace.test", "arn"),
 					resource.TestCheckResourceAttrSet("aws_service_discovery_public_dns_namespace.test", "hosted_zone"),
 				),
-			},
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 	})
 }
 
-func TestAccAWSServiceDiscoveryPublicDnsNamespace_longname(t *testing.T) {
+func TestAccAWSServiceDiscoveryPublicDnsNamespace_import(t *testing.T) {
 	resourceName := "aws_service_discovery_public_dns_namespace.test"
-	rName := acctest.RandStringFromCharSet(64-len("terraformtesting.com"), acctest.CharSetAlpha) + ".terraformtesting.com"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAwsServiceDiscoveryPublicDnsNamespaceDestroy,
 		Steps: []resource.TestStep{
-			{
-				Config: testAccServiceDiscoveryPublicDnsNamespaceConfig(rName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAwsServiceDiscoveryPublicDnsNamespaceExists("aws_service_discovery_public_dns_namespace.test"),
-					resource.TestCheckResourceAttrSet("aws_service_discovery_public_dns_namespace.test", "arn"),
-					resource.TestCheckResourceAttrSet("aws_service_discovery_public_dns_namespace.test", "hosted_zone"),
-				),
+			resource.TestStep{
+				Config: testAccServiceDiscoveryPublicDnsNamespaceConfig(acctest.RandString(5)),
 			},
-			{
+
+			resource.TestStep{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -111,7 +98,7 @@ func testAccCheckAwsServiceDiscoveryPublicDnsNamespaceExists(name string) resour
 func testAccServiceDiscoveryPublicDnsNamespaceConfig(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_service_discovery_public_dns_namespace" "test" {
-  name = %q
+  name = "tf-sd-%s.terraform.com"
   description = "test"
 }
 `, rName)

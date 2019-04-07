@@ -20,20 +20,6 @@ func resourceAwsApiGatewayStage() *schema.Resource {
 		Read:   resourceAwsApiGatewayStageRead,
 		Update: resourceAwsApiGatewayStageUpdate,
 		Delete: resourceAwsApiGatewayStageDelete,
-		Importer: &schema.ResourceImporter{
-			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				idParts := strings.Split(d.Id(), "/")
-				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-					return nil, fmt.Errorf("Unexpected format of ID (%q), expected REST-API-ID/STAGE-NAME", d.Id())
-				}
-				restApiID := idParts[0]
-				stageName := idParts[1]
-				d.Set("stage_name", stageName)
-				d.Set("rest_api_id", restApiID)
-				d.SetId(fmt.Sprintf("ags-%s-%s", restApiID, stageName))
-				return []*schema.ResourceData{d}, nil
-			},
-		},
 
 		Schema: map[string]*schema.Schema{
 			"access_log_settings": {
@@ -104,10 +90,6 @@ func resourceAwsApiGatewayStage() *schema.Resource {
 				Optional: true,
 			},
 			"tags": tagsSchema(),
-			"xray_tracing_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
 		},
 	}
 }
@@ -134,9 +116,6 @@ func resourceAwsApiGatewayStageCreate(d *schema.ResourceData, meta interface{}) 
 	}
 	if v, ok := d.GetOk("description"); ok {
 		input.Description = aws.String(v.(string))
-	}
-	if v, ok := d.GetOk("xray_tracing_enabled"); ok {
-		input.TracingEnabled = aws.Bool(v.(bool))
 	}
 	if v, ok := d.GetOk("documentation_version"); ok {
 		input.DocumentationVersion = aws.String(v.(string))
@@ -168,7 +147,6 @@ func resourceAwsApiGatewayStageCreate(d *schema.ResourceData, meta interface{}) 
 	d.SetPartial("deployment_id")
 	d.SetPartial("description")
 	d.SetPartial("variables")
-	d.SetPartial("xray_tracing_enabled")
 
 	if waitForCache && *out.CacheClusterStatus != "NOT_AVAILABLE" {
 		stateConf := &resource.StateChangeConf{
@@ -241,15 +219,8 @@ func resourceAwsApiGatewayStageRead(d *schema.ResourceData, meta interface{}) er
 	d.Set("deployment_id", stage.DeploymentId)
 	d.Set("description", stage.Description)
 	d.Set("documentation_version", stage.DocumentationVersion)
-	d.Set("xray_tracing_enabled", stage.TracingEnabled)
-
-	if err := d.Set("tags", aws.StringValueMap(stage.Tags)); err != nil {
-		return fmt.Errorf("error setting tags: %s", err)
-	}
-
-	if err := d.Set("variables", aws.StringValueMap(stage.Variables)); err != nil {
-		return fmt.Errorf("error setting variables: %s", err)
-	}
+	d.Set("variables", aws.StringValueMap(stage.Variables))
+	d.Set("tags", aws.StringValueMap(stage.Tags))
 
 	region := meta.(*AWSClient).region
 	d.Set("invoke_url", buildApiGatewayInvokeURL(restApiId, region, stageName))
@@ -321,13 +292,6 @@ func resourceAwsApiGatewayStageUpdate(d *schema.ResourceData, meta interface{}) 
 			Value: aws.String(d.Get("description").(string)),
 		})
 	}
-	if d.HasChange("xray_tracing_enabled") {
-		operations = append(operations, &apigateway.PatchOperation{
-			Op:    aws.String("replace"),
-			Path:  aws.String("/tracingEnabled"),
-			Value: aws.String(fmt.Sprintf("%t", d.Get("xray_tracing_enabled").(bool))),
-		})
-	}
 	if d.HasChange("documentation_version") {
 		operations = append(operations, &apigateway.PatchOperation{
 			Op:    aws.String("replace"),
@@ -339,7 +303,7 @@ func resourceAwsApiGatewayStageUpdate(d *schema.ResourceData, meta interface{}) 
 		o, n := d.GetChange("variables")
 		oldV := o.(map[string]interface{})
 		newV := n.(map[string]interface{})
-		operations = append(operations, diffVariablesOps(oldV, newV)...)
+		operations = append(operations, diffVariablesOps("/variables/", oldV, newV)...)
 	}
 	if d.HasChange("access_log_settings") {
 		accessLogSettings := d.Get("access_log_settings").([]interface{})
@@ -377,7 +341,6 @@ func resourceAwsApiGatewayStageUpdate(d *schema.ResourceData, meta interface{}) 
 	d.SetPartial("client_certificate_id")
 	d.SetPartial("deployment_id")
 	d.SetPartial("description")
-	d.SetPartial("xray_tracing_enabled")
 	d.SetPartial("variables")
 
 	if waitForCache && *out.CacheClusterStatus != "NOT_AVAILABLE" {
@@ -411,11 +374,10 @@ func resourceAwsApiGatewayStageUpdate(d *schema.ResourceData, meta interface{}) 
 	return resourceAwsApiGatewayStageRead(d, meta)
 }
 
-func diffVariablesOps(oldVars, newVars map[string]interface{}) []*apigateway.PatchOperation {
+func diffVariablesOps(prefix string, oldVars, newVars map[string]interface{}) []*apigateway.PatchOperation {
 	ops := make([]*apigateway.PatchOperation, 0)
-	prefix := "/variables/"
 
-	for k := range oldVars {
+	for k, _ := range oldVars {
 		if _, ok := newVars[k]; !ok {
 			ops = append(ops, &apigateway.PatchOperation{
 				Op:   aws.String("remove"),

@@ -580,7 +580,7 @@ func deleteAwsDynamoDbTable(tableName string, conn *dynamodb.DynamoDB) error {
 		TableName: aws.String(tableName),
 	}
 
-	return resource.Retry(5*time.Minute, func() *resource.RetryError {
+	return resource.Retry(1*time.Minute, func() *resource.RetryError {
 		_, err := conn.DeleteTable(input)
 		if err != nil {
 			// Subscriber limit exceeded: Only 10 tables can be created, updated, or deleted simultaneously
@@ -688,9 +688,7 @@ func readDynamoDbTableTags(arn string, conn *dynamodb.DynamoDB) (map[string]stri
 	output, err := conn.ListTagsOfResource(&dynamodb.ListTagsOfResourceInput{
 		ResourceArn: aws.String(arn),
 	})
-
-	// Do not fail if interfacing with dynamodb-local
-	if err != nil && !isAWSErr(err, "UnknownOperationException", "Tagging is not currently supported in DynamoDB Local.") {
+	if err != nil {
 		return nil, fmt.Errorf("Error reading tags from dynamodb resource: %s", err)
 	}
 
@@ -699,6 +697,18 @@ func readDynamoDbTableTags(arn string, conn *dynamodb.DynamoDB) (map[string]stri
 	// TODO Read NextToken if available
 
 	return result, nil
+}
+
+func readDynamoDbPITR(table string, conn *dynamodb.DynamoDB) (bool, error) {
+	output, err := conn.DescribeContinuousBackups(&dynamodb.DescribeContinuousBackupsInput{
+		TableName: aws.String(table),
+	})
+	if err != nil {
+		return false, fmt.Errorf("Error reading backup status from dynamodb resource: %s", err)
+	}
+
+	pitr := output.ContinuousBackupsDescription.PointInTimeRecoveryDescription
+	return *pitr.PointInTimeRecoveryStatus == dynamodb.PointInTimeRecoveryStatusEnabled, nil
 }
 
 // Waiters

@@ -29,7 +29,7 @@ func resourceAwsDaxSubnetGroup() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"subnet_ids": {
+			"subnet_ids": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},

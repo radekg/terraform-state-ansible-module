@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"go.etcd.io/etcd/pkg/types"
+	"github.com/coreos/etcd/pkg/types"
 )
 
 func TestMemberUnmarshal(t *testing.T) {

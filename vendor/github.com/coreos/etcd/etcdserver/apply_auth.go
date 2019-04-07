@@ -17,10 +17,10 @@ package etcdserver
 import (
 	"sync"
 
-	"go.etcd.io/etcd/auth"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
-	"go.etcd.io/etcd/lease"
-	"go.etcd.io/etcd/mvcc"
+	"github.com/coreos/etcd/auth"
+	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
+	"github.com/coreos/etcd/lease"
+	"github.com/coreos/etcd/mvcc"
 )
 
 type authApplierV3 struct {
@@ -156,7 +156,10 @@ func checkTxnAuth(as auth.AuthStore, ai *auth.AuthInfo, rt *pb.TxnRequest) error
 	if err := checkTxnReqsPermission(as, ai, rt.Success); err != nil {
 		return err
 	}
-	return checkTxnReqsPermission(as, ai, rt.Failure)
+	if err := checkTxnReqsPermission(as, ai, rt.Failure); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (aa *authApplierV3) Txn(rt *pb.TxnRequest) (*pb.TxnResponse, error) {

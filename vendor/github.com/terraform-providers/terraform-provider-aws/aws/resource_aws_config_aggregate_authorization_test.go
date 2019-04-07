@@ -29,10 +29,6 @@ func testSweepConfigAggregateAuthorizations(region string) error {
 
 	aggregateAuthorizations, err := describeConfigAggregateAuthorizations(conn)
 	if err != nil {
-		if testSweepSkipSweepError(err) {
-			log.Printf("[WARN] Skipping Config Aggregate Authorizations sweep for %s: %s", region, err)
-			return nil
-		}
 		return fmt.Errorf("Error retrieving config aggregate authorizations: %s", err)
 	}
 
@@ -60,7 +56,7 @@ func testSweepConfigAggregateAuthorizations(region string) error {
 func TestAccAWSConfigAggregateAuthorization_basic(t *testing.T) {
 	rString := acctest.RandStringFromCharSet(12, "0123456789")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSConfigAggregateAuthorizationDestroy,

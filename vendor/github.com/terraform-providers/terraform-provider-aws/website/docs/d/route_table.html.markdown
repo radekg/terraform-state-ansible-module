@@ -1,7 +1,7 @@
 ---
 layout: "aws"
 page_title: "AWS: aws_route_table"
-sidebar_current: "docs-aws-datasource-route-table-x"
+sidebar_current: "docs-aws-datasource-route-table"
 description: |-
     Provides details about a specific Route Table
 ---

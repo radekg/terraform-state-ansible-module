@@ -29,14 +29,16 @@ func TestConvert(t *testing.T) {
 	if e1.Error() != e2.Error() {
 		t.Fatalf("expected %q == %q", e1.Error(), e2.Error())
 	}
-	if ev1, ok := status.FromError(e1); ok && ev1.Code() != e3.(EtcdError).Code() {
+	ev1, _ := status.FromError(e1)
+	if ev1.Code() != e3.(EtcdError).Code() {
 		t.Fatalf("expected them to be equal, got %v / %v", ev1.Code(), e3.(EtcdError).Code())
 	}
 
 	if e1.Error() == e3.Error() {
 		t.Fatalf("expected %q != %q", e1.Error(), e3.Error())
 	}
-	if ev2, ok := status.FromError(e2); ok && ev2.Code() != e3.(EtcdError).Code() {
+	ev2, _ := status.FromError(e2)
+	if ev2.Code() != e3.(EtcdError).Code() {
 		t.Fatalf("expected them to be equal, got %v / %v", ev2.Code(), e3.(EtcdError).Code())
 	}
 }

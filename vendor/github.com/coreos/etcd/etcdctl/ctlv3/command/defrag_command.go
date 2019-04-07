@@ -20,8 +20,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/coreos/etcd/mvcc/backend"
 	"github.com/spf13/cobra"
-	"go.etcd.io/etcd/mvcc/backend"
 )
 
 var (
@@ -35,7 +35,6 @@ func NewDefragCommand() *cobra.Command {
 		Short: "Defragments the storage of the etcd members with given endpoints",
 		Run:   defragCommandFunc,
 	}
-	cmd.PersistentFlags().BoolVar(&epClusterEndpoints, "cluster", false, "use all endpoints from the cluster member list")
 	cmd.Flags().StringVar(&defragDataDir, "data-dir", "", "Optional. If present, defragments a data directory not in use by etcd.")
 	return cmd
 }
@@ -52,7 +51,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 
 	failures := 0
 	c := mustClientFromCmd(cmd)
-	for _, ep := range endpointsFromCluster(cmd) {
+	for _, ep := range c.Endpoints() {
 		ctx, cancel := commandCtx(cmd)
 		_, err := c.Defragment(ctx, ep)
 		cancel()

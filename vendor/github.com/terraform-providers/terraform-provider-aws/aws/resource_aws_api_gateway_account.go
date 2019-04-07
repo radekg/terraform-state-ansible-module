@@ -22,21 +22,21 @@ func resourceAwsApiGatewayAccount() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"cloudwatch_role_arn": {
+			"cloudwatch_role_arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"throttle_settings": {
+			"throttle_settings": &schema.Schema{
 				Type:     schema.TypeList,
 				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"burst_limit": {
+						"burst_limit": &schema.Schema{
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"rate_limit": {
+						"rate_limit": &schema.Schema{
 							Type:     schema.TypeFloat,
 							Computed: true,
 						},

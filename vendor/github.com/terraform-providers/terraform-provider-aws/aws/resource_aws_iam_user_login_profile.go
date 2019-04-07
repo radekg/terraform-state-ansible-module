@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/encryption"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
@@ -70,7 +71,7 @@ func generateIAMPassword(length int) string {
 	result := make([]byte, length)
 	charsetSize := big.NewInt(int64(len(charset)))
 
-	// rather than trying to artificially add specific characters from each
+	// rather than trying to artifically add specific characters from each
 	// class to the password to match the policy, we generate passwords
 	// randomly and reject those that don't match.
 	//
@@ -165,7 +166,7 @@ func resourceAwsIamUserLoginProfileCreate(d *schema.ResourceData, meta interface
 			d.Set("encrypted_password", "")
 			return nil
 		}
-		return fmt.Errorf("Error creating IAM User Login Profile for %q: %s", username, err)
+		return errwrap.Wrapf(fmt.Sprintf("Error creating IAM User Login Profile for %q: {{err}}", username), err)
 	}
 
 	d.SetId(*createResp.LoginProfile.UserName)

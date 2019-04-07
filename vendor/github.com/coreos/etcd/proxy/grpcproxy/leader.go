@@ -19,9 +19,11 @@ import (
 	"math"
 	"sync"
 
-	"go.etcd.io/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -67,7 +69,7 @@ func (l *leader) recvLoop() {
 		}
 		if cresp.Err() != nil {
 			l.loseLeader()
-			if clientv3.IsConnCanceled(cresp.Err()) {
+			if rpctypes.ErrorDesc(cresp.Err()) == grpc.ErrClientConnClosing.Error() {
 				close(l.disconnc)
 				return
 			}

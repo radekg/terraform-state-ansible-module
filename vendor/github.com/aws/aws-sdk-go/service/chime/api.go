@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awsutil"
 	"github.com/aws/aws-sdk-go/aws/request"
+	"github.com/aws/aws-sdk-go/private/protocol"
+	"github.com/aws/aws-sdk-go/private/protocol/restjson"
 )
 
 const opBatchSuspendUser = "BatchSuspendUser"
@@ -57,7 +59,7 @@ func (c *Chime) BatchSuspendUserRequest(input *BatchSuspendUserInput) (req *requ
 //
 // Suspends up to 50 users from a Team or EnterpriseLWA Amazon Chime account.
 // For more information about different account types, see Managing Your Amazon
-// Chime Accounts (http://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
+// Chime Accounts (https://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
 // in the Amazon Chime Administration Guide.
 //
 // Users suspended from a Team account are dissociated from the account, but
@@ -170,7 +172,7 @@ func (c *Chime) BatchUnsuspendUserRequest(input *BatchUnsuspendUserInput) (req *
 // Removes the suspension from up to 50 previously suspended users for the specified
 // Amazon Chime EnterpriseLWA account. Only users on EnterpriseLWA accounts
 // can be unsuspended using this action. For more information about different
-// account types, see Managing Your Amazon Chime Accounts (http://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
+// account types, see Managing Your Amazon Chime Accounts (https://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
 // in the Amazon Chime Administration Guide.
 //
 // Previously suspended users who are unsuspended using this action are returned
@@ -374,7 +376,7 @@ func (c *Chime) CreateAccountRequest(input *CreateAccountInput) (req *request.Re
 //
 // Creates an Amazon Chime account under the administrator's AWS account. Only
 // Team account types are currently supported for this action. For more information
-// about different account types, see Managing Your Amazon Chime Accounts (http://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
+// about different account types, see Managing Your Amazon Chime Accounts (https://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
 // in the Amazon Chime Administration Guide.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -468,6 +470,7 @@ func (c *Chime) DeleteAccountRequest(input *DeleteAccountInput) (req *request.Re
 
 	output = &DeleteAccountOutput{}
 	req = c.newRequest(op, input, output)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -688,7 +691,7 @@ func (c *Chime) GetAccountSettingsRequest(input *GetAccountSettingsInput) (req *
 //
 // Retrieves account settings for the specified Amazon Chime account ID, such
 // as remote control and dial out settings. For more information about these
-// settings, see Use the Policies Page (http://docs.aws.amazon.com/chime/latest/ag/policies.html)
+// settings, see Use the Policies Page (https://docs.aws.amazon.com/chime/latest/ag/policies.html)
 // in the Amazon Chime Administration Guide.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -789,6 +792,9 @@ func (c *Chime) GetUserRequest(input *GetUserInput) (req *request.Request, outpu
 //
 // Retrieves details for the specified user ID, such as primary email address,
 // license type, and personal meeting PIN.
+//
+// To retrieve user details with an email address instead of a user ID, use
+// the ListUsers action, and then filter by email address.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1149,7 +1155,9 @@ func (c *Chime) ListUsersRequest(input *ListUsersInput) (req *request.Request, o
 
 // ListUsers API operation for Amazon Chime.
 //
-// Lists the users that belong to the specified Amazon Chime account.
+// Lists the users that belong to the specified Amazon Chime account. You can
+// specify an email address to list only the user that the email address belongs
+// to.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1292,6 +1300,7 @@ func (c *Chime) LogoutUserRequest(input *LogoutUserInput) (req *request.Request,
 
 	output = &LogoutUserOutput{}
 	req = c.newRequest(op, input, output)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1589,6 +1598,7 @@ func (c *Chime) UpdateAccountSettingsRequest(input *UpdateAccountSettingsInput) 
 
 	output = &UpdateAccountSettingsOutput{}
 	req = c.newRequest(op, input, output)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1596,7 +1606,7 @@ func (c *Chime) UpdateAccountSettingsRequest(input *UpdateAccountSettingsInput) 
 //
 // Updates the settings for the specified Amazon Chime account. You can update
 // settings for remote control of shared screens, or for the dial-out option.
-// For more information about these settings, see Use the Policies Page (http://docs.aws.amazon.com/chime/latest/ag/policies.html)
+// For more information about these settings, see Use the Policies Page (https://docs.aws.amazon.com/chime/latest/ag/policies.html)
 // in the Amazon Chime Administration Guide.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -1765,7 +1775,7 @@ type Account struct {
 	AccountId *string `type:"string" required:"true"`
 
 	// The Amazon Chime account type. For more information about different account
-	// types, see Managing Your Amazon Chime Accounts (http://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
+	// types, see Managing Your Amazon Chime Accounts (https://docs.aws.amazon.com/chime/latest/ag/manage-chime-account.html)
 	// in the Amazon Chime Administration Guide.
 	AccountType *string `type:"string" enum:"AccountType"`
 
@@ -1844,7 +1854,7 @@ func (s *Account) SetSupportedLicenses(v []*string) *Account {
 // Settings related to the Amazon Chime account. This includes settings that
 // start or stop remote control of shared screens, or start or stop the dial-out
 // option in the Amazon Chime web application. For more information about these
-// settings, see Use the Policies Page (http://docs.aws.amazon.com/chime/latest/ag/policies.html)
+// settings, see Use the Policies Page (https://docs.aws.amazon.com/chime/latest/ag/policies.html)
 // in the Amazon Chime Administration Guide.
 type AccountSettings struct {
 	_ struct{} `type:"structure"`
@@ -1854,7 +1864,7 @@ type AccountSettings struct {
 
 	// Setting that allows meeting participants to choose the Call me at a phone
 	// number option. For more information, see Join a Meeting without the Amazon
-	// Chime App (http://docs.aws.amazon.com/chime/latest/ug/chime-join-meeting.html).
+	// Chime App (https://docs.aws.amazon.com/chime/latest/ug/chime-join-meeting.html).
 	EnableDialOut *bool `type:"boolean"`
 }
 
@@ -1909,6 +1919,9 @@ func (s *BatchSuspendUserInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "BatchSuspendUserInput"}
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
+	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
 	}
 	if s.UserIdList == nil {
 		invalidParams.Add(request.NewErrParamRequired("UserIdList"))
@@ -1987,6 +2000,9 @@ func (s *BatchUnsuspendUserInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 	if s.UserIdList == nil {
 		invalidParams.Add(request.NewErrParamRequired("UserIdList"))
 	}
@@ -2063,6 +2079,9 @@ func (s *BatchUpdateUserInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "BatchUpdateUserInput"}
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
+	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
 	}
 	if s.UpdateUserRequestItems == nil {
 		invalidParams.Add(request.NewErrParamRequired("UpdateUserRequestItems"))
@@ -2210,6 +2229,9 @@ func (s *DeleteAccountInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -2261,6 +2283,9 @@ func (s *GetAccountInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetAccountInput"}
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
+	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -2322,6 +2347,9 @@ func (s *GetAccountSettingsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetAccountSettingsInput"}
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
+	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -2389,8 +2417,14 @@ func (s *GetUserInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 	if s.UserId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UserId"))
+	}
+	if s.UserId != nil && len(*s.UserId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UserId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -2440,7 +2474,7 @@ type Invite struct {
 	_ struct{} `type:"structure"`
 
 	// The email address to which the invite is sent.
-	EmailAddress *string `type:"string"`
+	EmailAddress *string `type:"string" sensitive:"true"`
 
 	// The status of the invite email.
 	EmailStatus *string `type:"string" enum:"EmailStatus"`
@@ -2516,6 +2550,9 @@ func (s *InviteUsersInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 	if s.UserEmailList == nil {
 		invalidParams.Add(request.NewErrParamRequired("UserEmailList"))
 	}
@@ -2574,7 +2611,7 @@ type ListAccountsInput struct {
 	NextToken *string `location:"querystring" locationName:"next-token" type:"string"`
 
 	// User email address with which to filter results.
-	UserEmail *string `location:"querystring" locationName:"user-email" type:"string"`
+	UserEmail *string `location:"querystring" locationName:"user-email" type:"string" sensitive:"true"`
 }
 
 // String returns the string representation
@@ -2672,6 +2709,9 @@ type ListUsersInput struct {
 
 	// The token to use to retrieve the next page of results.
 	NextToken *string `location:"querystring" locationName:"next-token" type:"string"`
+
+	// Optional. The user email address used to filter results. Maximum 1.
+	UserEmail *string `location:"querystring" locationName:"user-email" type:"string" sensitive:"true"`
 }
 
 // String returns the string representation
@@ -2689,6 +2729,9 @@ func (s *ListUsersInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "ListUsersInput"}
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
+	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
 	}
 	if s.MaxResults != nil && *s.MaxResults < 1 {
 		invalidParams.Add(request.NewErrParamMinValue("MaxResults", 1))
@@ -2715,6 +2758,12 @@ func (s *ListUsersInput) SetMaxResults(v int64) *ListUsersInput {
 // SetNextToken sets the NextToken field's value.
 func (s *ListUsersInput) SetNextToken(v string) *ListUsersInput {
 	s.NextToken = &v
+	return s
+}
+
+// SetUserEmail sets the UserEmail field's value.
+func (s *ListUsersInput) SetUserEmail(v string) *ListUsersInput {
+	s.UserEmail = &v
 	return s
 }
 
@@ -2780,8 +2829,14 @@ func (s *LogoutUserInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 	if s.UserId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UserId"))
+	}
+	if s.UserId != nil && len(*s.UserId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UserId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -2846,8 +2901,14 @@ func (s *ResetPersonalPINInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 	if s.UserId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UserId"))
+	}
+	if s.UserId != nil && len(*s.UserId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UserId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -2918,6 +2979,9 @@ func (s *UpdateAccountInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "UpdateAccountInput"}
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
+	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
 	}
 	if s.Name != nil && len(*s.Name) < 1 {
 		invalidParams.Add(request.NewErrParamMinLen("Name", 1))
@@ -2994,6 +3058,9 @@ func (s *UpdateAccountSettingsInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 	if s.AccountSettings == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountSettings"))
 	}
@@ -3064,8 +3131,14 @@ func (s *UpdateUserInput) Validate() error {
 	if s.AccountId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AccountId"))
 	}
+	if s.AccountId != nil && len(*s.AccountId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AccountId", 1))
+	}
 	if s.UserId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UserId"))
+	}
+	if s.UserId != nil && len(*s.UserId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UserId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -3171,7 +3244,7 @@ type User struct {
 	AccountId *string `type:"string"`
 
 	// The display name of the user.
-	DisplayName *string `type:"string"`
+	DisplayName *string `type:"string" sensitive:"true"`
 
 	// Date and time when the user is invited to the Amazon Chime account, in ISO
 	// 8601 format.
@@ -3184,7 +3257,7 @@ type User struct {
 	PersonalPIN *string `type:"string"`
 
 	// The primary email address of the user.
-	PrimaryEmail *string `type:"string"`
+	PrimaryEmail *string `type:"string" sensitive:"true"`
 
 	// Date and time when the user is registered, in ISO 8601 format.
 	RegisteredOn *time.Time `type:"timestamp" timestampFormat:"iso8601"`

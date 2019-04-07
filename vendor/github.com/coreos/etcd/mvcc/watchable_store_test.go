@@ -23,15 +23,14 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/lease"
-	"go.etcd.io/etcd/mvcc/backend"
-	"go.etcd.io/etcd/mvcc/mvccpb"
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/lease"
+	"github.com/coreos/etcd/mvcc/backend"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 func TestWatch(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	defer func() {
 		s.store.Close()
@@ -43,7 +42,7 @@ func TestWatch(t *testing.T) {
 	s.Put(testKey, testValue, lease.NoLease)
 
 	w := s.NewWatchStream()
-	w.Watch(0, testKey, nil, 0)
+	w.Watch(testKey, nil, 0)
 
 	if !s.synced.contains(string(testKey)) {
 		// the key must have had an entry in synced
@@ -53,7 +52,7 @@ func TestWatch(t *testing.T) {
 
 func TestNewWatcherCancel(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	defer func() {
 		s.store.Close()
@@ -64,7 +63,7 @@ func TestNewWatcherCancel(t *testing.T) {
 	s.Put(testKey, testValue, lease.NoLease)
 
 	w := s.NewWatchStream()
-	wt, _ := w.Watch(0, testKey, nil, 0)
+	wt := w.Watch(testKey, nil, 0)
 
 	if err := w.Cancel(wt); err != nil {
 		t.Error(err)
@@ -85,7 +84,7 @@ func TestCancelUnsynced(t *testing.T) {
 	// method to sync watchers in unsynced map. We want to keep watchers
 	// in unsynced to test if syncWatchers works as expected.
 	s := &watchableStore{
-		store:    NewStore(zap.NewExample(), b, &lease.FakeLessor{}, nil),
+		store:    NewStore(b, &lease.FakeLessor{}, nil),
 		unsynced: newWatcherGroup(),
 
 		// to make the test not crash from assigning to nil map.
@@ -115,7 +114,7 @@ func TestCancelUnsynced(t *testing.T) {
 	watchIDs := make([]WatchID, watcherN)
 	for i := 0; i < watcherN; i++ {
 		// use 1 to keep watchers in unsynced
-		watchIDs[i], _ = w.Watch(0, testKey, nil, 1)
+		watchIDs[i] = w.Watch(testKey, nil, 1)
 	}
 
 	for _, idx := range watchIDs {
@@ -140,7 +139,7 @@ func TestSyncWatchers(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
 
 	s := &watchableStore{
-		store:    NewStore(zap.NewExample(), b, &lease.FakeLessor{}, nil),
+		store:    NewStore(b, &lease.FakeLessor{}, nil),
 		unsynced: newWatcherGroup(),
 		synced:   newWatcherGroup(),
 	}
@@ -161,7 +160,7 @@ func TestSyncWatchers(t *testing.T) {
 
 	for i := 0; i < watcherN; i++ {
 		// specify rev as 1 to keep watchers in unsynced
-		w.Watch(0, testKey, nil, 1)
+		w.Watch(testKey, nil, 1)
 	}
 
 	// Before running s.syncWatchers() synced should be empty because we manually
@@ -223,7 +222,7 @@ func TestSyncWatchers(t *testing.T) {
 // TestWatchCompacted tests a watcher that watches on a compacted revision.
 func TestWatchCompacted(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	defer func() {
 		s.store.Close()
@@ -243,7 +242,7 @@ func TestWatchCompacted(t *testing.T) {
 	}
 
 	w := s.NewWatchStream()
-	wt, _ := w.Watch(0, testKey, nil, compactRev-1)
+	wt := w.Watch(testKey, nil, compactRev-1)
 
 	select {
 	case resp := <-w.Chan():
@@ -260,7 +259,7 @@ func TestWatchCompacted(t *testing.T) {
 
 func TestWatchFutureRev(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	defer func() {
 		s.store.Close()
@@ -272,7 +271,7 @@ func TestWatchFutureRev(t *testing.T) {
 
 	w := s.NewWatchStream()
 	wrev := int64(10)
-	w.Watch(0, testKey, nil, wrev)
+	w.Watch(testKey, nil, wrev)
 
 	for i := 0; i < 10; i++ {
 		rev := s.Put(testKey, testValue, lease.NoLease)
@@ -301,7 +300,7 @@ func TestWatchRestore(t *testing.T) {
 	test := func(delay time.Duration) func(t *testing.T) {
 		return func(t *testing.T) {
 			b, tmpPath := backend.NewDefaultTmpBackend()
-			s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+			s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 			defer cleanup(s, b, tmpPath)
 
 			testKey := []byte("foo")
@@ -309,11 +308,11 @@ func TestWatchRestore(t *testing.T) {
 			rev := s.Put(testKey, testValue, lease.NoLease)
 
 			newBackend, newPath := backend.NewDefaultTmpBackend()
-			newStore := newWatchableStore(zap.NewExample(), newBackend, &lease.FakeLessor{}, nil)
+			newStore := newWatchableStore(newBackend, &lease.FakeLessor{}, nil)
 			defer cleanup(newStore, newBackend, newPath)
 
 			w := newStore.NewWatchStream()
-			w.Watch(0, testKey, nil, rev-1)
+			w.Watch(testKey, nil, rev-1)
 
 			time.Sleep(delay)
 
@@ -347,11 +346,11 @@ func TestWatchRestore(t *testing.T) {
 //   5. choose the watcher from step 1, without panic
 func TestWatchRestoreSyncedWatcher(t *testing.T) {
 	b1, b1Path := backend.NewDefaultTmpBackend()
-	s1 := newWatchableStore(zap.NewExample(), b1, &lease.FakeLessor{}, nil)
+	s1 := newWatchableStore(b1, &lease.FakeLessor{}, nil)
 	defer cleanup(s1, b1, b1Path)
 
 	b2, b2Path := backend.NewDefaultTmpBackend()
-	s2 := newWatchableStore(zap.NewExample(), b2, &lease.FakeLessor{}, nil)
+	s2 := newWatchableStore(b2, &lease.FakeLessor{}, nil)
 	defer cleanup(s2, b2, b2Path)
 
 	testKey, testValue := []byte("foo"), []byte("bar")
@@ -361,7 +360,7 @@ func TestWatchRestoreSyncedWatcher(t *testing.T) {
 	// create a watcher with a future revision
 	// add to "synced" watcher group (startRev > s.store.currentRev)
 	w1 := s1.NewWatchStream()
-	w1.Watch(0, testKey, nil, startRev)
+	w1.Watch(testKey, nil, startRev)
 
 	// make "s2" ends up with a higher last revision
 	s2.Put(testKey, testValue, lease.NoLease)
@@ -398,7 +397,7 @@ func TestWatchRestoreSyncedWatcher(t *testing.T) {
 // TestWatchBatchUnsynced tests batching on unsynced watchers
 func TestWatchBatchUnsynced(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	oldMaxRevs := watchBatchMaxRevs
 	defer func() {
@@ -415,7 +414,7 @@ func TestWatchBatchUnsynced(t *testing.T) {
 	}
 
 	w := s.NewWatchStream()
-	w.Watch(0, v, nil, 1)
+	w.Watch(v, nil, 1)
 	for i := 0; i < batches; i++ {
 		if resp := <-w.Chan(); len(resp.Events) != watchBatchMaxRevs {
 			t.Fatalf("len(events) = %d, want %d", len(resp.Events), watchBatchMaxRevs)
@@ -532,7 +531,7 @@ func TestWatchVictims(t *testing.T) {
 	oldChanBufLen, oldMaxWatchersPerSync := chanBufLen, maxWatchersPerSync
 
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	defer func() {
 		s.store.Close()
@@ -551,7 +550,7 @@ func TestWatchVictims(t *testing.T) {
 	for i := 0; i < numWatches; i++ {
 		go func() {
 			w := s.NewWatchStream()
-			w.Watch(0, testKey, nil, 1)
+			w.Watch(testKey, nil, 1)
 			defer func() {
 				w.Close()
 				wg.Done()
@@ -610,7 +609,7 @@ func TestWatchVictims(t *testing.T) {
 // canceling its watches.
 func TestStressWatchCancelClose(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	defer func() {
 		s.store.Close()
@@ -627,7 +626,7 @@ func TestStressWatchCancelClose(t *testing.T) {
 			w := s.NewWatchStream()
 			ids := make([]WatchID, 10)
 			for i := range ids {
-				ids[i], _ = w.Watch(0, testKey, nil, 0)
+				ids[i] = w.Watch(testKey, nil, 0)
 			}
 			<-readyc
 			wg.Add(1 + len(ids)/2)

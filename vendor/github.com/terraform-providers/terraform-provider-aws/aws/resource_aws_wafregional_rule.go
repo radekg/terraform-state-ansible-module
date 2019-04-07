@@ -20,31 +20,31 @@ func resourceAwsWafRegionalRule() *schema.Resource {
 		Delete: resourceAwsWafRegionalRuleDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"metric_name": {
+			"metric_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"predicate": {
+			"predicate": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"negated": {
+						"negated": &schema.Schema{
 							Type:     schema.TypeBool,
 							Required: true,
 						},
-						"data_id": {
+						"data_id": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringLenBetween(1, 128),
 						},
-						"type": {
+						"type": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validateWafPredicatesType(),
@@ -168,7 +168,7 @@ func updateWafRegionalRuleResource(id string, oldP, newP []interface{}, meta int
 }
 
 func flattenWafPredicates(ts []*waf.Predicate) []interface{} {
-	out := make([]interface{}, len(ts))
+	out := make([]interface{}, len(ts), len(ts))
 	for i, p := range ts {
 		m := make(map[string]interface{})
 		m["negated"] = *p.Negated

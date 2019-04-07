@@ -24,9 +24,9 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"go.etcd.io/etcd/client"
-	"go.etcd.io/etcd/integration"
-	"go.etcd.io/etcd/pkg/testutil"
+	"github.com/coreos/etcd/client"
+	"github.com/coreos/etcd/integration"
+	"github.com/coreos/etcd/pkg/testutil"
 )
 
 // TestV2NoRetryEOF tests destructive api calls won't retry on a disconnection.
@@ -46,7 +46,7 @@ func TestV2NoRetryEOF(t *testing.T) {
 			conn.Close()
 		}
 	}()
-	eofURL := integration.URLScheme + "://" + lEOF.Addr().String()
+	eofURL := integration.UrlScheme + "://" + lEOF.Addr().String()
 	cli := integration.MustNewHTTPClient(t, []string{eofURL, eofURL}, nil)
 	kapi := client.NewKeysAPI(cli)
 	for i, f := range noRetryList(kapi) {
@@ -64,16 +64,16 @@ func TestV2NoRetryEOF(t *testing.T) {
 // TestV2NoRetryNoLeader tests destructive api calls won't retry if given an error code.
 func TestV2NoRetryNoLeader(t *testing.T) {
 	defer testutil.AfterTest(t)
-	lHTTP := integration.NewListenerWithAddr(t, fmt.Sprintf("127.0.0.1:%05d", os.Getpid()))
+	lHttp := integration.NewListenerWithAddr(t, fmt.Sprintf("127.0.0.1:%05d", os.Getpid()))
 	eh := &errHandler{errCode: http.StatusServiceUnavailable}
 	srv := httptest.NewUnstartedServer(eh)
-	defer lHTTP.Close()
+	defer lHttp.Close()
 	defer srv.Close()
-	srv.Listener = lHTTP
+	srv.Listener = lHttp
 	go srv.Start()
-	lHTTPURL := integration.URLScheme + "://" + lHTTP.Addr().String()
+	lHttpURL := integration.UrlScheme + "://" + lHttp.Addr().String()
 
-	cli := integration.MustNewHTTPClient(t, []string{lHTTPURL, lHTTPURL}, nil)
+	cli := integration.MustNewHTTPClient(t, []string{lHttpURL, lHttpURL}, nil)
 	kapi := client.NewKeysAPI(cli)
 	// test error code
 	for i, f := range noRetryList(kapi) {
@@ -94,7 +94,7 @@ func TestV2RetryRefuse(t *testing.T) {
 	cl.Launch(t)
 	defer cl.Terminate(t)
 	// test connection refused; expect no error failover
-	cli := integration.MustNewHTTPClient(t, []string{integration.URLScheme + "://refuseconn:123", cl.URL(0)}, nil)
+	cli := integration.MustNewHTTPClient(t, []string{integration.UrlScheme + "://refuseconn:123", cl.URL(0)}, nil)
 	kapi := client.NewKeysAPI(cli)
 	if _, err := kapi.Set(context.Background(), "/delkey", "def", nil); err != nil {
 		t.Fatal(err)

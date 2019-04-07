@@ -17,8 +17,8 @@ package command
 import (
 	"fmt"
 
+	"github.com/coreos/etcd/clientv3"
 	"github.com/spf13/cobra"
-	"go.etcd.io/etcd/clientv3"
 )
 
 var (
@@ -43,7 +43,7 @@ func NewDelCommand() *cobra.Command {
 
 // delCommandFunc executes the "del" command.
 func delCommandFunc(cmd *cobra.Command, args []string) {
-	key, opts := getDelOp(args)
+	key, opts := getDelOp(cmd, args)
 	ctx, cancel := commandCtx(cmd)
 	resp, err := mustClientFromCmd(cmd).Delete(ctx, key, opts...)
 	cancel()
@@ -53,7 +53,7 @@ func delCommandFunc(cmd *cobra.Command, args []string) {
 	display.Del(*resp)
 }
 
-func getDelOp(args []string) (string, []clientv3.OpOption) {
+func getDelOp(cmd *cobra.Command, args []string) (string, []clientv3.OpOption) {
 	if len(args) == 0 || len(args) > 2 {
 		ExitWithError(ExitBadArgs, fmt.Errorf("del command needs one argument as key and an optional argument as range_end."))
 	}

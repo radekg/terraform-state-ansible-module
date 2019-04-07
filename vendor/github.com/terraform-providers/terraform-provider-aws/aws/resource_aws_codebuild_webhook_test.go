@@ -12,43 +12,12 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSCodeBuildWebhook_Bitbucket(t *testing.T) {
-	var webhook codebuild.Webhook
-	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "aws_codebuild_webhook.test"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSCodeBuildWebhookDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSCodeBuildWebhookConfig_Bitbucket(rName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSCodeBuildWebhookExists(resourceName, &webhook),
-					resource.TestCheckResourceAttr(resourceName, "branch_filter", ""),
-					resource.TestCheckResourceAttr(resourceName, "project_name", rName),
-					resource.TestMatchResourceAttr(resourceName, "payload_url", regexp.MustCompile(`^https://`)),
-					resource.TestCheckResourceAttr(resourceName, "secret", ""),
-					resource.TestMatchResourceAttr(resourceName, "url", regexp.MustCompile(`^https://`)),
-				),
-			},
-			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"secret"},
-			},
-		},
-	})
-}
-
 func TestAccAWSCodeBuildWebhook_GitHub(t *testing.T) {
 	var webhook codebuild.Webhook
 	rName := acctest.RandomWithPrefix("tf-acc-test")
 	resourceName := "aws_codebuild_webhook.test"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSCodeBuildWebhookDestroy,
@@ -79,7 +48,7 @@ func TestAccAWSCodeBuildWebhook_GitHubEnterprise(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tf-acc-test")
 	resourceName := "aws_codebuild_webhook.test"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSCodeBuildWebhookDestroy,
@@ -127,7 +96,7 @@ func TestAccAWSCodeBuildWebhook_BranchFilter(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tf-acc-test")
 	resourceName := "aws_codebuild_webhook.test"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSCodeBuildWebhookDestroy,
@@ -218,14 +187,6 @@ func testAccCheckAWSCodeBuildWebhookExists(name string, webhook *codebuild.Webho
 
 		return nil
 	}
-}
-
-func testAccAWSCodeBuildWebhookConfig_Bitbucket(rName string) string {
-	return fmt.Sprintf(testAccAWSCodeBuildProjectConfig_Source_Type_Bitbucket(rName) + `
-resource "aws_codebuild_webhook" "test" {
-  project_name = "${aws_codebuild_project.test.name}"
-}
-`)
 }
 
 func testAccAWSCodeBuildWebhookConfig_GitHub(rName string) string {

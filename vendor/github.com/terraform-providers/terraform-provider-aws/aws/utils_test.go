@@ -1,8 +1,6 @@
 package aws
 
-import (
-	"testing"
-)
+import "testing"
 
 var base64encodingTests = []struct {
 	in  []byte

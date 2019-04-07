@@ -21,20 +21,18 @@ import (
 	"os"
 	"time"
 
-	"go.etcd.io/etcd/proxy/tcpproxy"
+	"github.com/coreos/etcd/proxy/tcpproxy"
 
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 var (
-	gatewayListenAddr            string
-	gatewayEndpoints             []string
-	gatewayDNSCluster            string
-	gatewayDNSClusterServiceName string
-	gatewayInsecureDiscovery     bool
-	getewayRetryDelay            time.Duration
-	gatewayCA                    string
+	gatewayListenAddr        string
+	gatewayEndpoints         []string
+	gatewayDNSCluster        string
+	gatewayInsecureDiscovery bool
+	getewayRetryDelay        time.Duration
+	gatewayCA                string
 )
 
 var (
@@ -69,7 +67,6 @@ func newGatewayStartCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&gatewayListenAddr, "listen-addr", "127.0.0.1:23790", "listen address")
 	cmd.Flags().StringVar(&gatewayDNSCluster, "discovery-srv", "", "DNS domain used to bootstrap initial cluster")
-	cmd.Flags().StringVar(&gatewayDNSClusterServiceName, "discovery-srv-name", "", "service name to query when using DNS discovery")
 	cmd.Flags().BoolVar(&gatewayInsecureDiscovery, "insecure-discovery", false, "accept insecure SRV records")
 	cmd.Flags().StringVar(&gatewayCA, "trusted-ca-file", "", "path to the client server TLS CA file.")
 
@@ -82,24 +79,21 @@ func newGatewayStartCommand() *cobra.Command {
 
 func stripSchema(eps []string) []string {
 	var endpoints []string
+
 	for _, ep := range eps {
+
 		if u, err := url.Parse(ep); err == nil && u.Host != "" {
 			ep = u.Host
 		}
+
 		endpoints = append(endpoints, ep)
 	}
+
 	return endpoints
 }
 
 func startGateway(cmd *cobra.Command, args []string) {
-	var lg *zap.Logger
-	lg, err := zap.NewProduction()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	srvs := discoverEndpoints(lg, gatewayDNSCluster, gatewayCA, gatewayInsecureDiscovery, gatewayDNSClusterServiceName)
+	srvs := discoverEndpoints(gatewayDNSCluster, gatewayCA, gatewayInsecureDiscovery)
 	if len(srvs.Endpoints) == 0 {
 		// no endpoints discovered, fall back to provided endpoints
 		srvs.Endpoints = gatewayEndpoints
@@ -108,10 +102,9 @@ func startGateway(cmd *cobra.Command, args []string) {
 	srvs.Endpoints = stripSchema(srvs.Endpoints)
 	if len(srvs.SRVs) == 0 {
 		for _, ep := range srvs.Endpoints {
-			h, p, serr := net.SplitHostPort(ep)
-			if serr != nil {
-				fmt.Printf("error parsing endpoint %q", ep)
-				os.Exit(1)
+			h, p, err := net.SplitHostPort(ep)
+			if err != nil {
+				plog.Fatalf("error parsing endpoint %q", ep)
 			}
 			var port uint16
 			fmt.Sscanf(p, "%d", &port)
@@ -120,26 +113,23 @@ func startGateway(cmd *cobra.Command, args []string) {
 	}
 
 	if len(srvs.Endpoints) == 0 {
-		fmt.Println("no endpoints found")
-		os.Exit(1)
+		plog.Fatalf("no endpoints found")
 	}
 
-	var l net.Listener
-	l, err = net.Listen("tcp", gatewayListenAddr)
+	l, err := net.Listen("tcp", gatewayListenAddr)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
 	tp := tcpproxy.TCPProxy{
-		Logger:          lg,
 		Listener:        l,
 		Endpoints:       srvs.SRVs,
 		MonitorInterval: getewayRetryDelay,
 	}
 
 	// At this point, etcd gateway listener is initialized
-	notifySystemd(lg)
+	notifySystemd()
 
 	tp.Run()
 }

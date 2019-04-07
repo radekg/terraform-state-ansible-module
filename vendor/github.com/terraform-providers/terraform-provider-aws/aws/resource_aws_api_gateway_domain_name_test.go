@@ -33,7 +33,7 @@ func TestAccAWSAPIGatewayDomainName_CertificateArn(t *testing.T) {
 	resourceName := "aws_api_gateway_domain_name.test"
 	rName := fmt.Sprintf("tf-acc-%s.terraformtest.com", acctest.RandString(8))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckAWSAPIGatewayDomainNameDestroy,
@@ -61,7 +61,7 @@ func TestAccAWSAPIGatewayDomainName_CertificateName(t *testing.T) {
 	certRe := regexp.MustCompile("^-----BEGIN CERTIFICATE-----\n")
 	keyRe := regexp.MustCompile("^-----BEGIN RSA PRIVATE KEY-----\n")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckAWSAPIGatewayDomainNameDestroy,
@@ -94,12 +94,6 @@ func TestAccAWSAPIGatewayDomainName_CertificateName(t *testing.T) {
 					resource.TestCheckResourceAttrSet("aws_api_gateway_domain_name.test", "certificate_upload_date"),
 				),
 			},
-			{
-				ResourceName:            "aws_api_gateway_domain_name.test",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"certificate_body", "certificate_chain", "certificate_private_key"},
-			},
 		},
 	})
 }
@@ -119,7 +113,7 @@ func TestAccAWSAPIGatewayDomainName_RegionalCertificateArn(t *testing.T) {
 	resourceName := "aws_api_gateway_domain_name.test"
 	rName := fmt.Sprintf("tf-acc-%s.terraformtest.com", acctest.RandString(8))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckAWSAPIGatewayDomainNameDestroy,
@@ -159,7 +153,7 @@ func TestAccAWSAPIGatewayDomainName_RegionalCertificateName(t *testing.T) {
 	certRe := regexp.MustCompile("^-----BEGIN CERTIFICATE-----\n")
 	keyRe := regexp.MustCompile("^-----BEGIN RSA PRIVATE KEY-----\n")
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProvidersWithTLS,
 		CheckDestroy: testAccCheckAWSAPIGatewayDomainNameDestroy,

@@ -170,7 +170,6 @@ func TestClientWrite(t *testing.T) {
 	testCases := []struct {
 		name         string
 		resourceName string
-		maxBufSize   int
 		data         string
 		results      []int
 		wantWriteErr bool
@@ -294,11 +293,11 @@ func (w *UnsendableWriteClient) Trailer() metadata.MD {
 	log.Fatalf("UnsendableWriteClient.Trailer() should never be called")
 	return metadata.MD{}
 }
-func (fake *UnsendableWriteClient) SendMsg(m interface{}) error {
+func (w *UnsendableWriteClient) SendMsg(m interface{}) error {
 	log.Fatalf("UnsendableWriteClient.SendMsg() should never be called")
 	return nil
 }
-func (fake *UnsendableWriteClient) RecvMsg(m interface{}) error {
+func (w *UnsendableWriteClient) RecvMsg(m interface{}) error {
 	log.Fatalf("UnsendableWriteClient.RecvMsg() should never be called")
 	return nil
 }

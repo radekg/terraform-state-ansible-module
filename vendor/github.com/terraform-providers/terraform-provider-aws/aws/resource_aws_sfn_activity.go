@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceAwsSfnActivity() *schema.Resource {
@@ -27,7 +26,7 @@ func resourceAwsSfnActivity() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringLenBetween(0, 80),
+				ValidateFunc: validateMaxLength(80),
 			},
 
 			"creation_date": {

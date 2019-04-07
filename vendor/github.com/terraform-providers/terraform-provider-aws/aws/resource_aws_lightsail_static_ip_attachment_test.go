@@ -19,7 +19,7 @@ func TestAccAWSLightsailStaticIpAttachment_basic(t *testing.T) {
 	instanceName := fmt.Sprintf("tf-test-lightsail-%s", acctest.RandString(5))
 	keypairName := fmt.Sprintf("tf-test-lightsail-%s", acctest.RandString(5))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLightsailStaticIpAttachmentDestroy,
@@ -53,7 +53,7 @@ func TestAccAWSLightsailStaticIpAttachment_disappears(t *testing.T) {
 		return nil
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSLightsailStaticIpAttachmentDestroy,

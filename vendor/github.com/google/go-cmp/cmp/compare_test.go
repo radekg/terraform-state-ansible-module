@@ -51,8 +51,7 @@ func TestDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.label, func(t *testing.T) {
-			t.Parallel()
+		tRunParallel(t, tt.label, func(t *testing.T) {
 			var gotDiff, gotPanic string
 			func() {
 				defer func() {
@@ -613,22 +612,6 @@ SplitString({cmp_test.StringBytes}.String)[2]:
 SplitBytes({cmp_test.StringBytes}.Bytes)[3][0]:
 	-: 0x62
 	+: 0x42`,
-	}, {
-		x: "a\nb\nc\n",
-		y: "a\nb\nc\n",
-		opts: []cmp.Option{
-			cmp.Transformer("SplitLines", func(s string) []string { return strings.Split(s, "\n") }),
-		},
-		wantPanic: "recursive set of Transformers detected",
-	}, {
-		x: complex64(0),
-		y: complex64(0),
-		opts: []cmp.Option{
-			cmp.Transformer("T1", func(x complex64) complex128 { return complex128(x) }),
-			cmp.Transformer("T2", func(x complex128) [2]float64 { return [2]float64{real(x), imag(x)} }),
-			cmp.Transformer("T3", func(x float64) complex64 { return complex64(complex(x, 0)) }),
-		},
-		wantPanic: "recursive set of Transformers detected",
 	}}
 }
 
@@ -1981,4 +1964,22 @@ func project4Tests() []test {
 	-: &teststructs.Poison{poisonType: testprotos.PoisonType(2), manufacturer: "acme2"}
 	+: <non-existent>`,
 	}}
+}
+
+// TODO: Delete this hack when we drop Go1.6 support.
+func tRunParallel(t *testing.T, name string, f func(t *testing.T)) {
+	type runner interface {
+		Run(string, func(t *testing.T)) bool
+	}
+	var ti interface{} = t
+	if r, ok := ti.(runner); ok {
+		r.Run(name, func(t *testing.T) {
+			t.Parallel()
+			f(t)
+		})
+	} else {
+		// Cannot run sub-tests in parallel in Go1.6.
+		t.Logf("Test: %s", name)
+		f(t)
+	}
 }

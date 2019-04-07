@@ -16,7 +16,7 @@ func TestAccAWSSSMMaintenanceWindowTask_basic(t *testing.T) {
 	var task ssm.MaintenanceWindowTask
 
 	name := acctest.RandString(10)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSSSMMaintenanceWindowTaskDestroy,
@@ -25,8 +25,6 @@ func TestAccAWSSSMMaintenanceWindowTask_basic(t *testing.T) {
 				Config: testAccAWSSSMMaintenanceWindowTaskBasicConfig(name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSSSMMaintenanceWindowTaskExists("aws_ssm_maintenance_window_task.target", &task),
-					resource.TestCheckResourceAttr("aws_ssm_maintenance_window_task.target", "name", "TestMaintenanceWindowTask"),
-					resource.TestCheckResourceAttr("aws_ssm_maintenance_window_task.target", "description", "This resource is for test purpose only"),
 				),
 			},
 		},
@@ -36,7 +34,7 @@ func TestAccAWSSSMMaintenanceWindowTask_basic(t *testing.T) {
 func TestAccAWSSSMMaintenanceWindowTask_updateForcesNewResource(t *testing.T) {
 	var before, after ssm.MaintenanceWindowTask
 	name := acctest.RandString(10)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSSSMMaintenanceWindowTaskDestroy,
@@ -143,8 +141,6 @@ resource "aws_ssm_maintenance_window_task" "target" {
   task_type = "RUN_COMMAND"
   task_arn = "AWS-RunShellScript"
   priority = 1
-  name = "TestMaintenanceWindowTask"
-  description = "This resource is for test purpose only"
   service_role_arn = "${aws_iam_role.ssm_role.arn}"
   max_concurrency = "2"
   max_errors = "1"
@@ -217,8 +213,6 @@ resource "aws_ssm_maintenance_window_task" "target" {
   task_type = "RUN_COMMAND"
   task_arn = "AWS-RunShellScript"
   priority = 1
-  name = "TestMaintenanceWindowTask"
-  description = "This resource is for test purpose only"
   service_role_arn = "${aws_iam_role.ssm_role.arn}"
   max_concurrency = "2"
   max_errors = "1"

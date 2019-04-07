@@ -20,16 +20,15 @@ import (
 	"encoding/binary"
 	"time"
 
-	"go.etcd.io/etcd/auth"
-	"go.etcd.io/etcd/etcdserver/api/membership"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
-	"go.etcd.io/etcd/lease"
-	"go.etcd.io/etcd/lease/leasehttp"
-	"go.etcd.io/etcd/mvcc"
-	"go.etcd.io/etcd/raft"
+	"github.com/coreos/etcd/auth"
+	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
+	"github.com/coreos/etcd/etcdserver/membership"
+	"github.com/coreos/etcd/lease"
+	"github.com/coreos/etcd/lease/leasehttp"
+	"github.com/coreos/etcd/mvcc"
+	"github.com/coreos/etcd/raft"
 
 	"github.com/gogo/protobuf/proto"
-	"go.uber.org/zap"
 )
 
 const (
@@ -88,7 +87,7 @@ func (s *EtcdServer) Range(ctx context.Context, r *pb.RangeRequest) (*pb.RangeRe
 	var resp *pb.RangeResponse
 	var err error
 	defer func(start time.Time) {
-		warnOfExpensiveReadOnlyRangeRequest(s.getLogger(), start, r, resp, err)
+		warnOfExpensiveReadOnlyRangeRequest(start, r, resp, err)
 	}(time.Now())
 
 	if !r.Serializable {
@@ -140,7 +139,7 @@ func (s *EtcdServer) Txn(ctx context.Context, r *pb.TxnRequest) (*pb.TxnResponse
 		}
 
 		defer func(start time.Time) {
-			warnOfExpensiveReadOnlyTxnRequest(s.getLogger(), start, r, resp, err)
+			warnOfExpensiveReadOnlyTxnRequest(start, r, resp, err)
 		}(time.Now())
 
 		get := func() { resp, err = s.applyV3Base.Txn(r) }
@@ -364,22 +363,12 @@ func (s *EtcdServer) Authenticate(ctx context.Context, r *pb.AuthenticateRequest
 		return nil, err
 	}
 
-	lg := s.getLogger()
-
 	var resp proto.Message
 	for {
 		checkedRevision, err := s.AuthStore().CheckPassword(r.Name, r.Password)
 		if err != nil {
 			if err != auth.ErrAuthNotEnabled {
-				if lg != nil {
-					lg.Warn(
-						"invalid authentication was requested",
-						zap.String("user", r.Name),
-						zap.Error(err),
-					)
-				} else {
-					plog.Errorf("invalid authentication request to user %s was issued", r.Name)
-				}
+				plog.Errorf("invalid authentication request to user %s was issued", r.Name)
 			}
 			return nil, err
 		}
@@ -402,12 +391,7 @@ func (s *EtcdServer) Authenticate(ctx context.Context, r *pb.AuthenticateRequest
 		if checkedRevision == s.AuthStore().Revision() {
 			break
 		}
-
-		if lg != nil {
-			lg.Info("revision when password checked became stale; retrying")
-		} else {
-			plog.Infof("revision when password checked is obsolete, retrying")
-		}
+		plog.Infof("revision when password checked is obsolete, retrying")
 	}
 
 	return resp.(*pb.AuthenticateResponse), nil
@@ -603,12 +587,7 @@ func (s *EtcdServer) processInternalRaftRequestOnce(ctx context.Context, r pb.In
 	defer cancel()
 
 	start := time.Now()
-	err = s.r.Propose(cctx, data)
-	if err != nil {
-		proposalsFailed.Inc()
-		s.w.Trigger(id, nil) // GC wait
-		return nil, err
-	}
+	s.r.Propose(cctx, data)
 	proposalsPending.Inc()
 	defer proposalsPending.Dec()
 
@@ -634,10 +613,8 @@ func (s *EtcdServer) linearizableReadLoop() {
 		ctxToSend := make([]byte, 8)
 		id1 := s.reqIDGen.Next()
 		binary.BigEndian.PutUint64(ctxToSend, id1)
-		leaderChangedNotifier := s.leaderChangedNotify()
+
 		select {
-		case <-leaderChangedNotifier:
-			continue
 		case <-s.readwaitc:
 		case <-s.stopping:
 			return
@@ -650,18 +627,13 @@ func (s *EtcdServer) linearizableReadLoop() {
 		s.readNotifier = nextnr
 		s.readMu.Unlock()
 
-		lg := s.getLogger()
 		cctx, cancel := context.WithTimeout(context.Background(), s.Cfg.ReqTimeout())
 		if err := s.r.ReadIndex(cctx, ctxToSend); err != nil {
 			cancel()
 			if err == raft.ErrStopped {
 				return
 			}
-			if lg != nil {
-				lg.Warn("failed to get read index from Raft", zap.Error(err))
-			} else {
-				plog.Errorf("failed to get read index from raft: %v", err)
-			}
+			plog.Errorf("failed to get read index from raft: %v", err)
 			readIndexFailed.Inc()
 			nr.notify(err)
 			continue
@@ -683,31 +655,16 @@ func (s *EtcdServer) linearizableReadLoop() {
 					if len(rs.RequestCtx) == 8 {
 						id2 = binary.BigEndian.Uint64(rs.RequestCtx)
 					}
-					if lg != nil {
-						lg.Warn(
-							"ignored out-of-date read index response; local node read indexes queueing up and waiting to be in sync with leader",
-							zap.Uint64("sent-request-id", id1),
-							zap.Uint64("received-request-id", id2),
-						)
-					} else {
-						plog.Warningf("ignored out-of-date read index response; local node read indexes queueing up and waiting to be in sync with leader (request ID want %d, got %d)", id1, id2)
-					}
+					plog.Warningf("ignored out-of-date read index response; local node read indexes queueing up and waiting to be in sync with leader (request ID want %d, got %d)", id1, id2)
 					slowReadIndex.Inc()
 				}
-			case <-leaderChangedNotifier:
-				timeout = true
-				readIndexFailed.Inc()
-				// return a retryable error.
-				nr.notify(ErrLeaderChanged)
+
 			case <-time.After(s.Cfg.ReqTimeout()):
-				if lg != nil {
-					lg.Warn("timed out waiting for read index response (local node might have slow network)", zap.Duration("timeout", s.Cfg.ReqTimeout()))
-				} else {
-					plog.Warningf("timed out waiting for read index response (local node might have slow network)")
-				}
+				plog.Warningf("timed out waiting for read index response (local node might have slow network)")
 				nr.notify(ErrTimeout)
 				timeout = true
 				slowReadIndex.Inc()
+
 			case <-s.stopping:
 				return
 			}
@@ -760,5 +717,4 @@ func (s *EtcdServer) AuthInfoFromCtx(ctx context.Context) (*auth.AuthInfo, error
 	}
 	authInfo = s.AuthStore().AuthInfoFromTLS(ctx)
 	return authInfo, nil
-
 }

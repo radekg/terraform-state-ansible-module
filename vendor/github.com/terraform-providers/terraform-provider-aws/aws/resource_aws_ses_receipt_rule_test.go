@@ -14,96 +14,54 @@ import (
 )
 
 func TestAccAWSSESReceiptRule_basic(t *testing.T) {
-	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSESReceiptRuleDestroy,
 		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSSESReceiptRuleBasicConfig(rInt),
+			resource.TestStep{
+				Config: testAccAWSSESReceiptRuleBasicConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsSESReceiptRuleExists("aws_ses_receipt_rule.basic"),
 				),
-			},
-			{
-				ResourceName:      "aws_ses_receipt_rule.basic",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAwsSesReceiptRuleImportStateIdFunc("aws_ses_receipt_rule.basic"),
-			},
-		},
-	})
-}
-
-func TestAccAWSSESReceiptRule_s3Action(t *testing.T) {
-	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckSESReceiptRuleDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSSESReceiptRuleS3ActionConfig(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAwsSESReceiptRuleExists("aws_ses_receipt_rule.basic"),
-				),
-			},
-			{
-				ResourceName:      "aws_ses_receipt_rule.basic",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAwsSesReceiptRuleImportStateIdFunc("aws_ses_receipt_rule.basic"),
 			},
 		},
 	})
 }
 
 func TestAccAWSSESReceiptRule_order(t *testing.T) {
-	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSESReceiptRuleDestroy,
 		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSSESReceiptRuleOrderConfig(rInt),
+			resource.TestStep{
+				Config: testAccAWSSESReceiptRuleOrderConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsSESReceiptRuleOrder("aws_ses_receipt_rule.second"),
 				),
-			},
-			{
-				ResourceName:      "aws_ses_receipt_rule.second",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAwsSesReceiptRuleImportStateIdFunc("aws_ses_receipt_rule.second"),
 			},
 		},
 	})
 }
 
 func TestAccAWSSESReceiptRule_actions(t *testing.T) {
-	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSESReceiptRuleDestroy,
 		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSSESReceiptRuleActionsConfig(rInt),
+			resource.TestStep{
+				Config: testAccAWSSESReceiptRuleActionsConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAwsSESReceiptRuleActions("aws_ses_receipt_rule.actions"),
 				),
-			},
-			{
-				ResourceName:      "aws_ses_receipt_rule.actions",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAwsSesReceiptRuleImportStateIdFunc("aws_ses_receipt_rule.actions"),
 			},
 		},
 	})
@@ -153,8 +111,8 @@ func testAccCheckAwsSESReceiptRuleExists(n string) resource.TestCheckFunc {
 		conn := testAccProvider.Meta().(*AWSClient).sesConn
 
 		params := &ses.DescribeReceiptRuleInput{
-			RuleName:    aws.String(rs.Primary.Attributes["name"]),
-			RuleSetName: aws.String(rs.Primary.Attributes["rule_set_name"]),
+			RuleName:    aws.String("basic"),
+			RuleSetName: aws.String(fmt.Sprintf("test-me-%d", srrsRandomInt)),
 		}
 
 		response, err := conn.DescribeReceiptRule(params)
@@ -182,17 +140,6 @@ func testAccCheckAwsSESReceiptRuleExists(n string) resource.TestCheckFunc {
 	}
 }
 
-func testAccAwsSesReceiptRuleImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
-	return func(s *terraform.State) (string, error) {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return "", fmt.Errorf("Not Found: %s", resourceName)
-		}
-
-		return fmt.Sprintf("%s:%s", rs.Primary.Attributes["rule_set_name"], rs.Primary.Attributes["name"]), nil
-	}
-}
-
 func testAccCheckAwsSESReceiptRuleOrder(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -207,7 +154,7 @@ func testAccCheckAwsSESReceiptRuleOrder(n string) resource.TestCheckFunc {
 		conn := testAccProvider.Meta().(*AWSClient).sesConn
 
 		params := &ses.DescribeReceiptRuleSetInput{
-			RuleSetName: aws.String(rs.Primary.Attributes["rule_set_name"]),
+			RuleSetName: aws.String(fmt.Sprintf("test-me-%d", srrsRandomInt)),
 		}
 
 		response, err := conn.DescribeReceiptRuleSet(params)
@@ -239,8 +186,8 @@ func testAccCheckAwsSESReceiptRuleActions(n string) resource.TestCheckFunc {
 		conn := testAccProvider.Meta().(*AWSClient).sesConn
 
 		params := &ses.DescribeReceiptRuleInput{
-			RuleName:    aws.String(rs.Primary.Attributes["name"]),
-			RuleSetName: aws.String(rs.Primary.Attributes["rule_set_name"]),
+			RuleName:    aws.String("actions4"),
+			RuleSetName: aws.String(fmt.Sprintf("test-me-%d", srrsRandomInt)),
 		}
 
 		response, err := conn.DescribeReceiptRule(params)
@@ -281,8 +228,8 @@ func testAccCheckAwsSESReceiptRuleActions(n string) resource.TestCheckFunc {
 	}
 }
 
-func testAccAWSSESReceiptRuleBasicConfig(rInt int) string {
-	return fmt.Sprintf(`
+var srrsRandomInt = acctest.RandInt()
+var testAccAWSSESReceiptRuleBasicConfig = fmt.Sprintf(`
 resource "aws_ses_receipt_rule_set" "test" {
     rule_set_name = "test-me-%d"
 }
@@ -295,39 +242,9 @@ resource "aws_ses_receipt_rule" "basic" {
     scan_enabled = true
     tls_policy = "Require"
 }
-`, rInt)
-}
+`, srrsRandomInt)
 
-func testAccAWSSESReceiptRuleS3ActionConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "aws_ses_receipt_rule_set" "test" {
-    rule_set_name = "test-me-%d"
-}
-
-resource "aws_s3_bucket" "emails" {
-    bucket = "ses-terraform-emails-%d"
-    acl = "public-read-write"
-    force_destroy = "true"
-}
-
-resource "aws_ses_receipt_rule" "basic" {
-    name = "basic"
-    rule_set_name = "${aws_ses_receipt_rule_set.test.rule_set_name}"
-    recipients = ["test@example.com"]
-    enabled = true
-    scan_enabled = true
-    tls_policy = "Require"
-
-    s3_action {
-    	bucket_name = "${aws_s3_bucket.emails.id}"
-    	position = 1
-  	}
-}
-`, rInt, rInt)
-}
-
-func testAccAWSSESReceiptRuleOrderConfig(rInt int) string {
-	return fmt.Sprintf(`
+var testAccAWSSESReceiptRuleOrderConfig = fmt.Sprintf(`
 resource "aws_ses_receipt_rule_set" "test" {
     rule_set_name = "test-me-%d"
 }
@@ -342,11 +259,13 @@ resource "aws_ses_receipt_rule" "first" {
     name = "first"
     rule_set_name = "${aws_ses_receipt_rule_set.test.rule_set_name}"
 }
-`, rInt)
+`, srrsRandomInt)
+
+var testAccAWSSESReceiptRuleActionsConfig = fmt.Sprintf(`
+resource "aws_s3_bucket" "emails" {
+    bucket = "ses-terraform-emails"
 }
 
-func testAccAWSSESReceiptRuleActionsConfig(rInt int) string {
-	return fmt.Sprintf(`
 resource "aws_ses_receipt_rule_set" "test" {
     rule_set_name = "test-me-%d"
 }
@@ -372,5 +291,4 @@ resource "aws_ses_receipt_rule" "actions" {
 			position = 3
     }
 }
-`, rInt)
-}
+`, srrsRandomInt)

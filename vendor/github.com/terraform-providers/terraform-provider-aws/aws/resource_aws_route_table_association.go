@@ -20,13 +20,13 @@ func resourceAwsRouteTableAssociation() *schema.Resource {
 		Delete: resourceAwsRouteTableAssociationDelete,
 
 		Schema: map[string]*schema.Schema{
-			"subnet_id": {
+			"subnet_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"route_table_id": {
+			"route_table_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},

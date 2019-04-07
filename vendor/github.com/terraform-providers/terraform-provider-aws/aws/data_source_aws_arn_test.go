@@ -11,11 +11,11 @@ import (
 func TestAccDataSourceAwsArn_basic(t *testing.T) {
 	resourceName := "data.aws_arn.test"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccDataSourceAwsArnConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAwsArn(resourceName),

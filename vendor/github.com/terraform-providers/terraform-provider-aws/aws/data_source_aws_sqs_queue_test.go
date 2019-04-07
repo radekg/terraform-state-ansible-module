@@ -14,11 +14,11 @@ func TestAccDataSourceAwsSqsQueue(t *testing.T) {
 	resourceName := "aws_sqs_queue.test"
 	datasourceName := "data.aws_sqs_queue.by_name"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccDataSourceAwsSqsQueueConfig(rName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAwsSqsQueueCheck(datasourceName, resourceName),

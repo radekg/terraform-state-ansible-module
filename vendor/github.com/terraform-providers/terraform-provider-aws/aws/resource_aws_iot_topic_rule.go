@@ -190,11 +190,6 @@ func resourceAwsIotTopicRule() *schema.Resource {
 							Required:     true,
 							ValidateFunc: validateArn,
 						},
-						"separator": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: validateIoTTopicRuleFirehoseSeparator,
-						},
 					},
 				},
 			},
@@ -418,16 +413,12 @@ func createTopicRulePayload(d *schema.ResourceData) *iot.TopicRulePayload {
 
 	for _, a := range firehoseActions {
 		raw := a.(map[string]interface{})
-		act := &iot.Action{
+		actions[i] = &iot.Action{
 			Firehose: &iot.FirehoseAction{
 				DeliveryStreamName: aws.String(raw["delivery_stream_name"].(string)),
 				RoleArn:            aws.String(raw["role_arn"].(string)),
 			},
 		}
-		if v, ok := raw["separator"].(string); ok && v != "" {
-			act.Firehose.Separator = aws.String(raw["separator"].(string))
-		}
-		actions[i] = act
 		i++
 	}
 

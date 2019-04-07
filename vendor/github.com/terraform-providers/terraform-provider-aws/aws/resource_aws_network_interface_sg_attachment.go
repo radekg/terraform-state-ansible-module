@@ -81,13 +81,6 @@ func resourceAwsNetworkInterfaceSGAttachmentRead(d *schema.ResourceData, meta in
 	conn := meta.(*AWSClient).ec2conn
 
 	iface, err := fetchNetworkInterface(conn, interfaceID)
-
-	if isAWSErr(err, "InvalidNetworkInterfaceID.NotFound", "") {
-		log.Printf("[WARN] EC2 Network Interface (%s) not found, removing from state", interfaceID)
-		d.SetId("")
-		return nil
-	}
-
 	if err != nil {
 		return err
 	}
@@ -115,16 +108,15 @@ func resourceAwsNetworkInterfaceSGAttachmentDelete(d *schema.ResourceData, meta 
 	conn := meta.(*AWSClient).ec2conn
 
 	iface, err := fetchNetworkInterface(conn, interfaceID)
-
-	if isAWSErr(err, "InvalidNetworkInterfaceID.NotFound", "") {
-		return nil
-	}
-
 	if err != nil {
 		return err
 	}
 
-	return delSGFromENI(conn, sgID, iface)
+	if err := delSGFromENI(conn, sgID, iface); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // fetchNetworkInterface is a utility function used by Read and Delete to fetch
@@ -162,11 +154,6 @@ func delSGFromENI(conn *ec2.EC2, sgID string, iface *ec2.NetworkInterface) error
 	}
 
 	_, err := conn.ModifyNetworkInterfaceAttribute(params)
-
-	if isAWSErr(err, "InvalidNetworkInterfaceID.NotFound", "") {
-		return nil
-	}
-
 	return err
 }
 

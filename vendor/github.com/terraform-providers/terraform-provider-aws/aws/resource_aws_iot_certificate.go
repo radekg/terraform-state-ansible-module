@@ -15,16 +15,16 @@ func resourceAwsIotCertificate() *schema.Resource {
 		Update: resourceAwsIotCertificateUpdate,
 		Delete: resourceAwsIotCertificateDelete,
 		Schema: map[string]*schema.Schema{
-			"csr": {
+			"csr": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"active": {
+			"active": &schema.Schema{
 				Type:     schema.TypeBool,
 				Required: true,
 			},
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

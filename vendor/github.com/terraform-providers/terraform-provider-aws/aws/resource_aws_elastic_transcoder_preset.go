@@ -16,9 +16,6 @@ func resourceAwsElasticTranscoderPreset() *schema.Resource {
 		Create: resourceAwsElasticTranscoderPresetCreate,
 		Read:   resourceAwsElasticTranscoderPresetRead,
 		Delete: resourceAwsElasticTranscoderPresetDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
 
 		Schema: map[string]*schema.Schema{
 			"arn": {
@@ -503,7 +500,6 @@ func resourceAwsElasticTranscoderPresetRead(d *schema.ResourceData, meta interfa
 
 	d.Set("container", *preset.Container)
 	d.Set("name", *preset.Name)
-	d.Set("description", *preset.Description)
 
 	if preset.Thumbnails != nil {
 		err := d.Set("thumbnails", flattenETThumbnails(preset.Thumbnails))

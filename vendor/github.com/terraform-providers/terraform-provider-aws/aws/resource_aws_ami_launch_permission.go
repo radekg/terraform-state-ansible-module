@@ -19,12 +19,12 @@ func resourceAwsAmiLaunchPermission() *schema.Resource {
 		Delete: resourceAwsAmiLaunchPermissionDelete,
 
 		Schema: map[string]*schema.Schema{
-			"image_id": {
+			"image_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"account_id": {
+			"account_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -52,7 +52,7 @@ func resourceAwsAmiLaunchPermissionCreate(d *schema.ResourceData, meta interface
 		Attribute: aws.String("launchPermission"),
 		LaunchPermission: &ec2.LaunchPermissionModifications{
 			Add: []*ec2.LaunchPermission{
-				{UserId: aws.String(account_id)},
+				&ec2.LaunchPermission{UserId: aws.String(account_id)},
 			},
 		},
 	})
@@ -79,7 +79,7 @@ func resourceAwsAmiLaunchPermissionDelete(d *schema.ResourceData, meta interface
 		Attribute: aws.String("launchPermission"),
 		LaunchPermission: &ec2.LaunchPermissionModifications{
 			Remove: []*ec2.LaunchPermission{
-				{UserId: aws.String(account_id)},
+				&ec2.LaunchPermission{UserId: aws.String(account_id)},
 			},
 		},
 	})
@@ -106,7 +106,7 @@ func hasLaunchPermission(conn *ec2.EC2, image_id string, account_id string) (boo
 	}
 
 	for _, lp := range attrs.LaunchPermissions {
-		if aws.StringValue(lp.UserId) == account_id {
+		if *lp.UserId == account_id {
 			return true, nil
 		}
 	}

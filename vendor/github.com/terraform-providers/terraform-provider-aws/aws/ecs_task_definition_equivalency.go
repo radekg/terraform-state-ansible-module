@@ -13,15 +13,13 @@ import (
 	"github.com/mitchellh/copystructure"
 )
 
-// EcsContainerDefinitionsAreEquivalent determines equality between two ECS container definition JSON strings
-// Note: This function will be moved out of the aws package in the future.
-func EcsContainerDefinitionsAreEquivalent(def1, def2 string, isAWSVPC bool) (bool, error) {
+func ecsContainerDefinitionsAreEquivalent(def1, def2 string) (bool, error) {
 	var obj1 containerDefinitions
 	err := json.Unmarshal([]byte(def1), &obj1)
 	if err != nil {
 		return false, err
 	}
-	err = obj1.Reduce(isAWSVPC)
+	err = obj1.Reduce()
 	if err != nil {
 		return false, err
 	}
@@ -35,7 +33,7 @@ func EcsContainerDefinitionsAreEquivalent(def1, def2 string, isAWSVPC bool) (boo
 	if err != nil {
 		return false, err
 	}
-	err = obj2.Reduce(isAWSVPC)
+	err = obj2.Reduce()
 	if err != nil {
 		return false, err
 	}
@@ -55,7 +53,7 @@ func EcsContainerDefinitionsAreEquivalent(def1, def2 string, isAWSVPC bool) (boo
 
 type containerDefinitions []*ecs.ContainerDefinition
 
-func (cd containerDefinitions) Reduce(isAWSVPC bool) error {
+func (cd containerDefinitions) Reduce() error {
 	for i, def := range cd {
 		// Deal with special fields which have defaults
 		if def.Cpu != nil && *def.Cpu == 0 {
@@ -70,9 +68,6 @@ func (cd containerDefinitions) Reduce(isAWSVPC bool) error {
 			}
 			if pm.HostPort != nil && *pm.HostPort == 0 {
 				cd[i].PortMappings[j].HostPort = nil
-			}
-			if isAWSVPC && cd[i].PortMappings[j].HostPort == nil {
-				cd[i].PortMappings[j].HostPort = cd[i].PortMappings[j].ContainerPort
 			}
 		}
 

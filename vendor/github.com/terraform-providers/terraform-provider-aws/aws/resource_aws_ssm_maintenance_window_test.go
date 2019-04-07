@@ -12,10 +12,8 @@ import (
 )
 
 func TestAccAWSSSMMaintenanceWindow_basic(t *testing.T) {
-	var winId ssm.MaintenanceWindowIdentity
 	name := acctest.RandString(10)
-
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSSSMMaintenanceWindowDestroy,
@@ -23,7 +21,7 @@ func TestAccAWSSSMMaintenanceWindow_basic(t *testing.T) {
 			{
 				Config: testAccAWSSSMMaintenanceWindowBasicConfig(name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSSSMMaintenanceWindowExists("aws_ssm_maintenance_window.foo", &winId),
+					testAccCheckAWSSSMMaintenanceWindowExists("aws_ssm_maintenance_window.foo"),
 					resource.TestCheckResourceAttr(
 						"aws_ssm_maintenance_window.foo", "schedule", "cron(0 16 ? * TUE *)"),
 					resource.TestCheckResourceAttr(
@@ -39,7 +37,7 @@ func TestAccAWSSSMMaintenanceWindow_basic(t *testing.T) {
 			{
 				Config: testAccAWSSSMMaintenanceWindowBasicConfigUpdated(name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSSSMMaintenanceWindowExists("aws_ssm_maintenance_window.foo", &winId),
+					testAccCheckAWSSSMMaintenanceWindowExists("aws_ssm_maintenance_window.foo"),
 					resource.TestCheckResourceAttr(
 						"aws_ssm_maintenance_window.foo", "schedule", "cron(0 16 ? * WED *)"),
 					resource.TestCheckResourceAttr(
@@ -56,29 +54,7 @@ func TestAccAWSSSMMaintenanceWindow_basic(t *testing.T) {
 	})
 }
 
-func TestAccAWSSSMMaintenanceWindow_disappears(t *testing.T) {
-	var winId ssm.MaintenanceWindowIdentity
-	name := acctest.RandString(10)
-	resourceName := "aws_ssm_maintenance_window.foo"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSSSMMaintenanceWindowDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSSSMMaintenanceWindowBasicConfig(name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSSSMMaintenanceWindowExists(resourceName, &winId),
-					testAccCheckAWSSSMMaintenanceWindowDisappears(&winId),
-				),
-				ExpectNonEmptyPlan: true,
-			},
-		},
-	})
-}
-
-func testAccCheckAWSSSMMaintenanceWindowExists(n string, res *ssm.MaintenanceWindowIdentity) resource.TestCheckFunc {
+func testAccCheckAWSSSMMaintenanceWindowExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -99,33 +75,17 @@ func testAccCheckAWSSSMMaintenanceWindowExists(n string, res *ssm.MaintenanceWin
 				},
 			},
 		})
+
+		for _, i := range resp.WindowIdentities {
+			if *i.WindowId == rs.Primary.ID {
+				return nil
+			}
+		}
 		if err != nil {
 			return err
 		}
 
-		for _, i := range resp.WindowIdentities {
-			if *i.WindowId == rs.Primary.ID {
-				*res = *i
-				return nil
-			}
-		}
-
 		return fmt.Errorf("No AWS SSM Maintenance window found")
-	}
-}
-
-func testAccCheckAWSSSMMaintenanceWindowDisappears(maintenanceWindowIdentity *ssm.MaintenanceWindowIdentity) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		conn := testAccProvider.Meta().(*AWSClient).ssmconn
-
-		id := aws.StringValue(maintenanceWindowIdentity.WindowId)
-		_, err := conn.DeleteMaintenanceWindow(&ssm.DeleteMaintenanceWindowInput{
-			WindowId: aws.String(id),
-		})
-		if err != nil {
-			return fmt.Errorf("error deleting maintenance window %s: %s", id, err)
-		}
-		return nil
 	}
 }
 

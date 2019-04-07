@@ -18,46 +18,43 @@ func resourceAwsEipAssociation() *schema.Resource {
 		Create: resourceAwsEipAssociationCreate,
 		Read:   resourceAwsEipAssociationRead,
 		Delete: resourceAwsEipAssociationDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
 
 		Schema: map[string]*schema.Schema{
-			"allocation_id": {
+			"allocation_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"allow_reassociation": {
+			"allow_reassociation": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"instance_id": {
+			"instance_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"network_interface_id": {
+			"network_interface_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"private_ip_address": {
+			"private_ip_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"public_ip": {
+			"public_ip": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -215,11 +212,11 @@ func describeAddressesById(id string, supportedPlatforms []string) (*ec2.Describ
 
 		return &ec2.DescribeAddressesInput{
 			Filters: []*ec2.Filter{
-				{
+				&ec2.Filter{
 					Name:   aws.String("public-ip"),
 					Values: []*string{aws.String(id)},
 				},
-				{
+				&ec2.Filter{
 					Name:   aws.String("domain"),
 					Values: []*string{aws.String("standard")},
 				},
@@ -229,7 +226,7 @@ func describeAddressesById(id string, supportedPlatforms []string) (*ec2.Describ
 
 	return &ec2.DescribeAddressesInput{
 		Filters: []*ec2.Filter{
-			{
+			&ec2.Filter{
 				Name:   aws.String("association-id"),
 				Values: []*string{aws.String(id)},
 			},

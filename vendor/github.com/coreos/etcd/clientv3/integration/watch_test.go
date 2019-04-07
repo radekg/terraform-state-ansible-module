@@ -23,13 +23,14 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	"go.etcd.io/etcd/integration"
-	mvccpb "go.etcd.io/etcd/mvcc/mvccpb"
-	"go.etcd.io/etcd/pkg/testutil"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
+	"github.com/coreos/etcd/integration"
+	mvccpb "github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/coreos/etcd/pkg/testutil"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -582,78 +583,6 @@ func testWatchWithProgressNotify(t *testing.T, watchOnPut bool) {
 	}
 }
 
-func TestWatchRequestProgress(t *testing.T) {
-	testCases := []struct {
-		name     string
-		watchers []string
-	}{
-		{"0-watcher", []string{}},
-		{"1-watcher", []string{"/"}},
-		{"2-watcher", []string{"/", "/"}},
-	}
-
-	for _, c := range testCases {
-		t.Run(c.name, func(t *testing.T) {
-			defer testutil.AfterTest(t)
-
-			watchTimeout := 3 * time.Second
-
-			clus := integration.NewClusterV3(t, &integration.ClusterConfig{Size: 3})
-			defer clus.Terminate(t)
-
-			wc := clus.RandClient()
-
-			var watchChans []clientv3.WatchChan
-
-			for _, prefix := range c.watchers {
-				watchChans = append(watchChans, wc.Watch(context.Background(), prefix, clientv3.WithPrefix()))
-			}
-
-			_, err := wc.Put(context.Background(), "/a", "1")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			for _, rch := range watchChans {
-				select {
-				case resp := <-rch: // wait for notification
-					if len(resp.Events) != 1 {
-						t.Fatalf("resp.Events expected 1, got %d", len(resp.Events))
-					}
-				case <-time.After(watchTimeout):
-					t.Fatalf("watch response expected in %v, but timed out", watchTimeout)
-				}
-			}
-
-			// put a value not being watched to increment revision
-			_, err = wc.Put(context.Background(), "x", "1")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			err = wc.RequestProgress(context.Background())
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// verify all watch channels receive a progress notify
-			for _, rch := range watchChans {
-				select {
-				case resp := <-rch:
-					if !resp.IsProgressNotify() {
-						t.Fatalf("expected resp.IsProgressNotify() == true")
-					}
-					if resp.Header.Revision != 3 {
-						t.Fatalf("resp.Header.Revision expected 3, got %d", resp.Header.Revision)
-					}
-				case <-time.After(watchTimeout):
-					t.Fatalf("progress response expected in %v, but timed out", watchTimeout)
-				}
-			}
-		})
-	}
-}
-
 func TestWatchEventType(t *testing.T) {
 	cluster := integration.NewClusterV3(t, &integration.ClusterConfig{Size: 1})
 	defer cluster.Terminate(t)
@@ -738,9 +667,8 @@ func TestWatchErrConnClosed(t *testing.T) {
 	go func() {
 		defer close(donec)
 		ch := cli.Watch(context.TODO(), "foo")
-
-		if wr := <-ch; !isCanceled(wr.Err()) {
-			t.Fatalf("expected context canceled, got %v", wr.Err())
+		if wr := <-ch; grpc.ErrorDesc(wr.Err()) != grpc.ErrClientConnClosing.Error() {
+			t.Fatalf("expected %v, got %v", grpc.ErrClientConnClosing, grpc.ErrorDesc(wr.Err()))
 		}
 	}()
 
@@ -771,8 +699,8 @@ func TestWatchAfterClose(t *testing.T) {
 	donec := make(chan struct{})
 	go func() {
 		cli.Watch(context.TODO(), "foo")
-		if err := cli.Close(); err != nil && err != context.Canceled {
-			t.Fatalf("expected %v, got %v", context.Canceled, err)
+		if err := cli.Close(); err != nil && err != grpc.ErrClientConnClosing {
+			t.Fatalf("expected %v, got %v", grpc.ErrClientConnClosing, err)
 		}
 		close(donec)
 	}()

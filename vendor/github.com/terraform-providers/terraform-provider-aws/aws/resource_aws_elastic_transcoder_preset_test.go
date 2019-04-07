@@ -11,27 +11,6 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSElasticTranscoderPreset_import(t *testing.T) {
-	resourceName := "aws_elastictranscoder_preset.bar"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckElasticTranscoderPresetDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: awsElasticTranscoderPresetConfig,
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSElasticTranscoderPreset_basic(t *testing.T) {
 	preset := &elastictranscoder.Preset{}
 	name := "aws_elastictranscoder_preset.bar"
@@ -74,24 +53,24 @@ func TestAccAWSElasticTranscoderPreset_basic(t *testing.T) {
 		}
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckElasticTranscoderPresetDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: awsElasticTranscoderPresetConfig,
 				Check: resource.ComposeTestCheckFunc(
 					checkExists(false),
 				),
 			},
-			{
+			resource.TestStep{
 				Config: awsElasticTranscoderPresetConfig2,
 				Check: resource.ComposeTestCheckFunc(
 					checkExists(true),
 				),
 			},
-			{
+			resource.TestStep{
 				Config: awsElasticTranscoderPresetConfig3,
 				Check: resource.ComposeTestCheckFunc(
 					checkExists(true),

@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/waf"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -18,12 +19,12 @@ func resourceAwsWafByteMatchSet() *schema.Resource {
 		Delete: resourceAwsWafByteMatchSetDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"byte_match_tuples": {
+			"byte_match_tuples": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
@@ -45,15 +46,15 @@ func resourceAwsWafByteMatchSet() *schema.Resource {
 								},
 							},
 						},
-						"positional_constraint": {
+						"positional_constraint": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"target_string": {
+						"target_string": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"text_transformation": {
+						"text_transformation": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -69,7 +70,7 @@ func resourceAwsWafByteMatchSetCreate(d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("[INFO] Creating ByteMatchSet: %s", d.Get("name").(string))
 
-	wr := newWafRetryer(conn)
+	wr := newWafRetryer(conn, "global")
 	out, err := wr.RetryWithToken(func(token *string) (interface{}, error) {
 		params := &waf.CreateByteMatchSetInput{
 			ChangeToken: token,
@@ -78,7 +79,7 @@ func resourceAwsWafByteMatchSetCreate(d *schema.ResourceData, meta interface{}) 
 		return conn.CreateByteMatchSet(params)
 	})
 	if err != nil {
-		return fmt.Errorf("Error creating ByteMatchSet: %s", err)
+		return errwrap.Wrapf("[ERROR] Error creating ByteMatchSet: {{err}}", err)
 	}
 	resp := out.(*waf.CreateByteMatchSetOutput)
 
@@ -121,7 +122,7 @@ func resourceAwsWafByteMatchSetUpdate(d *schema.ResourceData, meta interface{}) 
 		oldT, newT := o.(*schema.Set).List(), n.(*schema.Set).List()
 		err := updateByteMatchSetResource(d.Id(), oldT, newT, conn)
 		if err != nil {
-			return fmt.Errorf("Error updating ByteMatchSet: %s", err)
+			return errwrap.Wrapf("[ERROR] Error updating ByteMatchSet: {{err}}", err)
 		}
 	}
 
@@ -140,7 +141,7 @@ func resourceAwsWafByteMatchSetDelete(d *schema.ResourceData, meta interface{}) 
 		}
 	}
 
-	wr := newWafRetryer(conn)
+	wr := newWafRetryer(conn, "global")
 	_, err := wr.RetryWithToken(func(token *string) (interface{}, error) {
 		req := &waf.DeleteByteMatchSetInput{
 			ChangeToken:    token,
@@ -150,14 +151,14 @@ func resourceAwsWafByteMatchSetDelete(d *schema.ResourceData, meta interface{}) 
 		return conn.DeleteByteMatchSet(req)
 	})
 	if err != nil {
-		return fmt.Errorf("Error deleting ByteMatchSet: %s", err)
+		return errwrap.Wrapf("[ERROR] Error deleting ByteMatchSet: {{err}}", err)
 	}
 
 	return nil
 }
 
 func updateByteMatchSetResource(id string, oldT, newT []interface{}, conn *waf.WAF) error {
-	wr := newWafRetryer(conn)
+	wr := newWafRetryer(conn, "global")
 	_, err := wr.RetryWithToken(func(token *string) (interface{}, error) {
 		req := &waf.UpdateByteMatchSetInput{
 			ChangeToken:    token,
@@ -168,14 +169,14 @@ func updateByteMatchSetResource(id string, oldT, newT []interface{}, conn *waf.W
 		return conn.UpdateByteMatchSet(req)
 	})
 	if err != nil {
-		return fmt.Errorf("Error updating ByteMatchSet: %s", err)
+		return errwrap.Wrapf("[ERROR] Error updating ByteMatchSet: {{err}}", err)
 	}
 
 	return nil
 }
 
 func flattenWafByteMatchTuples(bmt []*waf.ByteMatchTuple) []interface{} {
-	out := make([]interface{}, len(bmt))
+	out := make([]interface{}, len(bmt), len(bmt))
 	for i, t := range bmt {
 		m := make(map[string]interface{})
 

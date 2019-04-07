@@ -23,6 +23,7 @@ import (
 
 	dbCass "github.com/hashicorp/vault/plugins/database/cassandra"
 	dbHana "github.com/hashicorp/vault/plugins/database/hana"
+	dbInflux "github.com/hashicorp/vault/plugins/database/influxdb"
 	dbMongo "github.com/hashicorp/vault/plugins/database/mongodb"
 	dbMssql "github.com/hashicorp/vault/plugins/database/mssql"
 	dbMysql "github.com/hashicorp/vault/plugins/database/mysql"
@@ -72,6 +73,7 @@ func newRegistry() *registry {
 			"jwt":        credJWT.Factory,
 			"kubernetes": credKube.Factory,
 			"ldap":       credLdap.Factory,
+			"oidc":       credJWT.Factory,
 			"okta":       credOkta.Factory,
 			"radius":     credRadius.Factory,
 			"userpass":   credUserpass.Factory,
@@ -89,6 +91,7 @@ func newRegistry() *registry {
 			"cassandra-database-plugin":  dbCass.New,
 			"mongodb-database-plugin":    dbMongo.New,
 			"hana-database-plugin":       dbHana.New,
+			"influxdb-database-plugin":   dbInflux.New,
 		},
 		logicalBackends: map[string]logical.Factory{
 			"ad":         logicalAd.Factory,

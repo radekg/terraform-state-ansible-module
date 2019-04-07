@@ -17,27 +17,22 @@ import (
 
 func TestAccAWSAMI_basic(t *testing.T) {
 	var ami ec2.Image
-	resourceName := "aws_ami.test"
-	rName := acctest.RandomWithPrefix("tf-acc-test")
+	rInt := acctest.RandInt()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAmiDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAmiConfig_basic(rName),
+				Config: testAccAmiConfig_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAmiExists(resourceName, &ami),
-					resource.TestCheckResourceAttr(resourceName, "ena_support", "true"),
-					resource.TestCheckResourceAttr(resourceName, "name", rName),
-					resource.TestMatchResourceAttr(resourceName, "root_snapshot_id", regexp.MustCompile("^snap-")),
+					testAccCheckAmiExists("aws_ami.foo", &ami),
+					resource.TestCheckResourceAttr(
+						"aws_ami.foo", "name", fmt.Sprintf("tf-testing-%d", rInt)),
+					resource.TestMatchResourceAttr(
+						"aws_ami.foo", "root_snapshot_id", regexp.MustCompile("^snap-")),
 				),
-			},
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 	})
@@ -46,8 +41,7 @@ func TestAccAWSAMI_basic(t *testing.T) {
 func TestAccAWSAMI_snapshotSize(t *testing.T) {
 	var ami ec2.Image
 	var bd ec2.BlockDeviceMapping
-	resourceName := "aws_ami.test"
-	rName := acctest.RandomWithPrefix("tf-acc-test")
+	rInt := acctest.RandInt()
 
 	expectedDevice := &ec2.EbsBlockDevice{
 		DeleteOnTermination: aws.Bool(true),
@@ -57,25 +51,22 @@ func TestAccAWSAMI_snapshotSize(t *testing.T) {
 		VolumeType:          aws.String("standard"),
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAmiDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAmiConfig_snapshotSize(rName),
+				Config: testAccAmiConfig_snapshotSize(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAmiExists(resourceName, &ami),
+					testAccCheckAmiExists("aws_ami.foo", &ami),
 					testAccCheckAmiBlockDevice(&ami, &bd, "/dev/sda1"),
 					testAccCheckAmiEbsBlockDevice(&bd, expectedDevice),
-					resource.TestCheckResourceAttr(resourceName, "architecture", "x86_64"),
-					resource.TestCheckResourceAttr(resourceName, "name", rName),
+					resource.TestCheckResourceAttr(
+						"aws_ami.foo", "name", fmt.Sprintf("tf-testing-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"aws_ami.foo", "architecture", "x86_64"),
 				),
-			},
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 	})
@@ -212,7 +203,7 @@ func testAccCheckAmiEbsBlockDevice(bd *ec2.BlockDeviceMapping, ed *ec2.EbsBlockD
 	}
 }
 
-func testAccAmiConfig_basic(rName string) string {
+func testAccAmiConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 data "aws_availability_zones" "available" {}
 
@@ -232,21 +223,19 @@ resource "aws_ebs_snapshot" "foo" {
   }
 }
 
-resource "aws_ami" "test" {
-  ena_support         = true
-  name                = %q
-  root_device_name    = "/dev/sda1"
+resource "aws_ami" "foo" {
+  name = "tf-testing-%d"
   virtualization_type = "hvm"
-
+  root_device_name = "/dev/sda1"
   ebs_block_device {
     device_name = "/dev/sda1"
     snapshot_id = "${aws_ebs_snapshot.foo.id}"
   }
 }
-`, rName)
+	`, rInt)
 }
 
-func testAccAmiConfig_snapshotSize(rName string) string {
+func testAccAmiConfig_snapshotSize(rInt int) string {
 	return fmt.Sprintf(`
 data "aws_availability_zones" "available" {}
 
@@ -266,15 +255,14 @@ resource "aws_ebs_snapshot" "foo" {
   }
 }
 
-resource "aws_ami" "test" {
-  name                = %q
-  root_device_name    = "/dev/sda1"
+resource "aws_ami" "foo" {
+  name = "tf-testing-%d"
   virtualization_type = "hvm"
-
+  root_device_name = "/dev/sda1"
   ebs_block_device {
     device_name = "/dev/sda1"
     snapshot_id = "${aws_ebs_snapshot.foo.id}"
   }
 }
-`, rName)
+	`, rInt)
 }

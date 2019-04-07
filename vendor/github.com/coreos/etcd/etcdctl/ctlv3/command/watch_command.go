@@ -23,7 +23,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"go.etcd.io/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3"
 
 	"github.com/spf13/cobra"
 )
@@ -101,33 +101,27 @@ func watchInteractiveFunc(cmd *cobra.Command, osArgs []string, envKey, envRange 
 		l = strings.TrimSuffix(l, "\n")
 
 		args := argify(l)
-		switch args[0] {
-		case "watch":
-			if len(args) < 2 && envKey == "" {
-				fmt.Fprintf(os.Stderr, "Invalid command %s (command type or key is not provided)\n", l)
-				continue
-			}
-			watchArgs, execArgs, perr := parseWatchArgs(osArgs, args, envKey, envRange, true)
-			if perr != nil {
-				ExitWithError(ExitBadArgs, perr)
-			}
+		if len(args) < 2 && envKey == "" {
+			fmt.Fprintf(os.Stderr, "Invalid command %s (command type or key is not provided)\n", l)
+			continue
+		}
 
-			ch, err := getWatchChan(c, watchArgs)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Invalid command %s (%v)\n", l, err)
-				continue
-			}
-			go printWatchCh(c, ch, execArgs)
-		case "progress":
-			err := c.RequestProgress(clientv3.WithRequireLeader(context.Background()))
-			if err != nil {
-				ExitWithError(ExitError, err)
-			}
-		default:
+		if args[0] != "watch" {
 			fmt.Fprintf(os.Stderr, "Invalid command %s (only support watch)\n", l)
 			continue
 		}
 
+		watchArgs, execArgs, perr := parseWatchArgs(osArgs, args, envKey, envRange, true)
+		if perr != nil {
+			ExitWithError(ExitBadArgs, perr)
+		}
+
+		ch, err := getWatchChan(c, watchArgs)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Invalid command %s (%v)\n", l, err)
+			continue
+		}
+		go printWatchCh(c, ch, execArgs)
 	}
 }
 
@@ -157,9 +151,6 @@ func printWatchCh(c *clientv3.Client, ch clientv3.WatchChan, execArgs []string) 
 	for resp := range ch {
 		if resp.Canceled {
 			fmt.Fprintf(os.Stderr, "watch was canceled (%v)\n", resp.Err())
-		}
-		if resp.IsProgressNotify() {
-			fmt.Fprintf(os.Stdout, "progress notify: %d\n", resp.Header.Revision)
 		}
 		display.Watch(resp)
 
@@ -267,9 +258,9 @@ func parseWatchArgs(osArgs, commandArgs []string, envKey, envRange string, inter
 		}
 
 		flagset := NewWatchCommand().Flags()
-		if perr := flagset.Parse(watchArgs); perr != nil {
+		if err := flagset.Parse(watchArgs); err != nil {
 			watchPrefix, watchRev, watchPrevKey = false, 0, false
-			return nil, nil, perr
+			return nil, nil, err
 		}
 		pArgs := flagset.Args()
 
@@ -307,8 +298,8 @@ func parseWatchArgs(osArgs, commandArgs []string, envKey, envRange string, inter
 
 	if interactive {
 		flagset := NewWatchCommand().Flags()
-		if perr := flagset.Parse(argsWithSep); perr != nil {
-			return nil, nil, perr
+		if err := flagset.Parse(argsWithSep); err != nil {
+			return nil, nil, err
 		}
 		watchArgs = flagset.Args()
 

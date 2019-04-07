@@ -2,7 +2,6 @@ package aws
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/validation"
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -72,20 +71,6 @@ func resourceAwsSsmMaintenanceWindowTask() *schema.Resource {
 						},
 					},
 				},
-			},
-
-			"name": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validateAwsSSMMaintenanceWindowTaskName,
-			},
-
-			"description": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringLenBetween(3, 128),
 			},
 
 			"priority": {
@@ -206,8 +191,6 @@ func resourceAwsSsmMaintenanceWindowTaskCreate(d *schema.ResourceData, meta inte
 		TaskType:       aws.String(d.Get("task_type").(string)),
 		ServiceRoleArn: aws.String(d.Get("service_role_arn").(string)),
 		TaskArn:        aws.String(d.Get("task_arn").(string)),
-		Name:           aws.String(d.Get("name").(string)),
-		Description:    aws.String(d.Get("description").(string)),
 		Targets:        expandAwsSsmTargets(d.Get("targets").([]interface{})),
 	}
 
@@ -257,23 +240,21 @@ func resourceAwsSsmMaintenanceWindowTaskRead(d *schema.ResourceData, meta interf
 			d.Set("service_role_arn", t.ServiceRoleArn)
 			d.Set("task_arn", t.TaskArn)
 			d.Set("priority", t.Priority)
-			d.Set("name", t.Name)
-			d.Set("description", t.Description)
 
 			if t.LoggingInfo != nil {
 				if err := d.Set("logging_info", flattenAwsSsmMaintenanceWindowLoggingInfo(t.LoggingInfo)); err != nil {
-					return fmt.Errorf("Error setting logging_info error: %#v", err)
+					return fmt.Errorf("[DEBUG] Error setting logging_info error: %#v", err)
 				}
 			}
 
 			if t.TaskParameters != nil {
 				if err := d.Set("task_parameters", flattenAwsSsmTaskParameters(t.TaskParameters)); err != nil {
-					return fmt.Errorf("Error setting task_parameters error: %#v", err)
+					return fmt.Errorf("[DEBUG] Error setting task_parameters error: %#v", err)
 				}
 			}
 
 			if err := d.Set("targets", flattenAwsSsmTargets(t.Targets)); err != nil {
-				return fmt.Errorf("Error setting targets error: %#v", err)
+				return fmt.Errorf("[DEBUG] Error setting targets error: %#v", err)
 			}
 		}
 	}

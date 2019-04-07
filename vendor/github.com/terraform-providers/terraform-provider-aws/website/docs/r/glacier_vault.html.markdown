@@ -1,7 +1,7 @@
 ---
 layout: "aws"
 page_title: "AWS: aws_glacier_vault"
-sidebar_current: "docs-aws-resource-glacier-vault-x"
+sidebar_current: "docs-aws-resource-glacier-vault"
 description: |-
   Provides a Glacier Vault.
 ---

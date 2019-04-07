@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -111,29 +110,10 @@ func testSweepNetworkAcls(region string) error {
 	return nil
 }
 
-func TestAccAWSNetworkAcl_importBasic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSNetworkAclDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSNetworkAclEgressNIngressConfig,
-			},
-
-			{
-				ResourceName:      "aws_network_acl.bar",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSNetworkAcl_EgressAndIngressRules(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.bar",
 		Providers:     testAccProviders,
@@ -176,7 +156,7 @@ func TestAccAWSNetworkAcl_EgressAndIngressRules(t *testing.T) {
 func TestAccAWSNetworkAcl_OnlyIngressRules_basic(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.foos",
 		Providers:     testAccProviders,
@@ -207,7 +187,7 @@ func TestAccAWSNetworkAcl_OnlyIngressRules_basic(t *testing.T) {
 func TestAccAWSNetworkAcl_OnlyIngressRules_update(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.foos",
 		Providers:     testAccProviders,
@@ -262,7 +242,7 @@ func TestAccAWSNetworkAcl_OnlyIngressRules_update(t *testing.T) {
 func TestAccAWSNetworkAcl_CaseSensitivityNoChanges(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.foos",
 		Providers:     testAccProviders,
@@ -281,7 +261,7 @@ func TestAccAWSNetworkAcl_CaseSensitivityNoChanges(t *testing.T) {
 func TestAccAWSNetworkAcl_OnlyEgressRules(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.bond",
 		Providers:     testAccProviders,
@@ -301,7 +281,7 @@ func TestAccAWSNetworkAcl_OnlyEgressRules(t *testing.T) {
 func TestAccAWSNetworkAcl_SubnetChange(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.bar",
 		Providers:     testAccProviders,
@@ -340,7 +320,7 @@ func TestAccAWSNetworkAcl_Subnets(t *testing.T) {
 		}
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.bar",
 		Providers:     testAccProviders,
@@ -383,7 +363,7 @@ func TestAccAWSNetworkAcl_SubnetsDelete(t *testing.T) {
 		}
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.bar",
 		Providers:     testAccProviders,
@@ -414,7 +394,7 @@ func TestAccAWSNetworkAcl_SubnetsDelete(t *testing.T) {
 func TestAccAWSNetworkAcl_ipv6Rules(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.foos",
 		Providers:     testAccProviders,
@@ -444,30 +424,10 @@ func TestAccAWSNetworkAcl_ipv6Rules(t *testing.T) {
 	})
 }
 
-func TestAccAWSNetworkAcl_ipv6ICMPRules(t *testing.T) {
-	var networkAcl ec2.NetworkAcl
-	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "aws_network_acl.test"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSNetworkAclDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSNetworkAclConfigIpv6ICMP(rName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSNetworkAclExists(resourceName, &networkAcl),
-				),
-			},
-		},
-	})
-}
-
 func TestAccAWSNetworkAcl_ipv6VpcRules(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.foos",
 		Providers:     testAccProviders,
@@ -490,7 +450,7 @@ func TestAccAWSNetworkAcl_ipv6VpcRules(t *testing.T) {
 func TestAccAWSNetworkAcl_espProtocol(t *testing.T) {
 	var networkAcl ec2.NetworkAcl
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
 		IDRefreshName: "aws_network_acl.testesp",
 		Providers:     testAccProviders,
@@ -634,37 +594,6 @@ func testAccCheckSubnetIsNotAssociatedWithAcl(acl string, subnet string) resourc
 		}
 		return nil
 	}
-}
-
-func testAccAWSNetworkAclConfigIpv6ICMP(rName string) string {
-	return fmt.Sprintf(`
-resource "aws_vpc" "test" {
-  cidr_block = "10.1.0.0/16"
-
-  tags {
-    Name = %q
-  }
-}
-
-resource "aws_network_acl" "test" {
-  vpc_id = "${aws_vpc.test.id}"
-
-  ingress {
-    action          = "allow"
-    from_port       = 0
-    icmp_code       = -1
-    icmp_type       = -1
-    ipv6_cidr_block =  "::/0"
-    protocol        = 58
-    rule_no         = 1
-    to_port         = 0
-  }
-
-  tags {
-    Name = %q
-  }
-}
-`, rName, rName)
 }
 
 const testAccAWSNetworkAclIpv6Config = `

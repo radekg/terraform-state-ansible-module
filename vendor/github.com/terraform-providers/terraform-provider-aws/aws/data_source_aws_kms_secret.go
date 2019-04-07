@@ -13,8 +13,7 @@ import (
 
 func dataSourceAwsKmsSecret() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "This data source will be removed in Terraform AWS provider version 2.0. Please see migration information available in: https://www.terraform.io/docs/providers/aws/guides/version-2-upgrade.html#data-source-aws_kms_secret",
-		Read:               dataSourceAwsKmsSecretRead,
+		Read: dataSourceAwsKmsSecretRead,
 
 		Schema: map[string]*schema.Schema{
 			"secret": {
@@ -70,7 +69,7 @@ func dataSourceAwsKmsSecretRead(d *schema.ResourceData, meta interface{}) error 
 
 		// build the kms decrypt params
 		params := &kms.DecryptInput{
-			CiphertextBlob: payload,
+			CiphertextBlob: []byte(payload),
 		}
 		if context, exists := secret["context"]; exists {
 			params.EncryptionContext = make(map[string]*string)

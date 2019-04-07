@@ -10,35 +10,12 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccAWSCloudwatchLogDestinationPolicy_importBasic(t *testing.T) {
-	resourceName := "aws_cloudwatch_log_destination_policy.test"
-
-	rstring := acctest.RandString(5)
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSCloudwatchLogDestinationPolicyDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccAWSCloudwatchLogDestinationPolicyConfig(rstring),
-			},
-
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccAWSCloudwatchLogDestinationPolicy_basic(t *testing.T) {
 	var destination cloudwatchlogs.Destination
 
 	rstring := acctest.RandString(5)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSCloudwatchLogDestinationPolicyDestroy,

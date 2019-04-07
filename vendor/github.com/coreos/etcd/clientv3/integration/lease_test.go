@@ -22,11 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	"go.etcd.io/etcd/integration"
-	"go.etcd.io/etcd/pkg/testutil"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
+	"github.com/coreos/etcd/integration"
+	"github.com/coreos/etcd/pkg/testutil"
 
 	"google.golang.org/grpc"
 )
@@ -143,10 +143,6 @@ func TestLeaseKeepAlive(t *testing.T) {
 	kresp, ok := <-rc
 	if !ok {
 		t.Errorf("chan is closed, want not closed")
-	}
-
-	if kresp == nil {
-		t.Fatalf("unexpected null response")
 	}
 
 	if kresp.ID != resp.ID {
@@ -291,20 +287,21 @@ func TestLeaseGrantErrConnClosed(t *testing.T) {
 
 	cli := clus.Client(0)
 	clus.TakeClient(0)
-	if err := cli.Close(); err != nil {
-		t.Fatal(err)
-	}
 
 	donec := make(chan struct{})
 	go func() {
 		defer close(donec)
 		_, err := cli.Grant(context.TODO(), 5)
-		if !clientv3.IsConnCanceled(err) {
+		if err != nil && err != grpc.ErrClientConnClosing && err != context.Canceled {
 			// grpc.ErrClientConnClosing if grpc-go balancer calls 'Get' after client.Close.
 			// context.Canceled if grpc-go balancer calls 'Get' with an inflight client.Close.
-			t.Fatalf("expected %v, %v or server unavailable, got %v", err != context.Canceled, grpc.ErrClientConnClosing, err)
+			t.Fatalf("expected %v or %v, got %v", grpc.ErrClientConnClosing, context.Canceled, err)
 		}
 	}()
+
+	if err := cli.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	select {
 	case <-time.After(integration.RequestWaitTimeout):
@@ -370,9 +367,8 @@ func TestLeaseGrantNewAfterClose(t *testing.T) {
 
 	donec := make(chan struct{})
 	go func() {
-		_, err := cli.Grant(context.TODO(), 5)
-		if !clientv3.IsConnCanceled(err) {
-			t.Fatalf("expected %v, %v or server unavailable, got %v", err != context.Canceled, grpc.ErrClientConnClosing, err)
+		if _, err := cli.Grant(context.TODO(), 5); err != context.Canceled && err != grpc.ErrClientConnClosing {
+			t.Fatalf("expected %v or %v, got %v", err != context.Canceled, grpc.ErrClientConnClosing, err)
 		}
 		close(donec)
 	}()
@@ -403,9 +399,8 @@ func TestLeaseRevokeNewAfterClose(t *testing.T) {
 
 	donec := make(chan struct{})
 	go func() {
-		_, err := cli.Revoke(context.TODO(), leaseID)
-		if !clientv3.IsConnCanceled(err) {
-			t.Fatalf("expected %v, %v or server unavailable, got %v", err != context.Canceled, grpc.ErrClientConnClosing, err)
+		if _, err := cli.Revoke(context.TODO(), leaseID); err != context.Canceled && err != grpc.ErrClientConnClosing {
+			t.Fatalf("expected %v or %v, got %v", err != context.Canceled, grpc.ErrClientConnClosing, err)
 		}
 		close(donec)
 	}()
@@ -824,11 +819,8 @@ func TestLeaseWithRequireLeader(t *testing.T) {
 	// kaReqLeader may issue multiple requests while waiting for the first
 	// response from proxy server; drain any stray keepalive responses
 	time.Sleep(100 * time.Millisecond)
-	for {
+	for len(kaReqLeader) > 0 {
 		<-kaReqLeader
-		if len(kaReqLeader) == 0 {
-			break
-		}
 	}
 
 	select {

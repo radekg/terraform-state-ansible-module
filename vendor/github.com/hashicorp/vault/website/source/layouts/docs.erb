@@ -48,7 +48,8 @@
                   'awskms',
                   'azurekeyvault',
                   'gcpckms',
-                  'pkcs11'
+                  'pkcs11',
+                  'transit'
                 ]
               }, {
                 category: 'storage',
@@ -66,6 +67,7 @@
                   'google-cloud-storage',
                   'in-memory',
                   'manta',
+                  'mssql',
                   'mysql',
                   'postgresql',
                   's3',
@@ -177,6 +179,7 @@
                     category: 'methods',
                     content: [
                       'alicloud',
+                      'approle',
                       'aws',
                       'azure',
                       'gcp',
@@ -188,7 +191,8 @@
                     content: ['file']
                   }
                 ]
-              }
+              },
+              { category: 'caching' }
             ]
           },
           '----------------',
@@ -205,6 +209,7 @@
                 category: 'databases',
                 content: [
                   'cassandra',
+                  'influxdb',
                   'hanadb',
                   'mongodb',
                   'mssql',
@@ -316,7 +321,10 @@
               'upgrade-to-0.10.2',
               'upgrade-to-0.10.4',
               'upgrade-to-0.11.0',
-              'upgrade-to-0.11.2'
+              'upgrade-to-0.11.2',
+              'upgrade-to-0.11.6',
+              'upgrade-to-1.0.0',
+              'upgrade-to-1.1.0'
             ]
           },
           '----------------',

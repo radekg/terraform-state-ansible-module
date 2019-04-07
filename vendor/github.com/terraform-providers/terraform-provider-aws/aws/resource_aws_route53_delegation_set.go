@@ -22,13 +22,13 @@ func resourceAwsRoute53DelegationSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"reference_name": {
+			"reference_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"name_servers": {
+			"name_servers": &schema.Schema{
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,

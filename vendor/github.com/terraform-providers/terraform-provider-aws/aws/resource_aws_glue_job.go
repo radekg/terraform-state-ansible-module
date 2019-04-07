@@ -95,10 +95,6 @@ func resourceAwsGlueJob() *schema.Resource {
 				Optional: true,
 				Default:  2880,
 			},
-			"security_configuration": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 		},
 	}
 }
@@ -142,10 +138,6 @@ func resourceAwsGlueJobCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if v, ok := d.GetOk("max_retries"); ok {
 		input.MaxRetries = aws.Int64(int64(v.(int)))
-	}
-
-	if v, ok := d.GetOk("security_configuration"); ok {
-		input.SecurityConfiguration = aws.String(v.(string))
 	}
 
 	log.Printf("[DEBUG] Creating Glue Job: %s", input)
@@ -202,9 +194,6 @@ func resourceAwsGlueJobRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", job.Name)
 	d.Set("role_arn", job.Role)
 	d.Set("timeout", int(aws.Int64Value(job.Timeout)))
-	if err := d.Set("security_configuration", job.SecurityConfiguration); err != nil {
-		return fmt.Errorf("error setting security_configuration: %s", err)
-	}
 
 	return nil
 }
@@ -246,10 +235,6 @@ func resourceAwsGlueJobUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if v, ok := d.GetOk("max_retries"); ok {
 		jobUpdate.MaxRetries = aws.Int64(int64(v.(int)))
-	}
-
-	if v, ok := d.GetOk("security_configuration"); ok {
-		jobUpdate.SecurityConfiguration = aws.String(v.(string))
 	}
 
 	input := &glue.UpdateJobInput{

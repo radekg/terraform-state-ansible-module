@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -32,7 +31,7 @@ func resourceAwsCloudWatchLogMetricFilter() *schema.Resource {
 			"pattern": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringLenBetween(0, 1024),
+				ValidateFunc: validateMaxLength(1024),
 				StateFunc: func(v interface{}) string {
 					s, ok := v.(string)
 					if !ok {
@@ -68,12 +67,11 @@ func resourceAwsCloudWatchLogMetricFilter() *schema.Resource {
 						"value": {
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validation.StringLenBetween(0, 100),
+							ValidateFunc: validateMaxLength(100),
 						},
 						"default_value": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: validateTypeStringNullableFloat,
+							Type:     schema.TypeFloat,
+							Optional: true,
 						},
 					},
 				},
@@ -93,10 +91,14 @@ func resourceAwsCloudWatchLogMetricFilterUpdate(d *schema.ResourceData, meta int
 
 	transformations := d.Get("metric_transformation").([]interface{})
 	o := transformations[0].(map[string]interface{})
-	input.MetricTransformations = expandCloudWatchLogMetricTransformations(o)
+	metricsTransformations, err := expandCloudWachLogMetricTransformations(o)
+	if err != nil {
+		return err
+	}
+	input.MetricTransformations = metricsTransformations
 
 	log.Printf("[DEBUG] Creating/Updating CloudWatch Log Metric Filter: %s", input)
-	_, err := conn.PutMetricFilter(&input)
+	_, err = conn.PutMetricFilter(&input)
 	if err != nil {
 		return fmt.Errorf("Creating/Updating CloudWatch Log Metric Filter failed: %s", err)
 	}
@@ -127,7 +129,7 @@ func resourceAwsCloudWatchLogMetricFilterRead(d *schema.ResourceData, meta inter
 
 	d.Set("name", mf.FilterName)
 	d.Set("pattern", mf.FilterPattern)
-	d.Set("metric_transformation", flattenCloudWatchLogMetricTransformations(mf.MetricTransformations))
+	d.Set("metric_transformation", flattenCloudWachLogMetricTransformations(mf.MetricTransformations))
 
 	return nil
 }

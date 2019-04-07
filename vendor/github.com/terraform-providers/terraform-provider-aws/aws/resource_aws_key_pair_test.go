@@ -3,7 +3,6 @@ package aws
 import (
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -60,11 +59,9 @@ func testSweepKeyPairs(region string) error {
 }
 
 func TestAccAWSKeyPair_basic(t *testing.T) {
-	var keyPair ec2.KeyPairInfo
-	fingerprint := "d7:ff:a6:63:18:64:9c:57:a1:ee:ca:a4:ad:c2:81:62"
-	resourceName := "aws_key_pair.a_key_pair"
+	var conf ec2.KeyPairInfo
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSKeyPairDestroy,
@@ -72,27 +69,18 @@ func TestAccAWSKeyPair_basic(t *testing.T) {
 			{
 				Config: testAccAWSKeyPairConfig,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSKeyPairExists(resourceName, &keyPair),
-					testAccCheckAWSKeyPairFingerprint(&keyPair, fingerprint),
-					resource.TestCheckResourceAttr(resourceName, "fingerprint", fingerprint),
-					resource.TestCheckResourceAttr(resourceName, "key_name", "tf-acc-key-pair"),
+					testAccCheckAWSKeyPairExists("aws_key_pair.a_key_pair", &conf),
+					testAccCheckAWSKeyPairFingerprint("d7:ff:a6:63:18:64:9c:57:a1:ee:ca:a4:ad:c2:81:62", &conf),
 				),
-			},
-			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"public_key"},
 			},
 		},
 	})
 }
 
 func TestAccAWSKeyPair_generatedName(t *testing.T) {
-	var keyPair ec2.KeyPairInfo
-	resourceName := "aws_key_pair.a_key_pair"
+	var conf ec2.KeyPairInfo
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSKeyPairDestroy,
@@ -100,45 +88,18 @@ func TestAccAWSKeyPair_generatedName(t *testing.T) {
 			{
 				Config: testAccAWSKeyPairConfig_generatedName,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSKeyPairExists(resourceName, &keyPair),
-					testAccCheckAWSKeyPairKeyNamePrefix(&keyPair, "terraform-"),
-					resource.TestMatchResourceAttr(resourceName, "key_name", regexp.MustCompile(`^terraform-`)),
+					testAccCheckAWSKeyPairExists("aws_key_pair.a_key_pair", &conf),
+					testAccCheckAWSKeyPairFingerprint("d7:ff:a6:63:18:64:9c:57:a1:ee:ca:a4:ad:c2:81:62", &conf),
+					func(s *terraform.State) error {
+						if conf.KeyName == nil {
+							return fmt.Errorf("bad: No SG name")
+						}
+						if !strings.HasPrefix(*conf.KeyName, "terraform-") {
+							return fmt.Errorf("No terraform- prefix: %s", *conf.KeyName)
+						}
+						return nil
+					},
 				),
-			},
-			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"public_key"},
-			},
-		},
-	})
-}
-
-func TestAccAWSKeyPair_namePrefix(t *testing.T) {
-	var keyPair ec2.KeyPairInfo
-	resourceName := "aws_key_pair.a_key_pair"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:        func() { testAccPreCheck(t) },
-		IDRefreshName:   "aws_key_pair.a_key_pair",
-		IDRefreshIgnore: []string{"key_name_prefix"},
-		Providers:       testAccProviders,
-		CheckDestroy:    testAccCheckAWSKeyPairDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccCheckAWSKeyPairPrefixNameConfig,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckAWSKeyPairExists(resourceName, &keyPair),
-					testAccCheckAWSKeyPairKeyNamePrefix(&keyPair, "baz-"),
-					resource.TestMatchResourceAttr(resourceName, "key_name", regexp.MustCompile(`^baz-`)),
-				),
-			},
-			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"key_name_prefix", "public_key"},
 			},
 		},
 	})
@@ -176,19 +137,10 @@ func testAccCheckAWSKeyPairDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckAWSKeyPairFingerprint(conf *ec2.KeyPairInfo, expectedFingerprint string) resource.TestCheckFunc {
+func testAccCheckAWSKeyPairFingerprint(expectedFingerprint string, conf *ec2.KeyPairInfo) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if aws.StringValue(conf.KeyFingerprint) != expectedFingerprint {
-			return fmt.Errorf("incorrect fingerprint. expected %s, got %s", expectedFingerprint, aws.StringValue(conf.KeyFingerprint))
-		}
-		return nil
-	}
-}
-
-func testAccCheckAWSKeyPairKeyNamePrefix(conf *ec2.KeyPairInfo, namePrefix string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if !strings.HasPrefix(aws.StringValue(conf.KeyName), namePrefix) {
-			return fmt.Errorf("incorrect key name. expected %s prefix, got %s", namePrefix, aws.StringValue(conf.KeyName))
+		if *conf.KeyFingerprint != expectedFingerprint {
+			return fmt.Errorf("incorrect fingerprint. expected %s, got %s", expectedFingerprint, *conf.KeyFingerprint)
 		}
 		return nil
 	}
@@ -220,6 +172,44 @@ func testAccCheckAWSKeyPairExists(n string, res *ec2.KeyPairInfo) resource.TestC
 
 		*res = *resp.KeyPairs[0]
 
+		return nil
+	}
+}
+
+func testAccCheckAWSKeyPair_namePrefix(t *testing.T) {
+	var conf ec2.KeyPairInfo
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:        func() { testAccPreCheck(t) },
+		IDRefreshName:   "aws_key_pair.a_key_pair",
+		IDRefreshIgnore: []string{"key_name_prefix"},
+		Providers:       testAccProviders,
+		CheckDestroy:    testAccCheckAWSKeyPairDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckAWSKeyPairPrefixNameConfig,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSKeyPairExists("aws_key_pair.a_key_pair", &conf),
+					testAccCheckAWSKeyPairGeneratedNamePrefix("aws_key_pair.a_key_pair", "baz-"),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckAWSKeyPairGeneratedNamePrefix(resource, prefix string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		r, ok := s.RootModule().Resources[resource]
+		if !ok {
+			return fmt.Errorf("Resource not found")
+		}
+		name, ok := r.Primary.Attributes["name"]
+		if !ok {
+			return fmt.Errorf("Name attr not found: %#v", r.Primary.Attributes)
+		}
+		if !strings.HasPrefix(name, prefix) {
+			return fmt.Errorf("Name: %q, does not have prefix: %q", name, prefix)
+		}
 		return nil
 	}
 }

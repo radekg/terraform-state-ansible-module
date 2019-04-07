@@ -17,7 +17,7 @@ func TestAccAWSAPIGatewayMethod_basic(t *testing.T) {
 	var conf apigateway.Method
 	rInt := acctest.RandInt()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSAPIGatewayMethodDestroy,
@@ -35,12 +35,6 @@ func TestAccAWSAPIGatewayMethod_basic(t *testing.T) {
 						"aws_api_gateway_method.test", "request_models.application/json", "Error"),
 				),
 			},
-			{
-				ResourceName:      "aws_api_gateway_method.test",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAWSAPIGatewayMethodImportStateIdFunc("aws_api_gateway_method.test"),
-				ImportStateVerify: true,
-			},
 
 			{
 				Config: testAccAWSAPIGatewayMethodConfigUpdate(rInt),
@@ -57,7 +51,7 @@ func TestAccAWSAPIGatewayMethod_customauthorizer(t *testing.T) {
 	var conf apigateway.Method
 	rInt := acctest.RandInt()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSAPIGatewayMethodDestroy,
@@ -76,12 +70,6 @@ func TestAccAWSAPIGatewayMethod_customauthorizer(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"aws_api_gateway_method.test", "request_models.application/json", "Error"),
 				),
-			},
-			{
-				ResourceName:      "aws_api_gateway_method.test",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAWSAPIGatewayMethodImportStateIdFunc("aws_api_gateway_method.test"),
-				ImportStateVerify: true,
 			},
 
 			{
@@ -103,7 +91,7 @@ func TestAccAWSAPIGatewayMethod_cognitoauthorizer(t *testing.T) {
 	var conf apigateway.Method
 	rInt := acctest.RandInt()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSAPIGatewayMethodDestroy,
@@ -141,12 +129,6 @@ func TestAccAWSAPIGatewayMethod_cognitoauthorizer(t *testing.T) {
 						"aws_api_gateway_method.test", "authorization_scopes.#", "3"),
 				),
 			},
-			{
-				ResourceName:      "aws_api_gateway_method.test",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAWSAPIGatewayMethodImportStateIdFunc("aws_api_gateway_method.test"),
-				ImportStateVerify: true,
-			},
 		},
 	})
 }
@@ -155,7 +137,7 @@ func TestAccAWSAPIGatewayMethod_customrequestvalidator(t *testing.T) {
 	var conf apigateway.Method
 	rInt := acctest.RandInt()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSAPIGatewayMethodDestroy,
@@ -174,12 +156,6 @@ func TestAccAWSAPIGatewayMethod_customrequestvalidator(t *testing.T) {
 					resource.TestMatchResourceAttr(
 						"aws_api_gateway_method.test", "request_validator_id", regexp.MustCompile("^[a-z0-9]{6}$")),
 				),
-			},
-			{
-				ResourceName:      "aws_api_gateway_method.test",
-				ImportState:       true,
-				ImportStateIdFunc: testAccAWSAPIGatewayMethodImportStateIdFunc("aws_api_gateway_method.test"),
-				ImportStateVerify: true,
 			},
 
 			{
@@ -303,17 +279,6 @@ func testAccCheckAWSAPIGatewayMethodDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccAWSAPIGatewayMethodImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
-	return func(s *terraform.State) (string, error) {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return "", fmt.Errorf("Not found: %s", resourceName)
-		}
-
-		return fmt.Sprintf("%s/%s/%s", rs.Primary.Attributes["rest_api_id"], rs.Primary.Attributes["resource_id"], rs.Primary.Attributes["http_method"]), nil
-	}
 }
 
 func testAccAWSAPIGatewayMethodConfigWithCustomAuthorizer(rInt int) string {

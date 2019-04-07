@@ -9,11 +9,11 @@ import (
 )
 
 func TestAccDataSourceAwsAvailabilityZone(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccDataSourceAwsAvailabilityZoneConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAwsAvailabilityZoneCheck("data.aws_availability_zone.by_name"),

@@ -38,7 +38,7 @@ func TestAccDataSourceAwsLambdaInvocation_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tf-acc-test")
 	testData := "value3"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -60,7 +60,7 @@ func TestAccDataSourceAwsLambdaInvocation_qualifier(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tf-acc-test")
 	testData := "value3"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -81,7 +81,7 @@ func TestAccDataSourceAwsLambdaInvocation_complex(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tf-acc-test")
 	testData := "value3"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

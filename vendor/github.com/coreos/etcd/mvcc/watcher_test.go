@@ -22,17 +22,16 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/lease"
-	"go.etcd.io/etcd/mvcc/backend"
-	"go.etcd.io/etcd/mvcc/mvccpb"
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/lease"
+	"github.com/coreos/etcd/mvcc/backend"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 // TestWatcherWatchID tests that each watcher provides unique watchID,
 // and the watched event attaches the correct watchID.
 func TestWatcherWatchID(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := WatchableKV(newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil))
+	s := WatchableKV(newWatchableStore(b, &lease.FakeLessor{}, nil))
 	defer cleanup(s, b, tmpPath)
 
 	w := s.NewWatchStream()
@@ -41,7 +40,7 @@ func TestWatcherWatchID(t *testing.T) {
 	idm := make(map[WatchID]struct{})
 
 	for i := 0; i < 10; i++ {
-		id, _ := w.Watch(0, []byte("foo"), nil, 0)
+		id := w.Watch([]byte("foo"), nil, 0)
 		if _, ok := idm[id]; ok {
 			t.Errorf("#%d: id %d exists", i, id)
 		}
@@ -63,7 +62,7 @@ func TestWatcherWatchID(t *testing.T) {
 
 	// unsynced watchers
 	for i := 10; i < 20; i++ {
-		id, _ := w.Watch(0, []byte("foo2"), nil, 1)
+		id := w.Watch([]byte("foo2"), nil, 1)
 		if _, ok := idm[id]; ok {
 			t.Errorf("#%d: id %d exists", i, id)
 		}
@@ -80,46 +79,11 @@ func TestWatcherWatchID(t *testing.T) {
 	}
 }
 
-func TestWatcherRequestsCustomID(t *testing.T) {
-	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := WatchableKV(newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil))
-	defer cleanup(s, b, tmpPath)
-
-	w := s.NewWatchStream()
-	defer w.Close()
-
-	// - Request specifically ID #1
-	// - Try to duplicate it, get an error
-	// - Make sure the auto-assignment skips over things we manually assigned
-
-	tt := []struct {
-		givenID     WatchID
-		expectedID  WatchID
-		expectedErr error
-	}{
-		{1, 1, nil},
-		{1, 0, ErrWatcherDuplicateID},
-		{0, 0, nil},
-		{0, 2, nil},
-	}
-
-	for i, tcase := range tt {
-		id, err := w.Watch(tcase.givenID, []byte("foo"), nil, 0)
-		if tcase.expectedErr != nil || err != nil {
-			if err != tcase.expectedErr {
-				t.Errorf("expected get error %q in test case %q, got %q", tcase.expectedErr, i, err)
-			}
-		} else if tcase.expectedID != id {
-			t.Errorf("expected to create ID %d, got %d in test case %d", tcase.expectedID, id, i)
-		}
-	}
-}
-
 // TestWatcherWatchPrefix tests if Watch operation correctly watches
 // and returns events with matching prefixes.
 func TestWatcherWatchPrefix(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := WatchableKV(newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil))
+	s := WatchableKV(newWatchableStore(b, &lease.FakeLessor{}, nil))
 	defer cleanup(s, b, tmpPath)
 
 	w := s.NewWatchStream()
@@ -131,7 +95,7 @@ func TestWatcherWatchPrefix(t *testing.T) {
 	keyWatch, keyEnd, keyPut := []byte("foo"), []byte("fop"), []byte("foobar")
 
 	for i := 0; i < 10; i++ {
-		id, _ := w.Watch(0, keyWatch, keyEnd, 0)
+		id := w.Watch(keyWatch, keyEnd, 0)
 		if _, ok := idm[id]; ok {
 			t.Errorf("#%d: unexpected duplicated id %x", i, id)
 		}
@@ -163,7 +127,7 @@ func TestWatcherWatchPrefix(t *testing.T) {
 
 	// unsynced watchers
 	for i := 10; i < 15; i++ {
-		id, _ := w.Watch(0, keyWatch1, keyEnd1, 1)
+		id := w.Watch(keyWatch1, keyEnd1, 1)
 		if _, ok := idm[id]; ok {
 			t.Errorf("#%d: id %d exists", i, id)
 		}
@@ -193,27 +157,27 @@ func TestWatcherWatchPrefix(t *testing.T) {
 // does not create watcher, which panics when canceling in range tree.
 func TestWatcherWatchWrongRange(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := WatchableKV(newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil))
+	s := WatchableKV(newWatchableStore(b, &lease.FakeLessor{}, nil))
 	defer cleanup(s, b, tmpPath)
 
 	w := s.NewWatchStream()
 	defer w.Close()
 
-	if _, err := w.Watch(0, []byte("foa"), []byte("foa"), 1); err != ErrEmptyWatcherRange {
-		t.Fatalf("key == end range given; expected ErrEmptyWatcherRange, got %+v", err)
+	if id := w.Watch([]byte("foa"), []byte("foa"), 1); id != -1 {
+		t.Fatalf("key == end range given; id expected -1, got %d", id)
 	}
-	if _, err := w.Watch(0, []byte("fob"), []byte("foa"), 1); err != ErrEmptyWatcherRange {
-		t.Fatalf("key > end range given; expected ErrEmptyWatcherRange, got %+v", err)
+	if id := w.Watch([]byte("fob"), []byte("foa"), 1); id != -1 {
+		t.Fatalf("key > end range given; id expected -1, got %d", id)
 	}
 	// watch request with 'WithFromKey' has empty-byte range end
-	if id, _ := w.Watch(0, []byte("foo"), []byte{}, 1); id != 0 {
+	if id := w.Watch([]byte("foo"), []byte{}, 1); id != 0 {
 		t.Fatalf("\x00 is range given; id expected 0, got %d", id)
 	}
 }
 
 func TestWatchDeleteRange(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil)
+	s := newWatchableStore(b, &lease.FakeLessor{}, nil)
 
 	defer func() {
 		s.store.Close()
@@ -227,8 +191,8 @@ func TestWatchDeleteRange(t *testing.T) {
 	}
 
 	w := s.NewWatchStream()
-	from, to := testKeyPrefix, []byte(fmt.Sprintf("%s_%d", testKeyPrefix, 99))
-	w.Watch(0, from, to, 0)
+	from, to := []byte(testKeyPrefix), []byte(fmt.Sprintf("%s_%d", testKeyPrefix, 99))
+	w.Watch(from, to, 0)
 
 	s.DeleteRange(from, to)
 
@@ -252,13 +216,13 @@ func TestWatchDeleteRange(t *testing.T) {
 // with given id inside watchStream.
 func TestWatchStreamCancelWatcherByID(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := WatchableKV(newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil))
+	s := WatchableKV(newWatchableStore(b, &lease.FakeLessor{}, nil))
 	defer cleanup(s, b, tmpPath)
 
 	w := s.NewWatchStream()
 	defer w.Close()
 
-	id, _ := w.Watch(0, []byte("foo"), nil, 0)
+	id := w.Watch([]byte("foo"), nil, 0)
 
 	tests := []struct {
 		cancelID WatchID
@@ -295,7 +259,7 @@ func TestWatcherRequestProgress(t *testing.T) {
 	// method to sync watchers in unsynced map. We want to keep watchers
 	// in unsynced to test if syncWatchers works as expected.
 	s := &watchableStore{
-		store:    NewStore(zap.NewExample(), b, &lease.FakeLessor{}, nil),
+		store:    NewStore(b, &lease.FakeLessor{}, nil),
 		unsynced: newWatcherGroup(),
 		synced:   newWatcherGroup(),
 	}
@@ -320,7 +284,7 @@ func TestWatcherRequestProgress(t *testing.T) {
 	default:
 	}
 
-	id, _ := w.Watch(0, notTestKey, nil, 1)
+	id := w.Watch(notTestKey, nil, 1)
 	w.RequestProgress(id)
 	select {
 	case resp := <-w.Chan():
@@ -331,7 +295,7 @@ func TestWatcherRequestProgress(t *testing.T) {
 	s.syncWatchers()
 
 	w.RequestProgress(id)
-	wrs := WatchResponse{WatchID: id, Revision: 2}
+	wrs := WatchResponse{WatchID: 0, Revision: 2}
 	select {
 	case resp := <-w.Chan():
 		if !reflect.DeepEqual(resp, wrs) {
@@ -344,7 +308,7 @@ func TestWatcherRequestProgress(t *testing.T) {
 
 func TestWatcherWatchWithFilter(t *testing.T) {
 	b, tmpPath := backend.NewDefaultTmpBackend()
-	s := WatchableKV(newWatchableStore(zap.NewExample(), b, &lease.FakeLessor{}, nil))
+	s := WatchableKV(newWatchableStore(b, &lease.FakeLessor{}, nil))
 	defer cleanup(s, b, tmpPath)
 
 	w := s.NewWatchStream()
@@ -354,7 +318,7 @@ func TestWatcherWatchWithFilter(t *testing.T) {
 		return e.Type == mvccpb.PUT
 	}
 
-	w.Watch(0, []byte("foo"), nil, 0, filterPut)
+	w.Watch([]byte("foo"), nil, 0, filterPut)
 	done := make(chan struct{})
 
 	go func() {

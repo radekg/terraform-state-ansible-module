@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -382,7 +383,7 @@ func resourceAwsVpnConnectionRead(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	if len(resp.VpnConnections) != 1 {
-		return fmt.Errorf("Error finding VPN connection: %s", d.Id())
+		return fmt.Errorf("[ERROR] Error finding VPN connection: %s", d.Id())
 	}
 
 	vpnConnection := resp.VpnConnections[0]
@@ -531,7 +532,7 @@ func telemetryToMapList(telemetry []*ec2.VgwTelemetry) []map[string]interface{} 
 func xmlConfigToTunnelInfo(xmlConfig string) (*TunnelInfo, error) {
 	var vpnConfig XmlVpnConnectionConfig
 	if err := xml.Unmarshal([]byte(xmlConfig), &vpnConfig); err != nil {
-		return nil, fmt.Errorf("Error Unmarshalling XML: %s", err)
+		return nil, errwrap.Wrapf("Error Unmarshalling XML: {{err}}", err)
 	}
 
 	// don't expect consistent ordering from the XML

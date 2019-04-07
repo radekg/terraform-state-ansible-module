@@ -16,7 +16,7 @@ import (
 func TestAccAWSEMRInstanceGroup_basic(t *testing.T) {
 	var ig emr.InstanceGroup
 	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEmrInstanceGroupDestroy,
@@ -33,7 +33,7 @@ func TestAccAWSEMRInstanceGroup_basic(t *testing.T) {
 func TestAccAWSEMRInstanceGroup_zero_count(t *testing.T) {
 	var ig emr.InstanceGroup
 	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEmrInstanceGroupDestroy,
@@ -53,7 +53,7 @@ func TestAccAWSEMRInstanceGroup_zero_count(t *testing.T) {
 func TestAccAWSEMRInstanceGroup_ebsBasic(t *testing.T) {
 	var ig emr.InstanceGroup
 	rInt := acctest.RandInt()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSEmrInstanceGroupDestroy,

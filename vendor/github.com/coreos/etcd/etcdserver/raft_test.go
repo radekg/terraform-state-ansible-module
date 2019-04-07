@@ -17,18 +17,16 @@ package etcdserver
 import (
 	"encoding/json"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/etcdserver/api/membership"
-	"go.etcd.io/etcd/pkg/mock/mockstorage"
-	"go.etcd.io/etcd/pkg/pbutil"
-	"go.etcd.io/etcd/pkg/types"
-	"go.etcd.io/etcd/raft"
-	"go.etcd.io/etcd/raft/raftpb"
-
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/etcdserver/membership"
+	"github.com/coreos/etcd/pkg/mock/mockstorage"
+	"github.com/coreos/etcd/pkg/pbutil"
+	"github.com/coreos/etcd/pkg/types"
+	"github.com/coreos/etcd/raft"
+	"github.com/coreos/etcd/raft/raftpb"
+	"github.com/coreos/etcd/rafthttp"
 )
 
 func TestGetIDs(t *testing.T) {
@@ -66,7 +64,7 @@ func TestGetIDs(t *testing.T) {
 		if tt.confState != nil {
 			snap.Metadata.ConfState = *tt.confState
 		}
-		idSet := getIDs(testLogger, &snap, tt.ents)
+		idSet := getIDs(&snap, tt.ents)
 		if !reflect.DeepEqual(idSet, tt.widSet) {
 			t.Errorf("#%d: idset = %#v, want %#v", i, idSet, tt.widSet)
 		}
@@ -146,7 +144,7 @@ func TestCreateConfigChangeEnts(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		gents := createConfigChangeEnts(testLogger, tt.ids, tt.self, tt.term, tt.index)
+		gents := createConfigChangeEnts(tt.ids, tt.self, tt.term, tt.index)
 		if !reflect.DeepEqual(gents, tt.wents) {
 			t.Errorf("#%d: ents = %v, want %v", i, gents, tt.wents)
 		}
@@ -156,13 +154,12 @@ func TestCreateConfigChangeEnts(t *testing.T) {
 func TestStopRaftWhenWaitingForApplyDone(t *testing.T) {
 	n := newNopReadyNode()
 	r := newRaftNode(raftNodeConfig{
-		lg:          zap.NewExample(),
 		Node:        n,
 		storage:     mockstorage.NewStorageRecorder(""),
 		raftStorage: raft.NewMemoryStorage(),
-		transport:   newNopTransporter(),
+		transport:   rafthttp.NewNopTransporter(),
 	})
-	srv := &EtcdServer{lgMu: new(sync.RWMutex), lg: zap.NewExample(), r: *r}
+	srv := &EtcdServer{r: *r}
 	srv.r.start(nil)
 	n.readyc <- raft.Ready{}
 	select {
@@ -184,19 +181,14 @@ func TestConfgChangeBlocksApply(t *testing.T) {
 	n := newNopReadyNode()
 
 	r := newRaftNode(raftNodeConfig{
-		lg:          zap.NewExample(),
 		Node:        n,
 		storage:     mockstorage.NewStorageRecorder(""),
 		raftStorage: raft.NewMemoryStorage(),
-		transport:   newNopTransporter(),
+		transport:   rafthttp.NewNopTransporter(),
 	})
-	srv := &EtcdServer{lgMu: new(sync.RWMutex), lg: zap.NewExample(), r: *r}
+	srv := &EtcdServer{r: *r}
 
-	srv.r.start(&raftReadyHandler{
-		getLead:          func() uint64 { return 0 },
-		updateLead:       func(uint64) {},
-		updateLeadership: func(bool) {},
-	})
+	srv.r.start(&raftReadyHandler{updateLeadership: func(bool) {}})
 	defer srv.r.Stop()
 
 	n.readyc <- raft.Ready{

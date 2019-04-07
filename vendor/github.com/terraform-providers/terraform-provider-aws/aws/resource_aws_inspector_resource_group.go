@@ -16,12 +16,12 @@ func resourceAWSInspectorResourceGroup() *schema.Resource {
 		Delete: resourceAwsInspectorResourceGroupDelete,
 
 		Schema: map[string]*schema.Schema{
-			"tags": {
+			"tags": &schema.Schema{
 				ForceNew: true,
 				Type:     schema.TypeMap,
 				Required: true,
 			},
-			"arn": {
+			"arn": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

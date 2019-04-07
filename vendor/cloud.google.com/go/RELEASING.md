@@ -2,11 +2,7 @@
 
 ## Prerequisites
 
-- Install [releasetool](https://github.com/googleapis/releasetool).
-- Add `github` as as git remote:
-    ```
-    git remote add git@github.com:GoogleCloudPlatform/google-cloud-go.git
-    ```
+Install [releasetool](https://github.com/googleapis/releasetool).
 
 ## Create a release
 
@@ -48,4 +44,4 @@
    description, copy the changes added to CHANGES.md.
 
 
-[releases]: https://github.com/GoogleCloudPlatform/google-cloud-go/releases
+[releases]: https://github.com/googleapis/google-cloud-go/releases

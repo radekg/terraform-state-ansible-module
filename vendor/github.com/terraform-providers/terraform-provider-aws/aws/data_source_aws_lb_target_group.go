@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -146,7 +147,7 @@ func dataSourceAwsLbTargetGroupRead(d *schema.ResourceData, meta interface{}) er
 	log.Printf("[DEBUG] Reading Load Balancer Target Group: %s", describeTgOpts)
 	describeResp, err := elbconn.DescribeTargetGroups(describeTgOpts)
 	if err != nil {
-		return fmt.Errorf("Error retrieving LB Target Group: %s", err)
+		return errwrap.Wrapf("Error retrieving LB Target Group: {{err}}", err)
 	}
 	if len(describeResp.TargetGroups) != 1 {
 		return fmt.Errorf("Search returned %d results, please revise so only one is returned", len(describeResp.TargetGroups))
@@ -154,6 +155,6 @@ func dataSourceAwsLbTargetGroupRead(d *schema.ResourceData, meta interface{}) er
 
 	targetGroup := describeResp.TargetGroups[0]
 
-	d.SetId(aws.StringValue(targetGroup.TargetGroupArn))
+	d.SetId(*targetGroup.TargetGroupArn)
 	return flattenAwsLbTargetGroupResource(d, meta, targetGroup)
 }

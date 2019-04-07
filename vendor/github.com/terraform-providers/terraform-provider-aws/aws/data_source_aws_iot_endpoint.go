@@ -6,7 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iot"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func dataSourceAwsIotEndpoint() *schema.Resource {
@@ -17,16 +16,6 @@ func dataSourceAwsIotEndpoint() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"endpoint_type": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"iot:CredentialProvider",
-					"iot:Data",
-					"iot:Data-ATS",
-					"iot:Jobs",
-				}, false),
-			},
 		},
 	}
 }
@@ -34,10 +23,6 @@ func dataSourceAwsIotEndpoint() *schema.Resource {
 func dataSourceAwsIotEndpointRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).iotconn
 	input := &iot.DescribeEndpointInput{}
-
-	if v, ok := d.GetOk("endpoint_type"); ok {
-		input.EndpointType = aws.String(v.(string))
-	}
 
 	output, err := conn.DescribeEndpoint(input)
 	if err != nil {

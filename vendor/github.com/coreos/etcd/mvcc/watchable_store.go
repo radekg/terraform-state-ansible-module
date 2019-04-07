@@ -18,10 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"go.etcd.io/etcd/lease"
-	"go.etcd.io/etcd/mvcc/backend"
-	"go.etcd.io/etcd/mvcc/mvccpb"
-	"go.uber.org/zap"
+	"github.com/coreos/etcd/lease"
+	"github.com/coreos/etcd/mvcc/backend"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 // non-const so modifiable by tests
@@ -68,13 +67,13 @@ type watchableStore struct {
 // cancel operations.
 type cancelFunc func()
 
-func New(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter) ConsistentWatchableKV {
-	return newWatchableStore(lg, b, le, ig)
+func New(b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter) ConsistentWatchableKV {
+	return newWatchableStore(b, le, ig)
 }
 
-func newWatchableStore(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter) *watchableStore {
+func newWatchableStore(b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter) *watchableStore {
 	s := &watchableStore{
-		store:    NewStore(lg, b, le, ig),
+		store:    NewStore(b, le, ig),
 		victimc:  make(chan struct{}, 1),
 		unsynced: newWatcherGroup(),
 		synced:   newWatcherGroup(),
@@ -348,13 +347,7 @@ func (s *watchableStore) syncWatchers() int {
 	tx := s.store.b.ReadTx()
 	tx.Lock()
 	revs, vs := tx.UnsafeRange(keyBucketName, minBytes, maxBytes, 0)
-	var evs []mvccpb.Event
-	if s.store != nil && s.store.lg != nil {
-		evs = kvsToEvents(s.store.lg, wg, revs, vs)
-	} else {
-		// TODO: remove this in v3.5
-		evs = kvsToEvents(nil, wg, revs, vs)
-	}
+	evs := kvsToEvents(wg, revs, vs)
 	tx.Unlock()
 
 	var victims watcherBatch
@@ -406,15 +399,11 @@ func (s *watchableStore) syncWatchers() int {
 }
 
 // kvsToEvents gets all events for the watchers from all key-value pairs
-func kvsToEvents(lg *zap.Logger, wg *watcherGroup, revs, vals [][]byte) (evs []mvccpb.Event) {
+func kvsToEvents(wg *watcherGroup, revs, vals [][]byte) (evs []mvccpb.Event) {
 	for i, v := range vals {
 		var kv mvccpb.KeyValue
 		if err := kv.Unmarshal(v); err != nil {
-			if lg != nil {
-				lg.Panic("failed to unmarshal mvccpb.KeyValue", zap.Error(err))
-			} else {
-				plog.Panicf("cannot unmarshal event: %v", err)
-			}
+			plog.Panicf("cannot unmarshal event: %v", err)
 		}
 
 		if !wg.contains(string(kv.Key)) {
@@ -438,14 +427,7 @@ func (s *watchableStore) notify(rev int64, evs []mvccpb.Event) {
 	var victim watcherBatch
 	for w, eb := range newWatcherBatch(&s.synced, evs) {
 		if eb.revs != 1 {
-			if s.store != nil && s.store.lg != nil {
-				s.store.lg.Panic(
-					"unexpected multiple revisions in watch notification",
-					zap.Int("number-of-revisions", eb.revs),
-				)
-			} else {
-				plog.Panicf("unexpected multiple revisions in notification")
-			}
+			plog.Panicf("unexpected multiple revisions in notification")
 		}
 		if w.send(WatchResponse{WatchID: w.id, Events: eb.evs, Revision: rev}) {
 			pendingEventsGauge.Add(float64(len(eb.evs)))
