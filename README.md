@@ -1,6 +1,6 @@
 # Ansible module for retrieving Terraform state properties
 
-[![Build Status](https://travis-ci.org/radekg/terraform-provisioner-ansible.svg?branch=master)](https://travis-ci.org/radekg/terraform-state-ansible-module)
+[![CircleCI](https://circleci.com/gh/radekg/terraform-state-ansible-module.svg?style=svg)](https://circleci.com/gh/radekg/terraform-state-ansible-module)
 
 Coming full circle: provision machines [using Terraform and Ansible](https://github.com/radekg/terraform-provisioner-ansible), then use the Terraform state to power your Ansible!
 
